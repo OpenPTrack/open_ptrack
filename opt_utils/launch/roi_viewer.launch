@@ -1,0 +1,11 @@
+<launch>
+  <node pkg="opt_utils" type="roi_viewer" name="roi_viewer" output="screen">
+  <!-- mode = {roi_display} -->
+  <param name="mode" type="string" value="roi_display"/> -->
+  <!-- Note: label should be updated to list of values -->
+  <param name="label" type="int" value="1" />
+  <remap from ="input_image" to="output_image"/>
+  <remap from ="input_rois" to="output_rois1"/>  
+  </node>
+</launch>
+
