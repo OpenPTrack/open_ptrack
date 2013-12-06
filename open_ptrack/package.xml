@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package>
+  <name>open_ptrack</name>
+  <version>0.0.0</version>
+  <description>Library for multi-sensor people tracking</description>
+
+  <maintainer email="munaro@dei.unipd.it">Matteo Munaro</maintainer>
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <export>
+    <metapackage/>
+  </export>
+</package>
