@@ -1,0 +1,48 @@
+<launch>
+  <!-- Start the Kinect -->
+  <include file="$(find openni_launch)/launch/openni.launch"/> 
+
+   <!-- Launch ground based people detection node -->
+   <node pkg="detection" type="ground_based_people_detector" name="ground_based_people_detector" output="screen">
+    <param name="HogSvmThreshold" value="-1.5"/>
+    <param name="classifier_file" value="$(find detection)/data/HogSvmPCL.yaml"/>
+    <param name="minimum_person_height" value="1.3"/>
+    <param name="maximum_person_height" value="2.3"/>
+    <param name="sampling_factor" value="4"/>
+    <param name="pointcloud_topic" value="/camera/depth_registered/points"/>
+    <param name="rate" value="60.0"/>  
+    <param name="use_rgb" value="false"/>  
+  </node>
+
+   <!-- Launch HaarDispAda Node-->
+   <node name="HaarDispAdaNode" pkg="detection" type="HaarDispAda174" >	
+	<param name="Q_Size" value="20" />
+        <remap from="Color_Image" to="/camera/rgb/image_color"/>	
+       <remap from="Disparity_Image" to="/camera/depth_registered/disparity"/>
+       <remap from="input_rois" to="/ground_based_people_detector/GroundBasedPeopleDetectorOutputRois"/>
+        <param name="mode" value="load"/>
+        <param name="classifier_file" value="$(find detection)/data/HaarDispAda.xml"/>
+        <param name="num_Training_Samples" value="350"/>
+        <param name="HaarDispAdaPrior" value="7.5"/>
+        <param name="Kinect_Disparity_Fix" value="false"/>	
+        <param name="UseMissingDataMask" value="false"/>
+   </node>  
+
+  <!-- display the rois -->
+  <!--node pkg="opt_utils" type="roi_viewer" name="PeopleDetectionViewer" >
+    <param name="mode" type="string" value="roi_display"/> 
+    <param name="label" type="int" value="1" />
+    <param name="show_confidence" type="bool" value="true" />
+    <remap from ="input_image" to="/camera/rgb/image_color"/>
+	<remap from ="input_rois" to="/ground_based_people_detector/GroundBasedPeopleDetectorOutputRois"/>  
+  </node-->
+
+   <!-- display the rois -->
+   <node pkg="opt_utils" type="roi_viewer" name="HaarDispAdaViewer" >
+        <param name="mode" type="string" value="roi_display"/> 
+        <param name="label" type="int" value="1" />
+	<remap from ="input_image" to="HaarDispAdaColorImage"/>
+	<remap from ="input_rois" to="HaarDispAdaOutputRois"/>  
+   </node>
+
+</launch>

@@ -1,0 +1,10 @@
+<library path="lib/libHaarDispAda">
+ 
+  <!-- make sure this matches: -->
+  <!--PLUGINLIB_DECLARE_CLASS(pkg,class_name,class_type,base_class_type) -->
+  <!-- class name="pkg/class_name" type="class_type" base_class_type="base_class_type" -->
+  <class name="HaarDispAda/haardispada_nodelet" type="HaarDispAda::HaarDispAdaNodelet" base_class_type="nodelet::Nodelet">
+    <description>Nodelet Classifies ROIS as containing people or not with Haar features extracted from the disparity image</description>
+  </class>
+
+</library>
