@@ -29,3 +29,6 @@ catkin_make --force-cmake
 Connect a Microsoft Kinect for XBOX360 and run:
 roslaunch detection detector_depth.launch
 
+When the point cloud appears, press Shift+LeftClick on 3 (non collinear) points of the ground plane. Then, press 'Q'. 
+You should see the RGB image with people detections surrounded by white rectangles.
+
