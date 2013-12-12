@@ -1,0 +1,2 @@
+geometry_msgs/Vector3 p1
+geometry_msgs/Vector3 p2

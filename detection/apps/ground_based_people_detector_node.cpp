@@ -57,11 +57,14 @@
 
 // Open PTrack includes:
 #include <open_ptrack/detection/ground_based_people_detection_app.h>
+#include <open_ptrack/detection/conversions.h>
 
 //Publish Messages
-#include "opt_msgs/RoiRect.h"
-#include "opt_msgs/Rois.h"
-#include "std_msgs/String.h"
+#include <opt_msgs/RoiRect.h>
+#include <opt_msgs/Rois.h>
+#include <std_msgs/String.h>
+#include <opt_msgs/Detection.h>
+#include <opt_msgs/DetectionArray.h>
 
 using namespace opt_msgs;
 using namespace sensor_msgs;
@@ -79,169 +82,211 @@ enum { COLS = 640, ROWS = 480 };
 
 void cloud_cb(const PointCloudT::ConstPtr& callback_cloud)
 {
-  *cloud = *callback_cloud;
-  new_cloud_available_flag = true;
+	*cloud = *callback_cloud;
+	new_cloud_available_flag = true;
 }
 
 struct callback_args{
-    // structure used to pass arguments to the callback function
-    PointCloudT::Ptr clicked_points_3d;
-    pcl::visualization::PCLVisualizer* viewerPtr;
+	// structure used to pass arguments to the callback function
+	PointCloudT::Ptr clicked_points_3d;
+	pcl::visualization::PCLVisualizer* viewerPtr;
 };
 
 void
 pp_callback (const pcl::visualization::PointPickingEvent& event, void* args)
 {
-  struct callback_args* data = (struct callback_args *)args;
-  if (event.getPointIndex () == -1)
-    return;
-  PointT current_point;
-  event.getPoint(current_point.x, current_point.y, current_point.z);
-  data->clicked_points_3d->points.push_back(current_point);
-  // Draw clicked points in red:
-  pcl::visualization::PointCloudColorHandlerCustom<PointT> red (data->clicked_points_3d, 255, 0, 0);
-  data->viewerPtr->removePointCloud("clicked_points");
-  data->viewerPtr->addPointCloud(data->clicked_points_3d, red, "clicked_points");
-  data->viewerPtr->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "clicked_points");
-  std::cout << current_point.x << " " << current_point.y << " " << current_point.z << std::endl;
+	struct callback_args* data = (struct callback_args *)args;
+	if (event.getPointIndex () == -1)
+		return;
+	PointT current_point;
+	event.getPoint(current_point.x, current_point.y, current_point.z);
+	data->clicked_points_3d->points.push_back(current_point);
+	// Draw clicked points in red:
+	pcl::visualization::PointCloudColorHandlerCustom<PointT> red (data->clicked_points_3d, 255, 0, 0);
+	data->viewerPtr->removePointCloud("clicked_points");
+	data->viewerPtr->addPointCloud(data->clicked_points_3d, red, "clicked_points");
+	data->viewerPtr->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "clicked_points");
+	std::cout << current_point.x << " " << current_point.y << " " << current_point.z << std::endl;
 }
 
 int main (int argc, char** argv)
 {
-  ros::init(argc, argv, "ground_based_people_detector");
-  ros::NodeHandle nh("~");
+	ros::init(argc, argv, "ground_based_people_detector");
+	ros::NodeHandle nh("~");
 
-  // Read some parameters from launch file:
-  std::string svm_filename;
-  nh.param("classifier_file", svm_filename, std::string("./"));
-  bool use_rgb;
-  nh.param("use_rgb", use_rgb, false);
-  double min_confidence;
-  nh.param("HogSvmThreshold", min_confidence, -1.5);
-  double min_height;
-  nh.param("minimum_person_height", min_height, 1.3);
-  double max_height;
-  nh.param("maximum_person_height", max_height, 2.3);
-  int sampling_factor;
-  nh.param("sampling_factor", sampling_factor, 1);
-  std::string pointcloud_topic;
-  nh.param("pointcloud_topic", pointcloud_topic, std::string("/camera/depth_registered/points"));
-  double rate_value;
-  nh.param("rate", rate_value, 30.0);
+	// Read some parameters from launch file:
+	std::string svm_filename;
+	nh.param("classifier_file", svm_filename, std::string("./"));
+	bool use_rgb;
+	nh.param("use_rgb", use_rgb, false);
+	double min_confidence;
+	nh.param("HogSvmThreshold", min_confidence, -1.5);
+	double min_height;
+	nh.param("minimum_person_height", min_height, 1.3);
+	double max_height;
+	nh.param("maximum_person_height", max_height, 2.3);
+	int sampling_factor;
+	nh.param("sampling_factor", sampling_factor, 1);
+	std::string pointcloud_topic;
+	nh.param("pointcloud_topic", pointcloud_topic, std::string("/camera/depth_registered/points"));
+	double rate_value;
+	nh.param("rate", rate_value, 30.0);
 
-  // Fixed parameters:
-  float voxel_size = 0.06;
-  Eigen::Matrix3f rgb_intrinsics_matrix;
-  rgb_intrinsics_matrix << 525, 0.0, 319.5, 0.0, 525, 239.5, 0.0, 0.0, 1.0; // Kinect RGB camera intrinsics
+	// Fixed parameters:
+	float voxel_size = 0.06;
+	Eigen::Matrix3f rgb_intrinsics_matrix;
+	rgb_intrinsics_matrix << 525, 0.0, 319.5, 0.0, 525, 239.5, 0.0, 0.0, 1.0; // Kinect RGB camera intrinsics
 
-  // Subscribers:
-  ros::Subscriber sub = nh.subscribe(pointcloud_topic, 1, cloud_cb);
+	// Subscribers:
+	ros::Subscriber sub = nh.subscribe(pointcloud_topic, 1, cloud_cb);
 
-  // Publishers:
-  ros::Publisher pub_rois_;
-  pub_rois_= nh.advertise<Rois>("GroundBasedPeopleDetectorOutputRois",3);
+	// Publishers:
+	ros::Publisher detection_pub;
+	detection_pub= nh.advertise<DetectionArray>("detections",3);
+	ros::Publisher pub_rois_;
+	pub_rois_= nh.advertise<Rois>("GroundBasedPeopleDetectorOutputRois",3);
 
-  Rois output_rois_;
+	Rois output_rois_;
+	open_ptrack::detection::Conversions converter;
 
-  ros::Rate rate(rate_value);
-  while(ros::ok() && !new_cloud_available_flag)
-  {
-    ros::spinOnce();
-    rate.sleep();
-  }
+	ros::Rate rate(rate_value);
+	while(ros::ok() && !new_cloud_available_flag)
+	{
+		ros::spinOnce();
+		rate.sleep();
+	}
 
-  // Display pointcloud:
-  pcl::visualization::PointCloudColorHandlerRGBField<PointT> rgb(cloud);
-  viewer.addPointCloud<PointT> (cloud, rgb, "input_cloud");
-  viewer.setCameraPosition(0,0,-2,0,-1,0,0);
+	// Display pointcloud:
+	pcl::visualization::PointCloudColorHandlerRGBField<PointT> rgb(cloud);
+	viewer.addPointCloud<PointT> (cloud, rgb, "input_cloud");
+	viewer.setCameraPosition(0,0,-2,0,-1,0,0);
 
-  // Add point picking callback to viewer:
-  struct callback_args cb_args;
-  PointCloudT::Ptr clicked_points_3d (new PointCloudT);
-  cb_args.clicked_points_3d = clicked_points_3d;
-  cb_args.viewerPtr = &viewer;
-  viewer.registerPointPickingCallback (pp_callback, (void*)&cb_args);
-  std::cout << "Shift+click on three floor points, then press 'Q'..." << std::endl;
+	// Add point picking callback to viewer:
+	struct callback_args cb_args;
+	PointCloudT::Ptr clicked_points_3d (new PointCloudT);
+	cb_args.clicked_points_3d = clicked_points_3d;
+	cb_args.viewerPtr = &viewer;
+	viewer.registerPointPickingCallback (pp_callback, (void*)&cb_args);
+	std::cout << "Shift+click on three floor points, then press 'Q'..." << std::endl;
 
-  // Spin until 'Q' is pressed:
-  viewer.spin();
-  std::cout << "done." << std::endl;
+	// Spin until 'Q' is pressed:
+	viewer.spin();
+	std::cout << "done." << std::endl;
 
-  // Ground plane estimation:
-  Eigen::VectorXf ground_coeffs;
-  ground_coeffs.resize(4);
-  std::vector<int> clicked_points_indices;
-  for (unsigned int i = 0; i < clicked_points_3d->points.size(); i++)
-    clicked_points_indices.push_back(i);
-  pcl::SampleConsensusModelPlane<PointT> model_plane(clicked_points_3d);
-  model_plane.computeModelCoefficients(clicked_points_indices,ground_coeffs);
-  ROS_ERROR("Ground plane coefficients: %f, %f, %f, %f.", ground_coeffs(0), ground_coeffs(1), ground_coeffs(2), ground_coeffs(3));
+	// Ground plane estimation:
+	Eigen::VectorXf ground_coeffs;
+	ground_coeffs.resize(4);
+	std::vector<int> clicked_points_indices;
+	for (unsigned int i = 0; i < clicked_points_3d->points.size(); i++)
+		clicked_points_indices.push_back(i);
+	pcl::SampleConsensusModelPlane<PointT> model_plane(clicked_points_3d);
+	model_plane.computeModelCoefficients(clicked_points_indices,ground_coeffs);
+	ROS_ERROR("Ground plane coefficients: %f, %f, %f, %f.", ground_coeffs(0), ground_coeffs(1), ground_coeffs(2), ground_coeffs(3));
 
-  // Create classifier for people detection:
-  pcl::people::PersonClassifier<pcl::RGB> person_classifier;
-  person_classifier.loadSVMFromFile(svm_filename);   // load trained SVM
+	// Create classifier for people detection:
+	pcl::people::PersonClassifier<pcl::RGB> person_classifier;
+	person_classifier.loadSVMFromFile(svm_filename);   // load trained SVM
 
-  // People detection app initialization:
-  open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT> people_detector;    // people detection object
-  people_detector.setVoxelSize(voxel_size);                        // set the voxel size
-  people_detector.setIntrinsics(rgb_intrinsics_matrix);            // set RGB camera intrinsic parameters
-  people_detector.setClassifier(person_classifier);                // set person classifier
-  people_detector.setHeightLimits(min_height, max_height);         // set person classifier
-  people_detector.setSamplingFactor(sampling_factor);              // set sampling factor
+	// People detection app initialization:
+	open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT> people_detector;    // people detection object
+	people_detector.setVoxelSize(voxel_size);                        // set the voxel size
+	people_detector.setIntrinsics(rgb_intrinsics_matrix);            // set RGB camera intrinsic parameters
+	people_detector.setClassifier(person_classifier);                // set person classifier
+	people_detector.setHeightLimits(min_height, max_height);         // set person classifier
+	people_detector.setSamplingFactor(sampling_factor);              // set sampling factor
 
-  // Main loop:
-  while(ros::ok())
-  {
-    if (new_cloud_available_flag)
-    {
-      new_cloud_available_flag = false;
+	// Main loop:
+	while(ros::ok())
+	{
+		if (new_cloud_available_flag)
+		{
+			new_cloud_available_flag = false;
 
-      // Convert PCL cloud header to ROS header:
-      std_msgs::Header cloud_header = pcl_conversions::fromPCL(cloud->header);
+			// Convert PCL cloud header to ROS header:
+			std_msgs::Header cloud_header = pcl_conversions::fromPCL(cloud->header);
 
-      // Perform people detection on the new cloud:
-      std::vector<pcl::people::PersonCluster<PointT> > clusters;   // vector containing persons clusters
-      people_detector.setInputCloud(cloud);
-      people_detector.setGround(ground_coeffs);                    // set floor coefficients
-      people_detector.compute(clusters);                           // perform people detection
-      people_detector.setUseRGB(false);                            // set if RGB should be used or not
+			// Perform people detection on the new cloud:
+			std::vector<pcl::people::PersonCluster<PointT> > clusters;   // vector containing persons clusters
+			people_detector.setInputCloud(cloud);
+			people_detector.setGround(ground_coeffs);                    // set floor coefficients
+			people_detector.compute(clusters);                           // perform people detection
+			people_detector.setUseRGB(false);                            // set if RGB should be used or not
 
-      ground_coeffs = people_detector.getGround();                 // get updated floor coefficients
+			ground_coeffs = people_detector.getGround();                 // get updated floor coefficients
 
-      // Write ROIs message and publish it:
-      output_rois_.rois.clear();
-      output_rois_.header = cloud_header;
-      for(std::vector<pcl::people::PersonCluster<PointT> >::iterator it = clusters.begin(); it != clusters.end(); ++it)
-      {
-        if((!use_rgb) | (it->getPersonConfidence() > min_confidence))            // keep only people with confidence above a threshold
-        {
-          // theoretical person centroid:
-          Eigen::Vector3f centroid = rgb_intrinsics_matrix * (it->getTCenter());
-          centroid /= centroid(2);
-          // theoretical person top point:
-          Eigen::Vector3f top = rgb_intrinsics_matrix * (it->getTTop());
-          top /= top(2);
+			/// Write detection message:
+			DetectionArray::Ptr detection_array_msg(new DetectionArray);
+			// Set camera-specific fields:
+			detection_array_msg->header = cloud_header;
+			for(int i = 0; i < 3; i++)
+				for(int j = 0; j < 3; j++)
+					detection_array_msg->intrinsic_matrix.push_back(rgb_intrinsics_matrix(i, j));
+			// Add all valid detections:
+			for(std::vector<pcl::people::PersonCluster<PointT> >::iterator it = clusters.begin(); it != clusters.end(); ++it)
+			{
+				if((!use_rgb) | (it->getPersonConfidence() > min_confidence))            // if RGB is used, keep only people with confidence above a threshold
+				{
+				  // Create detection message:
+					Detection detection_msg;
+					converter.Vector3fToVector3(it->getMin(), detection_msg.box_3D.p1);
+					converter.Vector3fToVector3(it->getMax(), detection_msg.box_3D.p2);
+					// theoretical person centroid:
+					Eigen::Vector3f centroid = converter.world2cam(it->getTCenter(), rgb_intrinsics_matrix);
+					// theoretical person top point:
+					Eigen::Vector3f top = converter.world2cam(it->getTTop(), rgb_intrinsics_matrix);
+					// theoretical person bottom point:
+					Eigen::Vector3f bottom = converter.world2cam(it->getTBottom(), rgb_intrinsics_matrix);
+          float enlarge_factor = 1.1;
+          float pixel_xc = centroid(0);
+					float pixel_yc = centroid(1);
+					float pixel_height = (bottom(1) - top(1)) * enlarge_factor;
+					float pixel_width = pixel_height / 2;
+					detection_msg.box_2D.x = int(centroid(0) - pixel_width/2.0);
+					detection_msg.box_2D.y = int(centroid(1) - pixel_height/2.0);
+					detection_msg.box_2D.width = int(pixel_width);
+					detection_msg.box_2D.height = int(pixel_height);
+					detection_msg.height = it->getHeight();
+					detection_msg.confidence = it->getPersonConfidence();
+					detection_msg.distance = it->getDistance();
 
-          // Define RoiRect and make sure it is not out of the image:
-          RoiRect R;
-          R.height = centroid(1) - top(1);
-          R.width  = R.height * 2 / 3.0;
-          R.x      = std::max(0, int(centroid(0) - R.width / 2.0));
-          R.y      = std::max(0, int(top(1)));
-          R.height = std::min(int(ROWS - R.y), int(R.height));
-          R.width = std::min(int(COLS - R.x), int(R.width));
-          R.label  = 1;
-          R.confidence  = it->getPersonConfidence();
-          output_rois_.rois.push_back(R);
-        }
-      }
-      pub_rois_.publish(output_rois_);  // publish message
-    }
+					// Add message:
+					detection_array_msg->detections.push_back(detection_msg);
+				}
+			}
+			detection_pub.publish(detection_array_msg);		 // publish message
 
-    // Execute callbacks:
-    ros::spinOnce();
-    rate.sleep();
-  }
-  return 0;
+			// Write ROIs message and publish it:
+			output_rois_.rois.clear();
+			output_rois_.header = cloud_header;
+			for(std::vector<pcl::people::PersonCluster<PointT> >::iterator it = clusters.begin(); it != clusters.end(); ++it)
+			{
+				if((!use_rgb) | (it->getPersonConfidence() > min_confidence))            // if RGB is used, keep only people with confidence above a threshold
+				{
+					// theoretical person centroid:
+				  Eigen::Vector3f centroid = converter.world2cam(it->getTCenter(), rgb_intrinsics_matrix);
+					// theoretical person top point:
+				  Eigen::Vector3f top = converter.world2cam(it->getTTop(), rgb_intrinsics_matrix);
+
+					// Define RoiRect and make sure it is not out of the image:
+					RoiRect R;
+					R.height = centroid(1) - top(1);
+					R.width  = R.height * 2 / 3.0;
+					R.x      = std::max(0, int(centroid(0) - R.width / 2.0));
+					R.y      = std::max(0, int(top(1)));
+					R.height = std::min(int(ROWS - R.y), int(R.height));
+					R.width = std::min(int(COLS - R.x), int(R.width));
+					R.label  = 1;
+					R.confidence  = it->getPersonConfidence();
+					output_rois_.rois.push_back(R);
+				}
+			}
+			pub_rois_.publish(output_rois_);  // publish message
+		}
+
+		// Execute callbacks:
+		ros::spinOnce();
+		rate.sleep();
+	}
+	return 0;
 }
 

@@ -23,7 +23,8 @@ catkin_package(
    CATKIN_DEPENDS roscpp pcl_ros pcl_conversions
 )
 
-add_executable(ground_based_people_detector apps/ground_based_people_detector_node.cpp)
+add_executable(ground_based_people_detector apps/ground_based_people_detector_node.cpp 
+src/conversions.cpp)
 target_link_libraries(ground_based_people_detector ${catkin_LIBRARIES} vtkHybrid vtkRendering)
 
 add_library(haar_disp_ada src/haardispada.cpp apps/haardispada_nodelet.cpp)

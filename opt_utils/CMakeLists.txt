@@ -13,5 +13,5 @@ catkin_package(
    CATKIN_DEPENDS roscpp
 )
 
-add_executable(roi_viewer src/main.cpp)
+add_executable(roi_viewer src/roi_viewer.cpp)
 target_link_libraries(roi_viewer boost_system boost_filesystem boost_signals ${catkin_LIBRARIES} ${OpenCV_LIBS})
