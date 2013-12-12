@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<package>
+  <name>bayes</name>
+  <version>0.0.0</version>
+  <description>Module containing Bayes++ library for Bayesian filtering.</description>
+
+  <maintainer email="munaro@dei.unipd.it">Matteo Munaro</maintainer>
+
+  <license>BSD</license>
+
+  <!-- The *_depend tags are used to specify dependencies -->
+  <!-- Dependencies can be catkin packages or system dependencies -->
+  <!-- Examples: -->
+  <!-- Use build_depend for packages you need at compile time: -->
+  <!--   <build_depend>message_generation</build_depend> -->
+  <!-- Use buildtool_depend for build tool packages: -->
+  <!--   <buildtool_depend>catkin</buildtool_depend> -->
+  <!-- Use run_depend for packages you need at runtime: -->
+  <!--   <run_depend>message_runtime</run_depend> -->
+  <!-- Use test_depend for packages you need only for testing: -->
+  <!--   <test_depend>gtest</test_depend> -->
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <run_depend>roscpp</run_depend> 
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lbayes -L/usr/lib" />
+  </export>
+</package>
