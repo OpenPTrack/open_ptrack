@@ -13,8 +13,8 @@
  * ISSUES:
  *  observe functions: returned rcond is the minimum of each sequential update, an overall conditioning would be better
  */
-#include <UDFlt.hpp>
-#include <matSup.hpp>
+#include "UDFlt.hpp"
+#include "matSup.hpp"
 #include <boost/limits.hpp>
 
 /* Filter namespace */
@@ -36,11 +36,10 @@ UD_scheme (std::size_t x_size, std::size_t q_maxsize, std::size_t z_initialsize)
 		zpdecol(Empty),
 		Gz(Empty),
 		GIHx(Empty)
-/*
- * Initialise filter and set the size of things we know about
+/* Initialise filter and set the size of things we know about
  */
 {
-	last_z_size = 0;	// Leave z_size dependants Empty if z_initialsize==0
+	last_z_size = 0;	// Matrices conform to z_initialsize, they are left Empty if z_initialsize==0
 	observe_size (z_initialsize);
 }
 
@@ -59,8 +58,7 @@ UD_scheme&
 
 void
  UD_scheme::init ()
-/*
- * Initialise from a state and state coveriance
+/* Initialise from a state and state coveriance
  * Computes UD factor from initial covaiance
  * Predcond:
  *  X
@@ -79,8 +77,7 @@ void
 
 void
  UD_scheme::update ()
-/*
- * Defactor UD back into X
+/* Defactor UD back into X
  * Precond:
  *  UD
  * Postcond:
@@ -93,8 +90,7 @@ void
 
 UD_scheme::Float
  UD_scheme::predict (Linrz_predict_model& f)
-/*
- * Prediction using a diagonalised noise q, and its coupling G
+/* Prediction using a diagonalised noise q, and its coupling G
  *  q can have order less then x and a matching G so GqG' has order of x
  * Precond:
  *	UD
@@ -113,8 +109,7 @@ UD_scheme::Float
 
 UD_scheme::Float
  UD_scheme::predictGq (const Matrix& Fx, const Matrix& G, const FM::Vec& q)
-/*
- * MWG-S prediction from Bierman  p.132
+/* MWG-S prediction from Bierman  p.132
  *  q can have order less then x and a matching G so GqG' has order of x
  * Precond:
  *  UD
@@ -149,14 +144,14 @@ UD_scheme::Float
 				UDj[i+n] = Gj[i];
 		}
 
-						// U=Fx*U and diagonals retrived
+						// U=Fx*U and diagonals retrieved
 		for (j = n-1; j > 0; --j)		// n-1..1
 		{
 						// Prepare d(0)..d(j) as temporary
 			for (i = 0; i <= j; ++i)	// 0..j
 				d[i] = Float(UD(i,j));	// ISSUE mixed type proxy assignment
 
-						// Lower triangle of UD is implicity empty
+						// Lower triangle of UD is implicitly empty
 			for (i = 0; i < n; ++i) 	// 0..n-1
 			{
 				Matrix::Row UDi(UD,i);
@@ -220,7 +215,7 @@ UD_scheme::Float
 						if (e != 0)
 							goto Negative;
 					}
-					// UD(j,k) uneffected
+					// UD(j,k) unaffected
 				}
 			}//PD
 			else
@@ -253,8 +248,7 @@ Negative:
 
 void
  UD_scheme::observe_size (std::size_t z_size)
-/*
- * Optimised dyamic observation sizing
+/* Optimised dynamic observation sizing
  */
 {
 	if (z_size != last_z_size) {
@@ -268,9 +262,8 @@ void
 
 Bayes_base::Float
  UD_scheme::observe (Linrz_uncorrelated_observe_model& h, const Vec& z)
-/*
- * Standard linrz observe
- *  Uncorrelated observations are applied sequentialy in the order they appear in z
+/* Standard linrz observe
+ *  Uncorrelated observations are applied sequentially in the order they appear in z
  *  The sequential observation updates state x
  *  Therefore the model of each observation needs to be computed sequentially. Generally this
  *  is inefficient and observe (UD_sequential_observe_model&) should be used instead
@@ -279,7 +272,7 @@ Bayes_base::Float
  *	 Zv is PSD
  * Postcond:
  *  UD is PSD
- * Return: Minimum rcond of all squential observe
+ * Return: Minimum rcond of all sequential observe
  */
 {
 	const std::size_t z_size = z.size();
@@ -287,14 +280,14 @@ Bayes_base::Float
 
 								// Dynamic sizing
 	observe_size (z_size);
-								// Apply observations sequentialy as they are decorrelated
+								// Apply observations sequentially as they are decorrelated
 	Float rcondmin = std::numeric_limits<Float>::max();
 	for (std::size_t o = 0; o < z_size; ++o)
 	{
 								// Observation model, extracted for a single z element
 		const Vec& zp = h.h(x);
 		h.normalise(znorm = z, zp);
-		h1 = row(h.Hx,o);
+		noalias(h1) = row(h.Hx, o);
 								// Check Z precondition
 		if (h.Zv[o] < 0)
 			error (Numeric_exception("Zv not PSD in observe"));
@@ -314,7 +307,8 @@ Bayes_base::Float
 
 Bayes_base::Float
  UD_scheme::observe (Linrz_correlated_observe_model& /*h*/, const Vec& /*z*/)
-/* No solution for Correlated noise and Linearised model */
+/* No solution for Correlated noise and Linearised model
+ */
 {
 	error (Logic_exception("observe no Linrz_correlated_observe_model solution"));
 	return 0;	// never reached
@@ -322,17 +316,16 @@ Bayes_base::Float
 
 Bayes_base::Float
  UD_scheme::observe (Linear_correlated_observe_model& h, const Vec& z)
-/*
- * Special Linear Hx observe for correlated Z
+/* Special Linear Hx observe for correlated Z
  *  Z must be PD and will be decorrelated
- * Applies observations sequentialy in the order they appear in z
- * Creates temporary Vec and Matrix to decorelate z,Z
- * Predcondition:
+ * Applies observations sequentially in the order they appear in z
+ * Creates temporary Vec and Matrix to decorrelate z,Z
+ * Precondition:
  *  UD
  *  Z is PSD
  * Postcondition:
  *  UD is PSD
- * Return: Minimum rcond of all squential observe
+ * Return: Minimum rcond of all sequential observe
  */
 {
 	std::size_t i, j, k;
@@ -382,7 +375,7 @@ Bayes_base::Float
 		} while (i-- > 0);
 	}//if (z_size>0)
 
-								// Apply observations sequentialy as they are decorrelated
+								// Apply observations sequential as they are decorrelated
 	Float rcondmin = std::numeric_limits<Float>::max();
 	for (std::size_t o = 0; o < z_size; ++o)
 	{
@@ -403,17 +396,16 @@ Bayes_base::Float
 
 Bayes_base::Float
  UD_scheme::observe (UD_sequential_observe_model& h, const Vec& z)
-/*
- * Special observe using observe_model_sequential for fast uncorrelated linrz operation
- * Uncorrelated observations are applied sequentialy in the order they appear in z
+/* Special observe using observe_model_sequential for fast uncorrelated linrz operation
+ * Uncorrelated observations are applied sequentially in the order they appear in z
  * The sequential observation updates state x. Therefore the model of
  * each observation needs to be computed sequentially
- * Predcondition:
+ * Precondition:
  *  UD
  *  Z is PSD
  * Postcondition:
  *  UD is PSD
- * Return: Minimum rcond of all squential observe
+ * Return: Minimum rcond of all sequential observe
  */
 {
 	std::size_t o;
@@ -422,7 +414,7 @@ Bayes_base::Float
 
 								// Dynamic sizing
 	observe_size (z_size);
-								// Apply observations sequentialy as they are decorrelated
+								// Apply observations sequentially as they are decorrelated
 	Float rcondmin = std::numeric_limits<Float>::max();
 	for (o = 0; o < z_size; ++o)
 	{
@@ -449,18 +441,17 @@ Bayes_base::Float
 
 UD_scheme::Float
  UD_scheme::observeUD (FM::Vec& gain, Float & alpha, const Vec& h, const Float r)
-/*
- * Linear UD factorisation update
+/** Linear UD factorisation update
  *  Bierman UdU' factorisation update. Bierman p.100
  * Input
- *  h observation coeficients
+ *  h observation coefficients
  *  r observation variance
  * Output
  *  gain  observation Kalman gain
  *  alpha observation innovation variance
  * Variables with physical significance
  *  gamma becomes covariance of innovation
- * Predcondition:
+ * Precondition:
  *  UD
  *  r is PSD (not checked)
  * Postcondition:

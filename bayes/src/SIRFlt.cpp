@@ -7,13 +7,13 @@
  */
 
 /*
- * Sampling Importance Resampleing Filter.
+ * Sampling Importance Resampling Filter.
  *
- * Bootstap filter (Sequential Importance Resampleing).
+ * Bootstrap filter (Sequential Importance Resampling).
  */
-#include <SIRFlt.hpp>
-#include <matSup.hpp>
-#include <models.hpp>
+#include "SIRFlt.hpp"
+#include "matSup.hpp"
+#include "models.hpp"
 #include <algorithm>
 #include <iterator>
 #include <vector>
@@ -38,8 +38,7 @@ namespace Bayesian_filter
 
 Standard_resampler::Float
  Standard_resampler::resample (Resamples_t& presamples, std::size_t& uresamples, FM::DenseVec& w, SIR_random& r) const
-/*
- * Standard resampler from [1]
+/* Standard resampler from [1]
  * Algorithm:
  *	A particle is chosen once for each time its cumulative weight intersects with a uniform random draw.
  *	Complexity O(n*log(n))
@@ -49,7 +48,7 @@ Standard_resampler::Float
  *  presamples number of times this particle should be resampled
  *  uresamples number of unqiue particles (number of non zeros in Presamples)
  *  w becomes a normalised cumulative sum
- * Sideeffects:
+ * Side effects:
  *  A draw is made from 'r' for each particle
  */
 {
@@ -74,7 +73,7 @@ Standard_resampler::Float
 		error (Numeric_exception("negative weight"));
 	if (wcum <= 0)		// bad cumulative weights (previous check should actually prevent -ve
 		error (Numeric_exception("zero cumulative weight sum"));
-						// Any numerical failure should cascade into cummulative sum
+						// Any numerical failure should cascade into cumulative sum
 	if (wcum != wcum)		// inequality due to NaN
 		error (Numeric_exception("NaN cumulative weight sum"));
 
@@ -83,7 +82,7 @@ Standard_resampler::Float
 	r.uniform_01(ur);
 	std::sort  (ur.begin(), ur.end());
 	assert (ur[0] >= 0 && ur[ur.size()-1] < 1);	// very bad if random is incorrect
-						// Scale ur to cummulative sum
+						// Scale ur to cumulative sum
 	ur *= wcum;
 						// Resamples based on cumulative weights from sorted resample random values
 	Resamples_t::iterator pri = presamples.begin();
@@ -118,8 +117,7 @@ Standard_resampler::Float
 
 Systematic_resampler::Float
  Systematic_resampler::resample (Resamples_t& presamples, std::size_t& uresamples, FM::DenseVec& w, SIR_random& r) const
-/*
- * Systematic resample algorithm from [2]
+/* Systematic resample algorithm from [2]
  * Algorithm:
  *	A particle is chosen once for each time its cumulative weight intersects with an equidistant grid.
  *	A uniform random draw is chosen to position the grid within the cumulative weights
@@ -154,7 +152,7 @@ Systematic_resampler::Float
 		error (Numeric_exception("negative weight"));
 	if (wcum <= 0)		// bad cumulative weights (previous check should actually prevent -ve
 		error (Numeric_exception("total likelihood zero"));
-						// Any numerical failure should cascade into cummulative sum
+						// Any numerical failure should cascade into cumulative sum
 	if (wcum != wcum)
 		error (Numeric_exception("total likelihood numerical error"));
 
@@ -204,8 +202,7 @@ SIR_scheme::SIR_scheme (std::size_t x_size, std::size_t s_size, SIR_random& rand
 		Sample_filter (x_size, s_size),
 		random (random_helper),
 		resamples (s_size), wir (s_size)
-/*
- * Initialise filter and set the size of things we know about
+/* Initialise filter and set the size of things we know about
  */
 {
 	SIR_scheme::x_size = x_size;
@@ -227,8 +224,7 @@ SIR_scheme& SIR_scheme::operator= (const SIR_scheme& a)
 
 void
  SIR_scheme::init_S ()
-/*
- * Initialise sampling
+/* Initialise sampling
  *  Pre: S
  *  Post: stochastic_samples := samples in S
  */
@@ -241,8 +237,7 @@ void
 
 SIR_scheme::Float
  SIR_scheme::update_resample (const Importance_resampler& resampler)
-/*
- * Resample particles using weights and roughen
+/* Resample particles using weights and roughen
  * Pre : S represent the predicted distribution
  * Post: S represent the fused distribution, n_resampled from weighted_resample
  * Exceptions:
@@ -250,12 +245,12 @@ SIR_scheme::Float
  *    unchanged: S, stochastic_samples
  * Return
  *  lcond, Smallest normalised weight, represents conditioning of resampling solution
- *  lcond == 1 if no resampling preformed
- *  This should by multipled by the number of samples to get the Likelihood function conditioning
+ *  lcond == 1 if no resampling performed
+ *  This should by multiplied by the number of samples to get the Likelihood function conditioning
  */
 {
 	Float lcond = 1;
-	if (wir_update)		// Resampleing only required if weights have been updated
+	if (wir_update)		// Resampling only required if weights have been updated
 	{
 		// Resample based on likelihood weights
 		std::size_t R_unique;
@@ -276,8 +271,7 @@ SIR_scheme::Float
 
 void
  SIR_scheme::predict (Sampled_predict_model& f)
-/*
- * Predict state posterior with sampled noise model
+/* Predict state posterior with sampled noise model
  *  Pre : S represent the prior distribution
  *  Post: S represent the predicted distribution, stochastic_samples := samples in S
  */
@@ -294,10 +288,9 @@ void
 
 void
  SIR_scheme::observe (Likelihood_observe_model& h, const Vec& z)
-/*
- * Observation fusion using Likelihood at z
+/* Observation fusion using Likelihood at z
  * Pre : wir previous particle likelihood weights
- * Post: wir fused (multiplicative) particle likehood weights
+ * Post: wir fused (multiplicative) particle likelihood weights
  */
 {
 	h.Lz (z);			// Observe likelihood at z
@@ -312,11 +305,10 @@ void
 
 void
  SIR_scheme::observe_likelihood (const Vec& lw)
-/*
- * Observation fusion directly from likelihood weights
+/* Observation fusion directly from likelihood weights
  * lw may be smaller then the number of particles. Weights for additional particles are assumed to be 1
  * Pre : wir previous particle likelihood weights
- * Post: wir fused (multiplicative) particle likehood weights
+ * Post: wir fused (multiplicative) particle likelihood weights
  */
 {
 					// Weight Particles. Fused with previous weight
@@ -329,9 +321,8 @@ void
 
 
 void SIR_scheme::copy_resamples (ColMatrix& P, const Importance_resampler::Resamples_t& presamples)
-/*
- * Update P by selectively copying presamples
- * Uses a in-place copying alogorithm
+/* Update P by selectively copying presamples
+ * Uses a in-place copying algorithm
  * Algorithm: In-place copying
  *  First copy the live samples (those resampled) to end of P
  *  Replicate live sample in-place
@@ -366,12 +357,11 @@ void SIR_scheme::copy_resamples (ColMatrix& P, const Importance_resampler::Resam
 
 
 void SIR_scheme::roughen_minmax (ColMatrix& P, Float K) const
-/*
- * Roughening
+/* Roughening
  *  Uses algorithm from Ref[1] using max-min in each state of P
- *  K is scaleing factor for roughening noise
+ *  K is scaling factor for roughening noise
  *  unique_samples is unchanged as roughening is used to postprocess observe resamples
- * Numerical colapse of P
+ * Numerical collapse of P
  *  P with very small or zero range result in minimal roughening
  * Exceptions:
  *  none
@@ -411,7 +401,7 @@ void SIR_scheme::roughen_minmax (ColMatrix& P, Float K) const
    						// Apply roughening predict based on scaled variance
 	DenseVec n(x_size);
 	for (pi = P.begin2(); pi != P.end2(); ++pi) {
-		random.normal (n);			// independant zero mean normal
+		random.normal (n);			// independent zero mean normal
 									// multiply elements by std dev
 		for (DenseVec::iterator ni = n.begin(); ni != n.end(); ++ni) {
 			*ni *= rootq[ni.index()];
@@ -434,8 +424,7 @@ SIR_kalman_scheme::SIR_kalman_scheme (std::size_t x_size, std::size_t s_size, SI
 }
 
 void SIR_kalman_scheme::init ()
-/*
- * Initialise sampling from kalman statistics
+/* Initialise sampling from Kalman statistics
  *	Pre: x,X
  *	Post: x,X,S
  */
@@ -463,8 +452,7 @@ void SIR_kalman_scheme::init ()
 
 
 void SIR_kalman_scheme::mean ()
-/*
- * Update state mean
+/* Update state mean
  *  Pre : S
  *  Post: x,S
  */
@@ -482,8 +470,7 @@ void SIR_kalman_scheme::mean ()
 
 Bayes_base::Float
  SIR_kalman_scheme::update_resample (const Importance_resampler& resampler)
-/*
- * Modified SIR_scheme update implementation
+/* Modified SIR_scheme update implementation
  *  update mean and covariance of sampled distribution with update_statistics
  * Normal numerical circumstances (such as all identical samples)
  * may lead to illconditioned X which is not PSD when factorised.
@@ -497,8 +484,7 @@ Bayes_base::Float
 }
 
 void SIR_kalman_scheme::update_statistics ()
-/*
- * Update kalman statistics without resampling
+/* Update kalman statistics without resampling
  * Update mean and covariance estimate of sampled distribution => mean and covariance of particles
  *  Pre : S (s_size >=1 enforced by state_filter base)
  *  Post: x,X,S	(X may be non PSD)
@@ -524,17 +510,16 @@ void SIR_kalman_scheme::update_statistics ()
 
 
 void SIR_kalman_scheme::roughen_correlated (ColMatrix& P, Float K)
-/*
- * Roughening
+/* Roughening
  *  Uses a roughening noise based on covariance of P
  *  This is a more sophisticated algorithm then Ref[1] as it takes
  *  into account the correlation of P
- *  K is scaleing factor for roughening noise
+ *  K is scaling factor for roughening noise
  * Numerical colapse of P
  *  Numerically when covariance of P semi definite (or close), X's UdU factorisation
  *  may be negative.
  * Exceptions:
- *   Bayes_filter_exception due colapse of P
+ *   Bayes_filter_exception due collapse of P
  *    unchanged: P
  */
 {

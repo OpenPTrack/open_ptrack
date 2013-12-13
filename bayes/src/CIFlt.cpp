@@ -10,9 +10,9 @@
  * Covariance Intersection Filter.
  * TODO: Implement useful Omega based on iterative optimization algorithm from the authors of reference [1]
  */
-#include <CIFlt.hpp>
-#include <matSup.hpp>
-#include <models.hpp>
+#include "CIFlt.hpp"
+#include "matSup.hpp"
+#include "models.hpp"
 
 /* Filter namespace */
 namespace Bayesian_filter
@@ -23,11 +23,10 @@ namespace Bayesian_filter
 CI_scheme::CI_scheme (std::size_t x_size, std::size_t z_initialsize) :
 	Kalman_state_filter(x_size),
 	S(Empty), SI(Empty)
-/*
- * Initialise filter and set the size of things we know about
+/* Initialise filter and set the size of things we know about
  */
 {
-	last_z_size = 0;	// Leave z_size dependants Empty if z_initialsize==0
+	last_z_size = 0;	// Matrices conform to z_initialsize, they are left Empty if z_initialsize==0
 	observe_size (z_initialsize);
 }
 
@@ -66,8 +65,7 @@ Bayes_base::Float
 }
 
 void CI_scheme::observe_size (std::size_t z_size)
-/*
- * Optimised dynamic observation sizing
+/* Optimised dynamic observation sizing
  */
 {
 	if (z_size != last_z_size) {
@@ -81,8 +79,7 @@ void CI_scheme::observe_size (std::size_t z_size)
 
 Bayes_base::Float
  CI_scheme::observe_innovation (Linrz_uncorrelated_observe_model& h, const FM::Vec& s)
-/*
- * Iterated Extended Kalman Filter
+/* Iterated Extended Kalman Filter
  * Bar-Shalom and Fortmann p.119 (full scheme)
  * A hard limit is placed on the iterations whatever the
  * the normal terminal condition is to guarantee termination
@@ -122,7 +119,7 @@ Bayes_base::Float
 	rclimit.check_PD(rcond, "X not PD in observe");
 
 
-						// find omeage
+						// find omega
 	Float omega = Omega(invX, HTinvZH, X);
 
 						// calculate predicted innovation

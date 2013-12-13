@@ -15,7 +15,7 @@
  *
  * The observe algorithm uses the iterated non-linear formulation 
  * from Bar-Shalom and Fortmann p.119 (full scheme)
- * Discontinous observe models require that state is normailised with
+ * Discontinuous observe models require that state is normalised with
  * respect to the observation.
  *
  * The filter is operated by performing a
@@ -65,8 +65,7 @@ public:
 };
 
 class Counted_iterated_terminator : public Iterated_terminator
-/*
- * Termination condition with a simple fixed number of iterations 
+/* Termination condition with a simple fixed number of iterations
  */
 {
 public:
@@ -84,7 +83,7 @@ class Iterated_covariance_scheme : public Linrz_kalman_filter
 {
 public:
 	Iterated_covariance_scheme (std::size_t x_size, std::size_t z_initialsize = 0);
-	/* Initialised filter requries an addition iteration limit for the
+	/* Initialised filter requires an addition iteration limit for the
 	   observe algorithm */
 	Iterated_covariance_scheme& operator= (const Iterated_covariance_scheme&);
 	// Optimise copy assignment to only copy filter state
@@ -110,13 +109,13 @@ public:
 public:						// Exposed Numerical Results
 	FM::SymMatrix S, SI;		// Innovation Covariance and Inverse
 
-protected:			   		// Permenantly allocated temps
+protected:			   		// Permanently allocated temps
 	FM::RowMatrix tempX;
 
 protected:					// allow fast operation if z_size remains constant
 	std::size_t last_z_size;
 	void observe_size (std::size_t z_size);
-							// Permenantly allocated temps
+							// Permanently allocated temps
 	FM::Vec s;
 	FM::Matrix HxT;
 };

@@ -13,7 +13,7 @@
  * Matrix support functions for filter classes
  *  Members of the Bayesian_filter_matrix namespace are used in the
  *  interface of Bayesian_filter and for internal operations.
- *  Be aware! These functions and their implemenation are more likely to change
+ *  Be aware! These functions and their implementation are more likely to change
  *  then those in Bayesian_filter.
  */
 
@@ -80,7 +80,7 @@ void Uzero (RowMatrix& M);
 
 /*
  * Functions using UdU factorisation:
- *  inverse of Positive Definate matrix returning rcond
+ *  inverse of Positive Definite matrix returning rcond
  */
 SymMatrix::value_type UdUinversePDignoreInfinity (SymMatrix& M);
 SymMatrix::value_type UdUinversePD (SymMatrix& M);

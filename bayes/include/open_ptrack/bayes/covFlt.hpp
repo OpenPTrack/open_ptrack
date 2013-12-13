@@ -11,12 +11,12 @@
 
 /*
  * Covariance Filter Scheme.
- *  Implemention of extended Kalman filter
+ *  Implementation of extended Kalman filter
  * 
  * To work with with Linear and Linrz models
- *  a) a state seperate from covariance predict is used.
+ *  a) a state separate from covariance predict is used.
  *  b) a EKF innovation update algorithm is used.
- * Discontinous observe models require that predict is normailised with
+ * Discontinuous observe models require that predict is normalised with
  * respect to the observation.
  *
  * A initial observation size may also be specified for efficiency.
@@ -44,7 +44,7 @@ public:
 	Float predict (Linrz_predict_model& f);
 	// Standard Linrz prediction
 	Float predict (Gaussian_predict_model& f);
-	// Specialised 'stationary' prediction, only addative noise
+	// Specialised 'stationary' prediction, only additive noise
 
 	Float observe_innovation (Linrz_uncorrelated_observe_model& h, const FM::Vec& s);
 	Float observe_innovation (Linrz_correlated_observe_model& h, const FM::Vec& s);
@@ -53,7 +53,7 @@ public:						// Exposed Numerical Results
 	FM::SymMatrix S, SI;		// Innovation Covariance and Inverse
 	FM::Matrix W;				// Kalman Gain
 
-protected:			   		// Permenantly allocated temps
+protected:			   		// Permanently allocated temps
 	FM::RowMatrix tempX;
 protected:					// allow fast operation if z_size remains constant
 	std::size_t last_z_size;

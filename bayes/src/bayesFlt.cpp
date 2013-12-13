@@ -3,7 +3,7 @@
  * Copyright (c) 2002 Michael Stevens
  * See accompanying Bayes++.htm for terms and conditions of use.
  *
- * $Id: bayesFlt.cpp 634 2010-08-15 16:39:44Z mistevens $
+ * $Id$
  */
  
 /*
@@ -12,7 +12,7 @@
  *  error handlers
  *  default virtual and member functions
  */
-#include <bayesFlt.hpp>
+#include "bayesFlt.hpp"
 #include <boost/limits.hpp>
 #include <vector>		// Only for unique_samples
 
@@ -28,22 +28,19 @@ const Bayes_base::Float Numerical_rcond::limit_PD_init = std::numeric_limits<Bay
 
 
 Bayes_base::~Bayes_base()
-/*
- * Default definition required for a pure virtual distructor
+/* Default definition required for a pure virtual destructor
  */
 {}
 
 void Bayes_base::error (const Numeric_exception& e )
-/*
- * Filter error
+/* Filter error
  */
 {
 	throw e;
 }
 
 void Bayes_base::error (const Logic_exception& e )
-/*
- * Filter error
+/* Filter error
  */
 {
 	throw e;
@@ -51,12 +48,11 @@ void Bayes_base::error (const Logic_exception& e )
 
 Gaussian_predict_model::Gaussian_predict_model (std::size_t x_size, std::size_t q_size) :
 		q(q_size), G(x_size, q_size)
-/*
- * Set the size of things we know about
+/* Set the size of things we know about
  */
 {}
 
-Addative_predict_model::Addative_predict_model (std::size_t x_size, std::size_t q_size) :
+Additive_predict_model::Additive_predict_model (std::size_t x_size, std::size_t q_size) :
 		q(q_size), G(x_size, q_size)
 /*
  * Set the size of things we know about
@@ -64,16 +60,14 @@ Addative_predict_model::Addative_predict_model (std::size_t x_size, std::size_t 
 {}
 
 Linrz_predict_model::Linrz_predict_model (std::size_t x_size, std::size_t q_size) :
-/*
- * Set the size of things we know about
+/* Set the size of things we know about
  */
-		Addative_predict_model(x_size, q_size),
+		Additive_predict_model(x_size, q_size),
 		Fx(x_size,x_size)
 {}
 
 Linear_predict_model::Linear_predict_model (std::size_t x_size, std::size_t q_size) :
-/*
- * Set the size of things we know about
+/* Set the size of things we know about
  */
 		Linrz_predict_model(x_size, q_size),
 		xp(x_size)
@@ -94,8 +88,7 @@ Linear_invertable_predict_model::inverse_model::inverse_model (std::size_t x_siz
 
 State_filter::State_filter (std::size_t x_size) :
 	x(x_size)
-/*
- * Initialise filter and set the size of things we know about
+/* Initialise filter and set the size of things we know about
  */
 {
 	if (x_size < 1)
@@ -104,15 +97,13 @@ State_filter::State_filter (std::size_t x_size) :
 
 
 Kalman_state_filter::Kalman_state_filter (std::size_t x_size) :
-/*
- * Initialise state size
+/* Initialise state size
  */
 		State_filter(x_size), X(x_size,x_size)
 {}
 
 void Kalman_state_filter::init_kalman (const FM::Vec& x, const FM::SymMatrix& X)
-/*
- * Initialise from a state and state covariance
+/* Initialise from a state and state covariance
  *  Parameters that reference the instance's x and X members are valid
  */
 {
@@ -124,8 +115,7 @@ void Kalman_state_filter::init_kalman (const FM::Vec& x, const FM::SymMatrix& X)
 
 Bayes_base::Float
  Extended_kalman_filter::observe (Linrz_correlated_observe_model& h, const FM::Vec& z)
-/*
- * Extended linrz correlated observe, compute innovation for observe_innovation
+/* Extended linrz correlated observe, compute innovation for observe_innovation
  */
 {
 	update ();
@@ -139,8 +129,7 @@ Bayes_base::Float
 
 Bayes_base::Float
  Extended_kalman_filter::observe (Linrz_uncorrelated_observe_model& h, const FM::Vec& z)
-/*
- * Extended kalman uncorrelated observe, compute innovation for observe_innovation
+/* Extended Kalman uncorrelated observe, compute innovation for observe_innovation
  */
 {
 	update ();
@@ -154,15 +143,13 @@ Bayes_base::Float
 
 
 Information_state_filter::Information_state_filter (std::size_t x_size) :
-/*
- * Initialise state size
+/* Initialise state size
  */
 		y(x_size), Y(x_size,x_size)
 {}
 
 void Information_state_filter::init_information (const FM::Vec& y, const FM::SymMatrix& Y)
-/*
- * Initialise from a information state and information
+/* Initialise from a information state and information
  *  Parameters that reference the instance's y and Y members are valid
  */
 {
@@ -174,9 +161,7 @@ void Information_state_filter::init_information (const FM::Vec& y, const FM::Sym
 
 Sample_state_filter::Sample_state_filter (std::size_t x_size, std::size_t s_size) :
 		S(x_size,s_size)
-
-/*
- * Initialise state size
+/* Initialise state size
  * Postcond: s_size >= 1
  */
 {
@@ -185,16 +170,14 @@ Sample_state_filter::Sample_state_filter (std::size_t x_size, std::size_t s_size
 }
 
 Sample_state_filter::~Sample_state_filter()
-/*
- * Default definition required for a pure virtual distructor
- * ISSUE Cannot be defined if Matrix has private distructor
+/* Default definition required for a pure virtual destructor
+ * ISSUE Cannot be defined if Matrix has private destructor
  */
 {
 }
 
 void Sample_state_filter::init_sample (const FM::ColMatrix& initS)
-/*
- * Initialise from a sampling
+/* Initialise from a sampling
  */
 {
 	S = initS;
@@ -233,8 +216,7 @@ namespace {
 }//namespace
 
 std::size_t Sample_state_filter::unique_samples () const
-/*
- * Count number of unique (unequal value) samples in S
+/* Count number of unique (unequal value) samples in S
  * Implementation requires std::sort on sample column references
  */
 {
@@ -266,17 +248,14 @@ std::size_t Sample_state_filter::unique_samples () const
 
 Sample_filter::Sample_filter (std::size_t x_size, std::size_t s_size) :
 		Sample_state_filter(x_size,s_size)
-
-/*
- * Initialise filter and set the size of things we know about
+/* Initialise filter and set the size of things we know about
  * Postcond: s_size >= 1
  */
 {
 }
 
 void Sample_filter::predict (Functional_predict_model& f)
-/*
- * Predict samples forward
+/* Predict samples forward
  *		Pre : S represent the prior distribution
  *		Post: S represent the predicted distribution
  */

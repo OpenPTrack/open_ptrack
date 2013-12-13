@@ -3,14 +3,14 @@
  * Copyright (c) 2002 Michael Stevens
  * See accompanying Bayes++.htm for terms and conditions of use.
  *
- * $Id: infFlt.cpp 634 2010-08-15 16:39:44Z mistevens $
+ * $Id$
  */
 
 /*
  * Information Filter.
  */
-#include <infFlt.hpp>
-#include <matSup.hpp>
+#include "infFlt.hpp"
+#include "matSup.hpp"
 
 /* Filter namespace */
 namespace Bayesian_filter
@@ -23,11 +23,10 @@ Information_scheme::Information_scheme (std::size_t x_size, std::size_t z_initia
 		tempX(x_size,x_size),
 		i(x_size), I(x_size,x_size),
 		ZI(Empty)
-/*
- * Initialise filter and set the size of things we know about
+/* Initialise filter and set the size of things we know about
  */
 {
-	last_z_size = 0;	// Leave z_size dependants Empty if z_initialsize==0
+	last_z_size = 0;	// Matrices conform to z_initialsize, they are left Empty if z_initialsize==0
 	observe_size (z_initialsize);
 	update_required = true;	// Not a valid state, init is required before update can be used
 }
@@ -52,8 +51,7 @@ Information_scheme& Information_scheme::operator= (const Information_scheme& a)
 
 
 void Information_scheme::init ()
-/*
- * Initialise the filter from x,X
+/* Initialise the filter from x,X
  * Precondition:
  *		x, X
  * Postcondition:
@@ -70,8 +68,7 @@ void Information_scheme::init ()
 }
 
 void Information_scheme::init_yY ()
-/*
- * Initialisation directly from Information
+/* Initialisation directly from Information
  * Precondition:
  *		y, Y
  * Postcondition:
@@ -85,16 +82,14 @@ void Information_scheme::init_yY ()
 }
 
 void Information_scheme::update_yY ()
-/*
- * Postcondition:
+/* Postcondition:
  *		y, Y is PSD
  */
 {
 }
 
 void Information_scheme::update ()
-/*
- * Recompute x,X from y,Y
+/* Recompute x,X from y,Y
  *  Optimised using update_required (postcondition met iff update_required false)
  * Precondition:
  *		y, Y is PD
@@ -115,9 +110,8 @@ void Information_scheme::update ()
 
 Bayes_base::Float
  Information_scheme::predict (Linrz_predict_model& f)
-/*
- * Extented linrz information prediction
- *  Computation is through state to accommodate linearied model
+/* Extended linrz information prediction
+ *  Computation is through state to accommodate linearised model
  */
 {
 	update ();			// x,X required
@@ -135,15 +129,14 @@ Bayes_base::Float
 }
 
 Float Information_scheme::predict (Linear_invertable_predict_model& f, Linear_predict_byproducts& b)
-/*
- * Linear information predict
+/* Linear information predict
  *  Computation is through information state y,Y only
  *  Uses x(k+1|k) = Fx * x(k|k) instead of extended x(k+1|k) = f(x(k|k))
  * Requires y(k|k), Y(k|k)
  * Predicts y(k+1|k), Y(k+1|k)
  *
  * The numerical solution used is particularly flexible. It takes
- * particular care to avoid invertibilty requirements for the noise and noise coupling g,Q
+ * particular care to avoid invertibility requirements for the noise and noise coupling g,Q
  * Therefore both zero noises and zeros in the couplings can be used
  */
 {
@@ -153,18 +146,18 @@ Float Information_scheme::predict (Linear_invertable_predict_model& f, Linear_pr
 	noalias(b.B) = prod_SPDT(f.G, b.A, b.tempG);
 	for (std::size_t i = 0; i < f.q.size(); ++i)
 	{
-		if (f.q[i] < 0)	// allow PSD q, let infinity propogate into B
+		if (f.q[i] < 0)	// allow PSD q, let infinity propagate into B
 			error (Numeric_exception("Predict q Not PSD"));
 		b.B(i,i) += Float(1) / f.q[i];
 	}
 
-						// invert B ,Addative noise
+						// invert B ,additive noise
 	Float rcond = UdUinversePDignoreInfinity (b.B);
 	rclimit.check_PD(rcond, "(G'invFx'.Y.invFx.G + invQ) not PD in predict");
 
 						// G*invB*G' ,in state space
 	noalias(Y) = prod_SPD(f.G,b.B, b.tempG);
-						// I - A* G*invB*G', information gain
+						// I - A* G*invB*G' ,information gain
 	FM::identity(tempX);
 	noalias(tempX) -= prod(b.A,Y);
 						// Information
@@ -179,8 +172,7 @@ Float Information_scheme::predict (Linear_invertable_predict_model& f, Linear_pr
 
 
 inline void Information_scheme::observe_size (std::size_t z_size)
-/*
- * Optimised dynamic observation sizing
+/* Optimised dynamic observation sizing
  */
 {
 	if (z_size != last_z_size) {
@@ -192,7 +184,7 @@ inline void Information_scheme::observe_size (std::size_t z_size)
 
 Bayes_base::Float
  Information_scheme::observe_innovation (Linrz_correlated_observe_model& h, const FM::Vec& s)
-/* correlated innovation observe
+/* Correlated innovation observe
  */
 {
 						// Size consistency, z to model

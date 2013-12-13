@@ -13,7 +13,7 @@
  * Information Root Filter Scheme.
  *  A extended 'Square-root' Information filter as an Abstract class
  *
- * Algorithm: Square-root information propogation using QR factorisation
+ * Algorithm: Square-root information propagation using QR factorisation
  * Ref:	P. Dyer and S. McReynolds, "Extension of Square-Root Filtering to Include Process Noise",
  * [1] Journal of Optimization Theory and Applications, Vol.3 No.6 1969
  * Filter maintains r,R where
@@ -21,7 +21,7 @@
  *   r = R*x
  *   R is upper triangular but not strictly a Cholesky factor as diagonal may be negative
  * Observe algorithm has been extended to include linearised models
- * Discontinous observe models require that state is normailised with respect to the observation.
+ * Discontinuous observe models require that state is normalised with respect to the observation.
  *
  * The filter is operated by performing a
  *  predict, observe
@@ -46,13 +46,13 @@ public:
 	// Covariance form state interface
 
 	Float predict (Linrz_predict_model& f, const FM::ColMatrix& invFx, bool linear_r);
-	/* Generialised form, using precomputed inverse of f.Fx */
+	/* Generalised form, using precomputed inverse of f.Fx */
 	Float predict (Linrz_predict_model& f);
 	/* Use linrz form for r, computes inverse model using inverse_Fx */
 	Float predict (Linear_predict_model& f);
 	/* Use linear form for r, computes inverse model using inverse_Fx */
 	Float predict (Linear_invertable_predict_model& f)
-	/* Use linear form for r, and use inv.Fx from invertable model */
+	/* Use linear form for r, and use inv.Fx from invertible model */
 	{
 		return predict(f, f.inv.Fx, true);
 	}

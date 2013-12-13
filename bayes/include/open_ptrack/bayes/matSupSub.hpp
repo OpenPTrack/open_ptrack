@@ -22,7 +22,7 @@
  *  Thanks to Joerg Walter and Mathias Koch for an excellent library!
  *
  * Gappy matrix support: The macros BAYES_FILTER_(SPARSE/COMPRESSED/COORDINATE) control experimental gappy matrix support
- * When enabled the default storage types are replaced with their sparse equivilents
+ * When enabled the default storage types are replaced with their sparse equivalents
  */
 
 #include <boost/version.hpp>
@@ -109,6 +109,6 @@ typedef BaseDenseDiagMatrix BaseDiagMatrix;
 }//namespace
 
 /*
- * Common type independant uBlas interface
+ * Common type independent uBlas interface
  */
 #include "uBLASmatrix.hpp"

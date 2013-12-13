@@ -4,14 +4,14 @@
  * Copyright (c) 2002 Michael Stevens
  * See accompanying Bayes++.htm for terms and conditions of use.
  *
- * $Id: covFlt.cpp 634 2010-08-15 16:39:44Z mistevens $
+ * $Id$
  */
 
 /*
  * Covariance Filter.
  */
-#include <covFlt.hpp>
-#include <matSup.hpp>
+#include "covFlt.hpp"
+#include "matSup.hpp"
 
 /* Filter namespace */
 namespace Bayesian_filter
@@ -23,11 +23,10 @@ Covariance_scheme::Covariance_scheme (std::size_t x_size, std::size_t z_initials
 	Kalman_state_filter(x_size),
 	S(Empty), SI(Empty), W(Empty),
 	tempX(x_size,x_size)
-/*
- * Initialise filter and set the size of things we know about
+/* Initialise filter and set the size of things we know about
  */
 {
-	last_z_size = 0;	// Leave z_size dependants Empty if z_initialsize==0
+	last_z_size = 0;	// Matrices conform to z_initialsize, they are left Empty if z_initialsize==0
 	observe_size (z_initialsize);
 }
 
@@ -68,7 +67,7 @@ Bayes_base::Float
 
 Bayes_base::Float
  Covariance_scheme::predict (Gaussian_predict_model& f)
-/* Specialised 'stationary' predict, only addative noise
+/* Specialised 'stationary' predict, only additive noise
  */
 {
 						// Predict state covariance, simply add in noise
@@ -79,8 +78,7 @@ Bayes_base::Float
 
 
 void Covariance_scheme::observe_size (std::size_t z_size)
-/*
- * Optimised dynamic observe sizing
+/* Optimised dynamic observe sizing
  */
 {
 	if (z_size != last_z_size) {
@@ -94,7 +92,7 @@ void Covariance_scheme::observe_size (std::size_t z_size)
 
 Bayes_base::Float
  Covariance_scheme::observe_innovation (Linrz_correlated_observe_model& h, const FM::Vec& s)
-/* correlated innovation observe
+/* Correlated innovation observe
  */
 {
 						// Size consistency, z to model
@@ -123,7 +121,7 @@ Bayes_base::Float
 
 Bayes_base::Float
  Covariance_scheme::observe_innovation (Linrz_uncorrelated_observe_model& h, const FM::Vec& s)
-/* uncorrelated innovation observe
+/* Uncorrelated innovation observe
  */
 {
 						// Size consistency, z to model

@@ -19,15 +19,15 @@
  *  [2] Building Robust Simulation-based Filter for Evolving Data Sets"
  *   J Carpenter, P Clifford, P Fearnhead Technical Report Unversity of Oxford
  *
- *  A variety of reampling algorithms can be used for the SIR filter.
- *  There are implementations for two algorihtms:
+ *  A variety of resampling algorithms can be used for the SIR filter.
+ *  There are implementations for two algorithms:
  *   standard_resample: Standard resample algorithm from [1]
  *   systematic_resample: A Simple stratified resampler from [2]
  *  A virtual 'weighted_resample' provides an standard interface to these and defaults
  *  to the standard_resample.
  *
  * NOTES:
- *  SIR algorithm is sensative to random generator
+ *  SIR algorithm is sensitive to random generator
  *  In particular random uniform must be [0..1) NOT [0..1]
  *  Quantisation in the random number generator must not approach the sample size.
  *  This will result in quantisation of the resampling.
@@ -71,7 +71,7 @@ public:
 	/*
 	 * The resampling function
 	 *  Weights w are proportional to the posterior Likelihood of a state
-	 * Sideeffect
+	 * Side effect
 	 *  w becomes a normalised cumulative sum
 	 *  Random draws can be made from 'r'
 	 *
@@ -122,7 +122,7 @@ public:
 
 	virtual const FM::Vec& fw(const FM::Vec& x) const
 	/*
-	 * Definition of sampler for addative noise model given state x
+	 * Definition of sampler for additive noise model given state x
 	 *  Generate Gaussian correlated samples
 	 * Precond: init_GqG, automatic on first use
 	 */
@@ -132,7 +132,7 @@ public:
 							// Predict state using supplied functional predict model
 		xp = Predict_model::f(x);
 							// Additive random noise
-		genn.normal(n);				// independant zero mean normal
+		genn.normal(n);				// Independent zero mean normal
 									// multiply elements by std dev
 		for (FM::DenseVec::iterator ni = n.begin(); ni != n.end(); ++ni) {
 			*ni *= rootq[ni.index()];
@@ -263,7 +263,7 @@ public:
 	// Modified SIR_filter update implementation: update mean and covariance of sampled distribution
 
 	void update_statistics ();
-	// Update kalman statistics without resampling
+	// Update Kalman statistics without resampling
 
 	void roughen()
 	{	// Specialised correlated roughening

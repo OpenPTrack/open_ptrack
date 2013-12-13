@@ -25,6 +25,5 @@
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lbayes -L/usr/lib" />
   </export>
 </package>

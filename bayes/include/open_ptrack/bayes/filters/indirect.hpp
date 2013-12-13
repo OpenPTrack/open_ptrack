@@ -23,8 +23,7 @@ namespace Bayesian_filter
 
 template <typename Error_base>
 class Indirect_state_filter : public State_filter {
-/*
- * Indirect state filter
+/* Indirect state filter
  *  Estimates state using an associated observation error filter
  */
 public:
@@ -44,7 +43,7 @@ public:
 	template <typename O_model>
 	void observe (O_model& h, const FM::Vec& z)
 	{
-				// Observe error (explict temporary)
+				// Observe error (explicit temporary)
 		FM::Vec z_error(z.size());
 		z_error = h.h(x);
 		z_error -= z;
@@ -78,8 +77,7 @@ private:
 
 template <typename Error_base>
 class Indirect_kalman_filter : public Kalman_state_filter {
-/*
- * Indirect kalman filter
+/* Indirect Kalman filter
  *  Estimates state using an associated observation error filter
  */
 public:
@@ -107,7 +105,7 @@ public:
 	template <typename O_model>
 	void observe (O_model& h, const FM::Vec& z)
 	{
-				// Observe error (explict temporary)
+				// Observe error (explicit temporary)
 		FM::Vec z_error(z.size());
 		z_error = h.h(x);
 		z_error -= z;

@@ -12,7 +12,7 @@
 /*
  * Bayesian Filters.
  *  A Bayesian filters as an Abstract class.
- *  All filters have similar structure with vary algorthms and numerical properties
+ *  All filters have similar structure with vary algorithms and numerical properties
  */
 
 #include "UDFlt.hpp"

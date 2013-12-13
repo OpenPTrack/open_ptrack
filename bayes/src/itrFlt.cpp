@@ -9,9 +9,9 @@
 /*
  * Iterated Covariance Filter.
  */
-#include <itrFlt.hpp>
-#include <matSup.hpp>
-#include <models.hpp>
+#include "itrFlt.hpp"
+#include "matSup.hpp"
+#include "models.hpp"
 
 /* Filter namespace */
 namespace Bayesian_filter
@@ -33,11 +33,10 @@ Iterated_covariance_scheme::Iterated_covariance_scheme(std::size_t x_size, std::
 		S(Empty), SI(Empty),
 		tempX(x_size,x_size),
 		s(Empty), HxT(Empty)
-/*`
- * Initialise filter and set the size of things we know about
+/* Initialise filter and set the size of things we know about
  */
 {
-	last_z_size = 0;	// Leave z_size dependants Empty if z_initialsize==0
+	last_z_size = 0;	// Matrices conform to z_initialsize, they are left Empty if z_initialsize==0
 	observe_size (z_initialsize);
 }
 
@@ -76,8 +75,7 @@ Bayes_base::Float
 
 
 void Iterated_covariance_scheme::observe_size (std::size_t z_size)
-/*
- * Optimised dynamic observation sizing
+/* Optimised dynamic observation sizing
  */
 {
 	if (z_size != last_z_size) {
@@ -92,8 +90,7 @@ void Iterated_covariance_scheme::observe_size (std::size_t z_size)
 
 Bayes_base::Float
  Iterated_covariance_scheme::observe (Linrz_uncorrelated_observe_model& h, Iterated_terminator& term, const FM::Vec& z)
-/*
- * Iterated Extended Kalman Filter
+/* Iterated Extended Kalman Filter
  * Bar-Shalom and Fortmann p.119 (full scheme)
  * A hard limit is placed on the iterations whatever the
  * the normal terminal condition is to guarantee termination
@@ -107,8 +104,7 @@ Bayes_base::Float
 
 Bayes_base::Float
  Iterated_covariance_scheme::observe (Linrz_correlated_observe_model& h, Iterated_terminator& term, const FM::Vec& z)
-/*
- * Iterated Extended Kalman Filter
+/* Iterated Extended Kalman Filter
  * Bar-Shalom and Fortmann p.119 (full scheme)
  * A hard limit is placed on the iterations whatever the
  * the normal terminal condition is to guarantee termination

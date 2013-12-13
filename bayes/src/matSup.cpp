@@ -3,7 +3,7 @@
  * Copyright (c) 2002 Michael Stevens
  * See accompanying Bayes++.htm for terms and conditions of use.
  *
- * $Id: matSup.cpp 634 2010-08-15 16:39:44Z mistevens $
+ * $Id$
  */
 
 /*
@@ -11,8 +11,8 @@
  * Relies on Bayesian_filter::Bayes_filter for exception
  * thrown by internal matrix checks
  */
-#include <bayesFlt.hpp>		// Exceptions required
-#include <matSup.hpp>
+#include "bayesFlt.hpp"		// Exceptions required
+#include "matSup.hpp"
 #include <cassert>
 #ifndef NDEBUG
 #include "boost/numeric/ublas/io.hpp"
@@ -36,9 +36,8 @@ namespace Bayesian_filter_matrix
 
 #ifndef NDEBUG
 void assert_isPSD (const SymMatrix &M)
-/*
- * Assert a Matrix is Positive Semi Definate via the alogrithm in isPSD
- *  Requires 'cerr' and 'assert' to about execution
+/* Assert a Matrix is Positive Semi Definite via the algorithm in isPSD
+ *  Requires 'cerr' and 'assert' to abort execution
  */
 {
 	bool bPSD = isPSD(M);
@@ -53,8 +52,7 @@ void assert_isPSD (const SymMatrix &M)
 
 
 bool isPSD (const SymMatrix &M)
-/*
- * Check a Matrix is both Symertic and Positive Semi Definate
+/* Check a Matrix is both Symetric and Positive Semi Definite
  *  Creates a temporary copy
  *  
  * Numerics of Algorithm:
@@ -73,10 +71,9 @@ bool isPSD (const SymMatrix &M)
 
 
 bool isSymmetric (const Matrix &M)
-/*
- * Check a Symmetric Matrix really is Square and Symmetric
+/* Check a Symmetric Matrix really is Square and Symmetric
  * The later may be implied by the SymMatrix type
- * Implictly also checks matrix is without IEC 559 NaN values as they are always !=
+ * Implicitly also checks matrix is without IEC 559 NaN values as they are always !=
  * Return:
  *  true iff M is Square and Symmetric and without NaN 
  */
@@ -101,10 +98,9 @@ bool isSymmetric (const Matrix &M)
 
 
 void forceSymmetric (Matrix &M, bool bUpperToLower)
-/*
- * Force Matrix Symmetry
- *	Normally Copies ower triangle to upper or
- *   Upper to Lower triangle is specifed
+/* Force Matrix Symmetry
+ *	Normally Copies lower triangle to upper or
+ *   upper to lower triangle if specified
  */
 {
 	// Check Square

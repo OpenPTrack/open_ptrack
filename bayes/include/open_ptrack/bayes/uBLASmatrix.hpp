@@ -7,15 +7,15 @@
  */
 
 /*
- * Common type independant uBlas interface
+ * Common type independent uBlas interface
  *  Should be include after base types have been defined
  *
  * Everything in namespace Bayes_filter_matrix is intended to support the matrix storage
  * and algebra requirements of the library. Therefore the interfaces and implementation is
- * not intended to be stable. Nor is this a general purpose adapator for uBLAS
+ * not intended to be stable. Nor is this a general purpose adaptor for uBLAS
  *
  * Note on row_major matrices
- *  The implementation uses row major extensively. The computation of symetric products P*P' is 
+ *  The implementation uses row major extensively. The computation of symmetric products P*P' is
  *  most efficient with row operations. These products are used extensively so the default
  *  is to use row_major matrices
  */
@@ -44,7 +44,7 @@ using ublas::noalias;
 namespace detail
 {
 	// Assignment proxy.
-    // Provides temporary free assigment when LHS has no alias on RHS
+    // Provides temporary free assignment when LHS has no alias on RHS
     template<class C>
     class noalias_proxy {
     public:
@@ -78,7 +78,7 @@ namespace detail
 
 }//namespace detail
 
-// Improve syntax of effcient assignment where no aliases of LHS appear on the RHS
+// Improve syntax of efficient assignment where no aliases of LHS appear on the RHS
 //  noalias(lhs) = rhs_expression
 template <class E>
 BOOST_UBLAS_INLINE
@@ -119,16 +119,16 @@ public:
 	{}	// vector_expression copy constructor
 	template <class E>
 	FMVec(const ublas::matrix_column<E>& e) : VecBase(e)
-	{}	// conversion copy constructor, hides the implict copy required for matrix column access
+	{}	// conversion copy constructor, hides the implicit copy required for matrix column access
 
 	template <class E>
 	FMVec& operator= (const ublas::vector_expression<E>& r)
-	{	// Expression assignment; may be dependant on r
+	{	// Expression assignment; may be dependent on r
 		VecBase::operator=(r);
 		return *this;
 	}
 	FMVec& operator= (const FMVec& r)
-	{	// Vector assignment; independant
+	{	// Vector assignment; independent
 		VecBase::assign(r);
 		return *this;
 	}
@@ -169,12 +169,12 @@ public:
 
 	template <class E>
 	FMMatrix& operator= (const ublas::matrix_expression<E>& r)
-	{	// Expression assignment; may be dependant on r
+	{	// Expression assignment; may be dependent on r
 		MatrixBase::operator=(r);
 		return *this;
 	}
 	FMMatrix& operator= (const FMMatrix& r)
-	{	// Matrix assignment; independant
+	{	// Matrix assignment; independent
 		MatrixBase::assign (r);
 		return *this;
 	}
@@ -185,7 +185,7 @@ public:
 	typedef ublas::matrix_column<FMMatrix> Column;
 	typedef const ublas::matrix_column<const FMMatrix> const_Column;
 
-	// Vector proxies from iterators - static members dependant on MatrixBase type
+	// Vector proxies from iterators - static members dependent on MatrixBase type
 	// ri() returns container associated with iterator. static_cast required as typeof(ri()) may not be typeof(MM)
 	static Row rowi(const typename MatrixBase::iterator1& ri)
 	{
@@ -255,7 +255,7 @@ protected:
 
 
 /*
- * We require static type conversion between Symmetric matrices and equivilent row major matrices
+ * We require static type conversion between Symmetric matrices and equivalent row major matrices
  * Therefore we create symmetric matrix types, using a MatrixBase for storage
  * and wraps this in a symmetric_adaptor
  */
@@ -276,10 +276,10 @@ public:
 	SymMatrixWrapper (std::size_t size1, std::size_t size2) : matrix_type(size1,size2), symadaptor_type(matrix_type::member)
 	{}	// Normal sized constructor
 	explicit SymMatrixWrapper (const SymMatrixWrapper& r) : matrix_type(reinterpret_cast<const MatrixBase&>(r)), symadaptor_type(matrix_type::member)
-	{}	// Explict copy construction referencing the copy reinterpreted as a MatrixBase
+	{}	// Explicit copy construction referencing the copy reinterpreted as a MatrixBase
 	template <class E>
 	explicit SymMatrixWrapper (const ublas::matrix_expression<E>& e) : matrix_type(e), symadaptor_type(matrix_type::member)
-	{}	// Explict matrix_expression conversion constructor
+	{}	// Explicit matrix_expression conversion constructor
 
 	template <class E>
 	SymMatrixWrapper& operator=(const ublas::matrix_expression<E>& r)
@@ -288,7 +288,7 @@ public:
 		return *this;
 	}
 
-	// Conversions straight to a FMMatrix, equivilent to a RowMatrix types
+	// Conversions straight to a FMMatrix, equivalent to a RowMatrix types
 	const FMMatrix<MatrixBase>& asRowMatrix() const
 	{
 		return static_cast<const FMMatrix<MatrixBase>& >(matrix_type::member);
@@ -421,9 +421,9 @@ void identity(FMMatrix<Base>& I)
 
 
 /*
- * Symmetric Positive (Semi) Definate multiplication: X*S*X' and X'*S*X
+ * Symmetric Positive (Semi) Definite multiplication: X*S*X' and X'*S*X
  *  The name is slightly misleading. The result is actually only PD if S is PD
- *  Algorithms are intended to exploit the symmerty of the result
+ *  Algorithms are intended to exploit the symmetry of the result
  *  and also where possible the row by row multiplication inherent in X*X'
  */
 
@@ -432,7 +432,7 @@ namespace detail {		// mult_SPD now an implementation detail
 template <class MatrixX>
 void mult_SPD (const MatrixX& X, const Vec& s, SymMatrix& P)
 /*
- * Symmetric Positive (Semi) Definate multiply:	P += X*diag_matrix(s)*X'
+ * Symmetric Positive (Semi) Definite multiply:	P += X*diag_matrix(s)*X'
  */
 {
 	Vec::const_iterator si, send = s.end();
@@ -444,10 +444,10 @@ void mult_SPD (const MatrixX& X, const Vec& s, SymMatrix& P)
 	for (; Xa != Xend; ++Xa)				// Iterate Rows
 	{
 		typename MatrixX::const_Row Xav = MatrixX::rowi(Xa);
-		Xb = Xa;							// Start at the row Xa only one triangle of symetric result required
+		Xb = Xa;							// Start at the row Xa only one triangle of symmetric result required
 		for (; Xb != Xend; ++Xb)
 		{
-			SymMatrix::value_type p = 0;	// Tripple vector inner product
+			SymMatrix::value_type p = 0;	// Triple vector inner product
 			typename MatrixX::const_Row Xbv = MatrixX::rowi(Xb);
 			for (si = s.begin(); si != send; ++si) {
 				Vec::size_type i = si.index();
@@ -461,7 +461,7 @@ void mult_SPD (const MatrixX& X, const Vec& s, SymMatrix& P)
 template <class MatrixX>
 void mult_SPDT (const MatrixX& X, const Vec& s, SymMatrix& P)
 /*
- * Symmetric Positive (Semi) Definate multiply:	P += X'*diag_matrix(s)*X
+ * Symmetric Positive (Semi) Definite multiply:	P += X'*diag_matrix(s)*X
  */
 {
 	Vec::const_iterator si, send = s.end();
@@ -473,9 +473,9 @@ void mult_SPDT (const MatrixX& X, const Vec& s, SymMatrix& P)
 	for (; Xa != Xend; ++Xa)				// Iterate vectors
 	{
 		typename MatrixX::const_Column Xav = MatrixX::columni(Xa);
-		Xb = Xa;							// Start at the row Xa only one triangle of symertric result required
+		Xb = Xa;							// Start at the row Xa only one triangle of symmetric result required
 		for (; Xb != Xend; ++Xb)
-		{									// Tripple vector inner product
+		{									// Triple vector inner product
 			SymMatrix::value_type p = 0;
 			typename MatrixX::const_Column Xbv = MatrixX::columni(Xb);
 			for (si = s.begin(); si != send; ++si) {
@@ -515,10 +515,10 @@ template<class E> inline
 typename prod_expression_result<E,E>::E1E2T_type
  prod_SPD (const ublas::matrix_expression<E>& X)
 /*
- * Symmetric Positive (Semi) Definate product: X*X'
+ * Symmetric Positive (Semi) Definite product: X*X'
  */
 {
-	// ISSUE: uBLAS post Boost 1_31_0 introduces a trans(const matrix_expression<E>& e) which propogates the const expression type
+	// ISSUE: uBLAS post Boost 1_31_0 introduces a trans(const matrix_expression<E>& e) which propagates the const expression type
 	// Bypass this to avoid having to detect the Boost version
 	return prod( X, trans(const_cast<ublas::matrix_expression<E>&>(X) ));
 }
@@ -527,7 +527,7 @@ template<class EX, class ES, class ET> inline
 typename prod_expression_result<EX,ET>::E1E2T_type
  prod_SPD (const ublas::matrix_expression<EX>& X, const ublas::matrix_expression<ES>& S, ublas::matrix_expression<ET>& XStemp)
 /*
- * Symmetric Positive (Semi) Definate product: X*(X*S)', XStemp = X*S
+ * Symmetric Positive (Semi) Definite product: X*(X*S)', XStemp = X*S
  *  Result symmetric if S is symmetric
  */
 {
@@ -537,7 +537,7 @@ typename prod_expression_result<EX,ET>::E1E2T_type
 template<class EX, class ES, class ET> inline
 ET prod_SPD (const ublas::matrix_expression<EX>& X, const ublas::vector_expression<ES>& s, ublas::matrix_expression<ET>& Ptemp)
 /*
- * Symmetric Positive (Semi) Definate product: X*diag_matrix(s)*X'
+ * Symmetric Positive (Semi) Definite product: X*diag_matrix(s)*X'
  * Precond: Ptemp must be size conformant with the product
  *  DEPRECATED With explicit Ptemp, do not rely on it's value
  */
@@ -553,7 +553,7 @@ ET prod_SPD (const ublas::matrix_expression<EX>& X, const ublas::vector_expressi
 	{
 		typedef const ublas::matrix_row<const EX> EX_row;
 		EX_row Xav (ublas::row(XX, Xa.index1()));
-		Xb = Xa;							// Start at the row Xa only one triangle of symetric result required
+		Xb = Xa;							// Start at the row Xa only one triangle of symmetric result required
 		for (; Xb != Xend; ++Xb)
 		{
 			typename EX::value_type p = 0;	// Triple vector inner product
@@ -572,7 +572,7 @@ ET prod_SPD (const ublas::matrix_expression<EX>& X, const ublas::vector_expressi
 template<class EX, class ES> inline
 SymMatrix prod_SPD (const ublas::matrix_expression<EX>& X, const ublas::vector_expression<ES>& s)
 /*
- * Symmetric Positive (Semi) Definate product: X*diag_matrix(s)*X'
+ * Symmetric Positive (Semi) Definite product: X*diag_matrix(s)*X'
  * TODO requires a prod_diag(X,s)
  */
 {
@@ -588,7 +588,7 @@ template<class E> inline
 typename prod_expression_result<E,E>::E1TE2_type
  prod_SPDT (const ublas::matrix_expression<E>& X)
 /*
- * Symmetric Positive (Semi) Definate product: X'*X
+ * Symmetric Positive (Semi) Definite product: X'*X
  */
 {
 	// ISSUE: See prod_SPD
@@ -599,7 +599,7 @@ template<class EX, class ES, class ET> inline
 typename prod_expression_result<ET,EX>::E1TE2_type
  prod_SPDT (const ublas::matrix_expression<EX>& X, const ublas::matrix_expression<ES>& S, ublas::matrix_expression<ET>& SXtemp)
 /*
- * Symmetric Positive (Semi) Definate product: (S*X)'*X, SXtemp = S*X
+ * Symmetric Positive (Semi) Definite product: (S*X)'*X, SXtemp = S*X
  *  Result symmetric if S is symmetric
  */
 {
@@ -609,7 +609,7 @@ typename prod_expression_result<ET,EX>::E1TE2_type
 template<class EX, class ES, class ET> inline
 ET prod_SPDT (const ublas::matrix_expression<EX>& X, const ublas::vector_expression<ES>& s, ublas::matrix_expression<ET>& Ptemp)
 /*
- * Symmetric Positive (Semi) Definate product: X'*diag_matrix(s)*X, Ptemp = return value
+ * Symmetric Positive (Semi) Definite product: X'*diag_matrix(s)*X, Ptemp = return value
  * Precond: Ptemp must be size conformant with the product
  *  DEPRECATED With explicit Ptemp, do not rely on it's value
  */
@@ -625,7 +625,7 @@ ET prod_SPDT (const ublas::matrix_expression<EX>& X, const ublas::vector_express
 	{
 		typedef const ublas::matrix_column<const EX> EX_column;
 		EX_column Xav = ublas::column(XX, Xa.index2());
-		Xb = Xa;							// Start at the column Xa only one triangle of symetric result required
+		Xb = Xa;							// Start at the column Xa only one triangle of symmetric result required
 		for (; Xb != Xend; ++Xb)
 		{
 			typename EX::value_type p = 0;	// Triple vector inner product
@@ -644,7 +644,7 @@ ET prod_SPDT (const ublas::matrix_expression<EX>& X, const ublas::vector_express
 template<class EX, class ES> inline
 SymMatrix prod_SPDT (const ublas::matrix_expression<EX>& X, const ublas::vector_expression<ES>& s)
 /*
- * Symmetric Positive (Semi) Definate product: X'*diag_matrix(s)*X
+ * Symmetric Positive (Semi) Definite product: X'*diag_matrix(s)*X
  * TODO requires a prod_diag(X,s)
  */
 {
@@ -657,7 +657,7 @@ SymMatrix prod_SPDT (const ublas::matrix_expression<EX>& X, const ublas::vector_
 
 inline Vec::value_type prod_SPDT (const Vec& x, const Vec& s)
 /*
- * Symmetric Positive (Semi) Definate product: x'*diag_matrix(s)*x
+ * Symmetric Positive (Semi) Definite product: x'*diag_matrix(s)*x
  */
 {
 	const Vec::const_iterator xi_end = x.end();
@@ -675,7 +675,7 @@ inline Vec::value_type prod_SPDT (const Vec& x, const Vec& s)
 
 inline Vec::value_type prod_SPDT (const Vec& x, const SymMatrix& S)
 /*
- * Symmetric Positive (Semi) Definate multiply:	p = x'*S*x
+ * Symmetric Positive (Semi) Definite multiply:	p = x'*S*x
  */
 {
 	return inner_prod (x, prod(S,x) );

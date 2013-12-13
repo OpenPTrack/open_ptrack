@@ -10,7 +10,7 @@
 
 /*
  * UdU' Factorisation of covariance Filter Scheme.
- *  Implementation of a 'Square-root' linearised kalman filter
+ *  Implementation of a 'Square-root' linearised Kalman filter
  * 
  * Bierman's UD factorisatised update algorithm using Agee-Turner UdU' factorisation rank 1 update
  * Thornton's MWG-S factorisation predict algorithm

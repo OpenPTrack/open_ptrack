@@ -4,10 +4,10 @@ find_package(catkin REQUIRED COMPONENTS roscpp )
 
 link_libraries(/usr/lib/liblapack.so.3gf)
 
-include_directories(include include/filter)
+include_directories(include include/open_ptrack/bayes include/open_ptrack/bayes/filters)
 
 catkin_package(
-   INCLUDE_DIRS 
+   INCLUDE_DIRS include include/open_ptrack/bayes include/open_ptrack/bayes/filters
    LIBRARIES ${PROJECT_NAME}
    CATKIN_DEPENDS roscpp 
 )
@@ -23,7 +23,6 @@ add_library(bayes src/bayesFlt.cpp
                                  src/SIRFlt.cpp
                                  src/UDFlt.cpp
                                  src/UdU.cpp
-                                 src/unsFlt.cpp
-                                 include/random.hpp)
+                                 src/unsFlt.cpp)
 target_link_libraries(bayes ${catkin_LIBRARIES})
 

@@ -3,15 +3,15 @@
  * Copyright (c) 2002 Michael Stevens
  * See accompanying Bayes++.htm for terms and conditions of use.
  *
- * $Id: infRtFlt.cpp 634 2010-08-15 16:39:44Z mistevens $
+ * $Id$
  */
 
 /*
  * Information Root Filter.
  */
-#include <infRtFlt.hpp>
-#include <matSup.hpp>
-#include <uLAPACK.hpp>	// Common LAPACK interface
+#include "infRtFlt.hpp"
+#include "matSup.hpp"
+#include "uLAPACK.hpp"	// Common LAPACK interface
 #include <algorithm>
 
 /* Filter namespace */
@@ -23,8 +23,7 @@ namespace Bayesian_filter
 Information_root_scheme::Information_root_scheme (std::size_t x_size, std::size_t /*z_initialsize*/) :
 		Kalman_state_filter(x_size),
 		r(x_size), R(x_size,x_size)
-/*
- * Set the size of things we know about
+/* Set the size of things we know about
  */
 {}
 
@@ -35,9 +34,8 @@ Information_root_info_scheme::Information_root_info_scheme (std::size_t x_size, 
 
 
 void Information_root_scheme::init ()
-/*
- * Inialise the filter from x,X
- * Predcondition:
+/* Initialise the filter from x,X
+ * Precondition:
  *		x,X
  * Postcondition:
  *		inv(R)*inv(R)' = X is PSD
@@ -54,9 +52,8 @@ void Information_root_scheme::init ()
 }
 
 void Information_root_info_scheme::init_yY ()
-/*
- * Special Initialisation directly from Information form
- * Predcondition:
+/* Special Initialisation directly from Information form
+ * Precondition:
  *		y,Y
  * Postcondition:
  *		R'*R = Y is PSD
@@ -70,7 +67,7 @@ void Information_root_info_scheme::init_yY ()
 	Float rcond = LdLfactor (LC, Y);
 	rclimit.check_PD(rcond, "Initial Y not PD");
 
-	{				// Lower triangular Choleksy factor of LdL'
+	{				// Lower triangular Cholesky factor of LdL'
 		std::size_t i,j;
 		for (i = 0; i < n; ++i)
 		{
@@ -95,8 +92,7 @@ void Information_root_info_scheme::init_yY ()
 }
 
 void Information_root_scheme::update ()
-/*
- * Recompute x,X from r,R
+/* Recompute x,X from r,R
  * Precondition:
  *		r(k|k),R(k|k)
  * Postcondition:
@@ -115,8 +111,7 @@ void Information_root_scheme::update ()
 }
 
 void Information_root_info_scheme::update_yY ()
-/*
- * Recompute y,Y from r,R
+/* Recompute y,Y from r,R
  * Precondition:
  *		r(k|k),R(k|k)
  * Postcondition:
@@ -132,8 +127,7 @@ void Information_root_info_scheme::update_yY ()
 
 
 void Information_root_scheme::inverse_Fx (FM::DenseColMatrix& invFx, const FM::Matrix& Fx)
-/*
- * Numerical Inversion of Fx using LU factorisation
+/* Numerical Inversion of Fx using LU factorisation
  * Required LAPACK getrf (with PIVOTING) and getrs
  */
 {
@@ -185,7 +179,7 @@ Bayes_base::Float
 	const std::size_t q_size = f.q.size();
 						// Column major required for LAPACK, also this property is using in indexing
 	DenseColMatrix A(q_size+x_size, q_size+x_size+unsigned(linear_r));
-	FM::identity (A);	// Prefill with identity for topleft and zero's in off diagonals
+	FM::identity (A);	// Prefill with identity for top left and zero's in off diagonals
 
 	Matrix RFxI (prod(R, invFx));
 	A.sub_matrix(q_size,q_size+x_size, 0,q_size) .assign (prod(RFxI, Gqr));
@@ -242,7 +236,7 @@ Bayes_base::Float Information_root_scheme::observe_innovation (Linrz_correlated_
  * Postcondition:
  *		r(k+1|k+1),R(k+1|k+1)
  *
- * Uses LAPACK geqrf for QR decomposigtion (without PIVOTING)
+ * Uses LAPACK geqrf for QR decomposition (without PIVOTING)
  * ISSUE correctness of linrz form needs validation
  */
 {
@@ -285,7 +279,7 @@ Bayes_base::Float Information_root_scheme::observe_innovation (Linrz_uncorrelate
  * Postcondition:
  *		r(k+1|k+1),R(k+1|k+1)
  *
- * Uses LAPACK geqrf for QR decomposigtion (without PIVOTING)
+ * Uses LAPACK geqrf for QR decomposition (without PIVOTING)
  * ISSUE correctness of linrz form needs validation
  * ISSUE Efficiency. Product of Zir can be simplified
  */

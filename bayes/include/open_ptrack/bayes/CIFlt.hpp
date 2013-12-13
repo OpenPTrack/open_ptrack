@@ -17,10 +17,10 @@
  *   Simon J Julier, Jeffrey K Uhlmann
  *
  * CI provides a generalised consistent method to combine mean and covariances
- * of two estimates. The combination can be optimised by chosing a norm of the
+ * of two estimates. The combination can be optimised by choosing a norm of the
  * combined correlations. The norm (omega) is restrict to 0..1 inclusive an effectively
  * scales the combination
- * Here is CI with a predict and obeserve model to form a filter.
+ * Here is CI with a predict and observe model to form a filter.
  *
  * The Omega norm chosen here is the fixed value of 0.5
  * The Omega function should be overloaded to produce more useful results

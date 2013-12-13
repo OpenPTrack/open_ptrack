@@ -3,7 +3,7 @@
  * Copyright (c) 2002 Michael Stevens
  * See accompanying Bayes++.htm for terms and conditions of use.
  *
- * $Id: UdU.cpp 634 2010-08-15 16:39:44Z mistevens $
+ * $Id$
  */
 
 /*
@@ -20,8 +20,8 @@
  *  LD(LTriMatrix) format of LdL' factor 
  *   strict_lower_triangle(LD) = strict_lower_triangle(L), diagonal(LD) = d, strict_upper_triangle(LD) ignored or zeroed
  */
-#include <bayesFlt.hpp>
-#include <matSup.hpp>
+#include "bayesFlt.hpp"
+#include "matSup.hpp"
 #include <cassert>
 #include <cmath>
 
@@ -32,8 +32,7 @@ namespace Bayesian_filter_matrix
 
 template <class V>
 inline typename V::value_type rcond_internal (const V& D)
-/*
- * Estimate the reciprocal condition number of a Diagonal Matrix for inversion.
+/* Estimate the reciprocal condition number of a Diagonal Matrix for inversion.
  * D represents a diagonal matrix, the parameter is actually passed as a vector
  *
  * The Condition Number is defined from a matrix norm.
@@ -81,8 +80,7 @@ inline typename V::value_type rcond_internal (const V& D)
 
 template <class V>
 inline typename V::value_type rcond_ignore_infinity_internal (const V& D)
-/*
- * Estimate the reciprocal condition number of a Diagonal Matrix for inversion.
+/* Estimate the reciprocal condition number of a Diagonal Matrix for inversion.
  * Same as rcond_internal except that elements are infinity are ignored
  * when determining the maximum element.
  */
@@ -119,8 +117,7 @@ inline typename V::value_type rcond_ignore_infinity_internal (const V& D)
 }
 
 Vec::value_type UdUrcond (const Vec& d)
-/*
- * Estimate the reciprocal condition number for inversion of the original PSD
+/* Estimate the reciprocal condition number for inversion of the original PSD
  * matrix for which d is the factor UdU' or LdL'.
  * The original matrix must therefore be diagonal
  */
@@ -129,8 +126,7 @@ Vec::value_type UdUrcond (const Vec& d)
 }
 
 RowMatrix::value_type UdUrcond (const RowMatrix& UD)
-/*
- * Estimate the reciprocal condition number for inversion of the original PSD
+/* Estimate the reciprocal condition number for inversion of the original PSD
  * matrix for which UD is the factor UdU' or LdL'
  *
  * The rcond of the original matrix is simply the rcond of its d factor
@@ -142,16 +138,14 @@ RowMatrix::value_type UdUrcond (const RowMatrix& UD)
 }
 
 RowMatrix::value_type UdUrcond (const RowMatrix& UD, std::size_t n)
-/*
- * As above but only first n elements are used
+/* As above but only first n elements are used
  */
 {
 	return rcond_internal (diag(UD,n));
 }
 
 UTriMatrix::value_type UCrcond (const UTriMatrix& UC)
-/*
- * Estimate the reciprocal condition number for inversion of the original PSD
+/* Estimate the reciprocal condition number for inversion of the original PSD
  * matrix for which U is the factor UU'
  *
  * The rcond of the original matrix is simply the square of the rcond of diagonal(UC)
@@ -167,8 +161,7 @@ UTriMatrix::value_type UCrcond (const UTriMatrix& UC)
 }
 
 inline UTriMatrix::value_type UCrcond (const UTriMatrix& UC, std::size_t n)
-/*
- * As above but for use by UCfactor functions where only first n elements are used
+/* As above but for use by UCfactor functions where only first n elements are used
  */
 {
 	Float rcond = rcond_internal (diag(UC,n));
@@ -181,8 +174,7 @@ inline UTriMatrix::value_type UCrcond (const UTriMatrix& UC, std::size_t n)
 
 
 RowMatrix::value_type UdUdet (const RowMatrix& UD)
-/*
- * Compute the determinant of the original PSD
+/* Compute the determinant of the original PSD
  * matrix for which UD is the factor UdU' or LdL'
  * Result comes directly from determinant of diagonal in triangular matrices
  *  Defined to be 1 for 0 size UD
@@ -199,10 +191,9 @@ RowMatrix::value_type UdUdet (const RowMatrix& UD)
 
 
 RowMatrix::value_type UdUfactor_variant1 (RowMatrix& M, std::size_t n)
-/*
- * In place Modified upper triangular Cholesky factor of a
+/* In place Modified upper triangular Cholesky factor of a
  *  Positive definite or semi-definite matrix M
- * Reference: A+G p.218 Upper cholesky algorithm modified for UdU'
+ * Reference: A+G p.218 Upper Cholesky algorithm modified for UdU'
  *  Numerical stability may not be as good as M(k,i) is updated from previous results
  *  Algorithm has poor locality of reference and avoided for large matrices
  *  Infinity values on the diagonal can be factorised
@@ -213,7 +204,7 @@ RowMatrix::value_type UdUfactor_variant1 (RowMatrix& M, std::size_t n)
  * Output: M as UdU' factor
  *    strict_upper_triangle(M) = strict_upper_triangle(U)
  *    diagonal(M) = d
- *    strict_lower_triangle(M) is unmodifed
+ *    strict_lower_triangle(M) is unmodified
  * Return:
  *    reciprocal condition number, -1 if negative, 0 if semi-definite (including zero)
  */
@@ -267,8 +258,7 @@ Negative:
 
 
 RowMatrix::value_type UdUfactor_variant2 (RowMatrix& M, std::size_t n)
-/*
- * In place Modified upper triangular Cholesky factor of a
+/* In place modified upper triangular Cholesky factor of a
  *  Positive definite or semi-definite matrix M
  * Reference: A+G p.219 right side of table
  *  Algorithm has good locality of reference and preferable for large matrices
@@ -280,7 +270,7 @@ RowMatrix::value_type UdUfactor_variant2 (RowMatrix& M, std::size_t n)
  * Output: M as UdU' factor
  *    strict_upper_triangle(M) = strict_upper_triangle(U)
  *    diagonal(M) = d
- *    strict_lower_triangle(M) is unmodifed
+ *    strict_lower_triangle(M) is unmodified
  * Return:
  *    reciprocal condition number, -1 if negative, 0 if semi-definite (including zero)
  */
@@ -338,10 +328,9 @@ Negative:
 
 
 LTriMatrix::value_type LdLfactor (LTriMatrix& M, std::size_t n)
-/*
- * In place Modified lower triangular Cholesky factor of a
+/* In place modified lower triangular Cholesky factor of a
  *  Positive definite or semi-definite matrix M
- * Reference: A+G p.218 Lower cholesky algorithm modified for LdL'
+ * Reference: A+G p.218 Lower Cholesky algorithm modified for LdL'
  *
  * Input: M, n=last std::size_t to be included in factorisation
  * Output: M as LdL' factor
@@ -349,7 +338,7 @@ LTriMatrix::value_type LdLfactor (LTriMatrix& M, std::size_t n)
  *    diagonal(M) = d
  * Return:
  *    reciprocal condition number, -1 if negative, 0 if semi-definite (including zero)
- * ISSUE: This could change to equivilient of UdUfactor_varient2
+ * ISSUE: This could change to be equivalent to UdUfactor_varient2
  */
 {
 	std::size_t i,j,k;
@@ -401,8 +390,7 @@ Negative:
 
 
 UTriMatrix::value_type UCfactor (UTriMatrix& M, std::size_t n)
-/*
- * In place Upper triangular Cholesky factor of a
+/* In place upper triangular Cholesky factor of a
  *  Positive definite or semi-definite matrix M
  * Reference: A+G p.218
  * Strict lower triangle of M is ignored in computation
@@ -468,8 +456,7 @@ Negative:
 
 
 RowMatrix::value_type UdUfactor (RowMatrix& UD, const SymMatrix& M)
-/*
- * Modified upper triangular Cholesky factor of a
+/* Modified upper triangular Cholesky factor of a
  * Positive definite or semi-definite Matrix M
  * Wraps UdUfactor for non in place factorisation
  * Output:
@@ -487,8 +474,7 @@ RowMatrix::value_type UdUfactor (RowMatrix& UD, const SymMatrix& M)
 
 
 LTriMatrix::value_type LdLfactor (LTriMatrix& LD, const SymMatrix& M)
-/*
- * Modified lower triangular Cholesky factor of a
+/* Modified lower triangular Cholesky factor of a
  * Positive definite or semi-definite Matrix M
  * Wraps LdLfactor for non in place factorisation
  * Output:
@@ -505,8 +491,7 @@ LTriMatrix::value_type LdLfactor (LTriMatrix& LD, const SymMatrix& M)
 
 
 UTriMatrix::value_type UCfactor (UTriMatrix& UC, const SymMatrix& M)
-/*
- * Upper triangular Cholesky factor of a
+/* Upper triangular Cholesky factor of a
  * Positive definite or semi-definite Matrix M
  * Wraps UCfactor for non in place factorisation
  * Output:
@@ -524,10 +509,9 @@ UTriMatrix::value_type UCfactor (UTriMatrix& UC, const SymMatrix& M)
 
 
 bool UdUinverse (RowMatrix& UD)
-/*
- * In-place (destructive) inversion of diagonal and unit upper triangular matrices in UD
+/* In-place (destructive) inversion of diagonal and unit upper triangular matrices in UD
  * BE VERY CAREFUL THIS IS NOT THE INVERSE OF UD
- *  Inversion on d and U is seperate: inv(U)*inv(d)*inv(U') = inv(U'dU) NOT EQUAL inv(UdU')
+ *  Inversion on d and U is separate: inv(U)*inv(d)*inv(U') = inv(U'dU) NOT EQUAL inv(UdU')
  * Lower triangle of UD is ignored and unmodified
  * Only diagonal part d can be singular (zero elements), inverse is computed of all elements other then singular
  * Reference: A+G p.223
@@ -574,8 +558,7 @@ bool UdUinverse (RowMatrix& UD)
 
 
 bool UTinverse (UTriMatrix& U)
-/*
- * In-place (destructive) inversion of upper triangular matrix in U
+/* In-place (destructive) inversion of upper triangular matrix in U
  *
  * Output:
  *    U: inv(U)
@@ -617,15 +600,14 @@ bool UTinverse (UTriMatrix& U)
 
 
 void UdUrecompose_transpose (RowMatrix& M)
-/*
- * In-place recomposition of Symmetric matrix from U'dU factor store in UD format
+/* In-place recomposition of Symmetric matrix from U'dU factor store in UD format
  *  Generally used for recomposing result of UdUinverse
  * Note definiteness of result depends purely on diagonal(M)
  *  i.e. if d is positive definite (>0) then result is positive definite
  * Reference: A+G p.223
  * In place computation uses simple structure of solution due to triangular zero elements
  *  Defn: R = (U' d) row i , C = U column j   -> M(i,j) = R dot C;
- *  However M(i,j) only dependant R(k<=i), C(k<=j) due to zeros
+ *  However M(i,j) only dependent R(k<=i), C(k<=j) due to zeros
  *  Therefore in place multiple sequences such k < i <= j
  * Input:
  *    M - U'dU factorisation (UD format)
@@ -643,7 +625,7 @@ void UdUrecompose_transpose (RowMatrix& M)
 		i = n-1;
 		do {
 			RowMatrix::Row Mi(M,i);
-			// (U' d) row i of lower triangle from upper trinagle
+			// (U' d) row i of lower triangle from upper triangle
 			for (j = 0; j < i; ++j)
 				Mi[j] = M(j,i) * M(j,j);
 			// (U' d) U in place
@@ -663,8 +645,7 @@ void UdUrecompose_transpose (RowMatrix& M)
 
 
 void UdUrecompose (RowMatrix& M)
-/*
- * In-place recomposition of Symmetric matrix from UdU' factor store in UD format
+/* In-place recomposition of Symmetric matrix from UdU' factor store in UD format
  *  See UdUrecompose_transpose()
  * Input:
  *    M - UdU' factorisation (UD format)
@@ -701,8 +682,7 @@ void UdUrecompose (RowMatrix& M)
 
 
 void Lzero (RowMatrix& M)
-/*
- * Zero strict lower triangle of Matrix
+/* Zero strict lower triangle of Matrix
  */
 {
 	std::size_t i,j;
@@ -719,8 +699,7 @@ void Lzero (RowMatrix& M)
 }
 
 void Uzero (RowMatrix& M)
-/*
- * Zero strict upper triangle of Matrix
+/* Zero strict upper triangle of Matrix
  */
 {
 	std::size_t i,j;
@@ -738,8 +717,7 @@ void Uzero (RowMatrix& M)
 
 
 void UdUfromUCholesky (RowMatrix& U)
-/*
- * Convert a normal upper triangular Cholesky factor into
+/* Convert a normal upper triangular Cholesky factor into
  * a Modified Cholesky factor.
  * Lower triangle of UD is ignored and unmodified
  * Ignores Columns with zero diagonal element
@@ -771,8 +749,7 @@ void UdUfromUCholesky (RowMatrix& U)
 }
 
 void UdUseperate (RowMatrix& U, Vec& d, const RowMatrix& UD)
-/*
- * Extract the seperate U and d parts of the UD factorisation
+/* Extract the separate U and d parts of the UD factorisation
  * Output:
  *    U and d parts of UD
  */
@@ -814,8 +791,7 @@ void UdUrecompose (SymMatrix& X, const RowMatrix& M)
 }
 
 SymMatrix::value_type UdUinversePDignoreInfinity (SymMatrix& M)
-/*
- * inverse of Positive Definate matrix
+/* Inverse of Positive Definite matrix
  * The inverse is able to deal with infinities on the leading diagonal
  * Input:
  *     M is a symmetric matrix
@@ -842,8 +818,7 @@ SymMatrix::value_type UdUinversePDignoreInfinity (SymMatrix& M)
 }
 
 SymMatrix::value_type UdUinversePD (SymMatrix& M)
-/*
- * inverse of Positive Definate matrix
+/* Inverse of Positive Definite matrix
  * Input:
  *     M is a symmetric matrix
  * Output:
@@ -865,8 +840,7 @@ SymMatrix::value_type UdUinversePD (SymMatrix& M)
 }
 
 SymMatrix::value_type UdUinversePD (SymMatrix& M, SymMatrix::value_type& detM)
-/*
- * As above but also computes determinant of original M if M is PSD
+/* As above but also computes determinant of original M if M is PSD
  */
 {
 					// Abuse as a RowMatrix
@@ -884,8 +858,7 @@ SymMatrix::value_type UdUinversePD (SymMatrix& M, SymMatrix::value_type& detM)
 
 
 SymMatrix::value_type UdUinversePD (SymMatrix& MI, const SymMatrix& M)
-/*
- * inverse of Positive Definate matrix
+/* Inverse of Positive Definite matrix
  * Input:
  *    M is a symmetric matrix
  * Output:
@@ -908,8 +881,7 @@ SymMatrix::value_type UdUinversePD (SymMatrix& MI, const SymMatrix& M)
 }
 
 SymMatrix::value_type UdUinversePD (SymMatrix& MI, SymMatrix::value_type& detM, const SymMatrix& M)
-/*
- * As above but also computes determinant of original M if M is PSD
+/* As above but also computes determinant of original M if M is PSD
  */
 {
 	MI = M;

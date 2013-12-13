@@ -10,14 +10,14 @@
  */
 
 /*
- * Bayesian filtering reresented as Dual heirarchy of:
+ * Bayesian filtering represented as Dual hierarchy of:
  *  Prediction and Observation models
  *  Filtering Schemes
  */
  
-// Common headers required for declerations
-#include <bayesException.hpp>	// exception types
-#include <matSupSub.hpp>			// matrix support subsystem
+// Common headers required for declarations
+#include "bayesException.hpp"	// exception types
+#include "matSupSub.hpp"			// matrix support subsystem
 
 /* Filter namespace */
 namespace Bayesian_filter
@@ -27,7 +27,7 @@ namespace Bayesian_filter
 
 
 /*
- * Abstraction support classes, at the base of the heirarchy
+ * Abstraction support classes, at the base of the hierarchy
  */
 
 class Bayes_base {
@@ -37,7 +37,7 @@ class Bayes_base {
  */
 public:
 	typedef Bayesian_filter_matrix::Float Float;
-	// Type used thoughout as a number representation for state etc
+	// Type used throughout as a number representation for state etc
 
 	virtual ~Bayes_base() = 0;
 	// Polymorphic
@@ -45,8 +45,8 @@ public:
 	static void error (const Numeric_exception& a);
 	static void error (const Logic_exception& a);
 	// Report a filter, throw a Filter_exception
-	//  No exception saftey rules are specified, assume the object is invalid
-	// May have side effects for debuging
+	//  No exception safety rules are specified, assume the object is invalid
+	// May have side effects for debugging
 };
 
 
@@ -103,7 +103,7 @@ class Sampled_predict_model : virtual public Predict_model_base
     x*(k) = fw(x(k-1), w(k))
    fw should generate samples from the stochastic variable w(k)
    This fundamental model is used instead of the predict likelihood function L(x*|x)
-   Since drawing samples from an arbitary L is non-trivial (see MCMC theory)
+   Since drawing samples from an arbitrary L is non-trivial (see MCMC theory)
    the burden is place on the model to generate these samples.
    Defines an Interface without data members
  */
@@ -151,9 +151,9 @@ public:
 	// Reciprocal condition number limit of linear components when factorised or inverted
 };
 
-class Addative_predict_model : virtual public Predict_model_base
-/* Addative Gaussian noise predict model
-   This fundamental model for non-linear filtering with addative noise
+class Additive_predict_model : virtual public Predict_model_base
+/* Additive Gaussian noise predict model
+   This fundamental model for non-linear filtering with additive noise
     x(k|k-1) = f(x(k-1|k-1)) + G(k)w(k)
     q(k) = state noise covariance, q(k) is covariance of w(k)
     G(k) = state noise coupling
@@ -161,10 +161,10 @@ class Addative_predict_model : virtual public Predict_model_base
 */
 {
 public:
-	Addative_predict_model (std::size_t x_size, std::size_t q_size);
+	Additive_predict_model (std::size_t x_size, std::size_t q_size);
 
 	virtual const FM::Vec& f(const FM::Vec& x) const = 0;
-	// Functional part of addative model
+	// Functional part of additive model
 	// Note: Reference return value as a speed optimisation, MUST be copied by caller.
 
 	FM::Vec q;		// Noise variance (always dense, use coupling to represent sparseness)
@@ -174,7 +174,7 @@ public:
 	// Reciprocal condition number limit of linear components when factorised or inverted
 };
 
-class Linrz_predict_model : public Addative_predict_model
+class Linrz_predict_model : public Additive_predict_model
 /* Linrz predict model
    This fundamental model for linear/linearised filtering
     x(k|k-1) = f(x(k-1|k-1)
@@ -196,7 +196,7 @@ public:
 	Linear_predict_model (std::size_t x_size, std::size_t q_size);
 	const FM::Vec& f(const FM::Vec& x) const
 	{	// Provide the linear implementation of functional f
-		xp.assign(FM::prod(Fx,x));
+		xp.assign (FM::prod(Fx,x));
 		return xp;
 	}
 private:
@@ -261,7 +261,7 @@ protected:
 class Functional_observe_model : virtual public Observe_model_base, public Observe_function
 /* Functional (non-stochastic) observe model h
  *  zp(k) = hx(x(k|k-1))
- * This is a seperate fundamental model and not derived from likelihood because:
+ * This is a separate fundamental model and not derived from likelihood because:
  *  L is a delta function which isn't much use for numerical systems
  * Defines an Interface without data members
  */
@@ -280,44 +280,44 @@ class Parametised_observe_model : virtual public Observe_model_base, public Obse
  *  Includes the functional part of a noise model
  *  Model is assume to have linear and non-linear components
  *  Linear components need to be checked for conditioning
- *  Non-linear components may be discontinous and need normalisation
+ *  Non-linear components may be discontinuous and need normalisation
  */
 {
 public:
 	Parametised_observe_model(std::size_t /*z_size*/)
 	{}
 	virtual const FM::Vec& h(const FM::Vec& x) const = 0;
-	// Functional part of addative model
+	// Functional part of additive model
 	virtual void normalise (FM::Vec& /*z_denorm*/, const FM::Vec& /*z_from*/) const
-	// Discontinous h. Normalise one observation (z_denorm) from another
-	{}	//  Default normalistion, z_denorm unchanged
+	// Discontinuous h. Normalise one observation (z_denorm) from another
+	{}	//  Default normalisation, z_denorm unchanged
 	
 	Numerical_rcond rclimit;
 	// Reciprocal condition number limit of linear components when factorised or inverted
 };
 
-class Uncorrelated_addative_observe_model : public Parametised_observe_model
-/* Observation model, uncorrelated addative observation noise
+class Uncorrelated_additive_observe_model : public Parametised_observe_model
+/* Observation model, uncorrelated additive observation noise
 	Z(k) = I * Zv(k) observe noise variance vector Zv
  */
 {
 public:
-	Uncorrelated_addative_observe_model (std::size_t z_size) :
+	Uncorrelated_additive_observe_model (std::size_t z_size) :
 		Parametised_observe_model(z_size), Zv(z_size)
 	{}
 	FM::Vec Zv;			// Noise Variance
 };
 
-class Correlated_addative_observe_model : public Parametised_observe_model
-/* Observation model, correlated addative observation noise
+class Correlated_additive_observe_model : public Parametised_observe_model
+/* Observation model, correlated additive observation noise
     Z(k) = observe noise covariance
  */
 {
 public:
-	Correlated_addative_observe_model (std::size_t z_size) :
+	Correlated_additive_observe_model (std::size_t z_size) :
 		Parametised_observe_model(z_size), Z(z_size,z_size)
 	{}
-	FM::SymMatrix Z;	// Noise Covariance (not necessarly dense)
+	FM::SymMatrix Z;	// Noise Covariance (not necessarily dense)
 };
 
 class Jacobian_observe_model : virtual public Observe_model_base
@@ -334,8 +334,8 @@ protected: // Jacobian model is not sufficient, it is used to build Linrz observ
 	{}
 };
 
-class Linrz_correlated_observe_model : public Correlated_addative_observe_model, public Jacobian_observe_model
-/* Linrz observation model Hx, h with repespect to state x (fixed size)
+class Linrz_correlated_observe_model : public Correlated_additive_observe_model, public Jacobian_observe_model
+/* Linrz observation model Hx, h with respect to state x (fixed size)
     correlated observation noise
     zp(k) = h(x(k-1|k-1)
     Hx(x(k|k-1) = Jacobian of f with respect to state x
@@ -344,12 +344,12 @@ class Linrz_correlated_observe_model : public Correlated_addative_observe_model,
 {
 public:
 	Linrz_correlated_observe_model (std::size_t x_size, std::size_t z_size) :
-		Correlated_addative_observe_model(z_size), Jacobian_observe_model(x_size, z_size)
+		Correlated_additive_observe_model(z_size), Jacobian_observe_model(x_size, z_size)
 	{}
 };
 
-class Linrz_uncorrelated_observe_model : public Uncorrelated_addative_observe_model, public Jacobian_observe_model
-/* Linrz observation model Hx, h with repespect to state x (fixed size)
+class Linrz_uncorrelated_observe_model : public Uncorrelated_additive_observe_model, public Jacobian_observe_model
+/* Linrz observation model Hx, h with respect to state x (fixed size)
     uncorrelated observation noise
     zp(k) = h(x(k-1|k-1)
     Hx(x(k|k-1) = Jacobian of f with respect to state x
@@ -358,7 +358,7 @@ class Linrz_uncorrelated_observe_model : public Uncorrelated_addative_observe_mo
 {
 public:
 	Linrz_uncorrelated_observe_model (std::size_t x_size, std::size_t z_size) :
-		Uncorrelated_addative_observe_model(z_size), Jacobian_observe_model(x_size, z_size)
+		Uncorrelated_additive_observe_model(z_size), Jacobian_observe_model(x_size, z_size)
 	{}
 };
 
@@ -405,7 +405,7 @@ private:
  * Bayesian Filter
  *
  * A Bayesian Filter uses Bayes rule to fuse the state probabilities
- * of a prior and a likelhood function
+ * of a prior and a likelihood function
  */
 class Bayes_filter_base : public Bayes_base
 {
@@ -440,7 +440,7 @@ public:
 
 	virtual void predict (Functional_predict_model& f) = 0;
 	/* Predict state with functional no noise model
-	    Requires x(k|k), X(k|k) or internal equivilent
+	    Requires x(k|k), X(k|k) or internal equivalent
 	    Predicts x(k+1|k), X(k+1|k), using predict model
 	*/
 };
@@ -473,15 +473,15 @@ public:
  * Kalman State Filter - Abstract filtering property
  * Linear filter representation for 1st (mean) and 2nd (covariance) moments of a distribution
  *
- * Probability distributions are represted by state vector (x) and a covariance matix.(X)
+ * Probability distributions are represented by state vector (x) and a covariance matrix.(X)
  *
  * State (x) sizes is assumed to remain constant.
  * The state and state covariance are public so they can be directly manipulated.
  *  init: Should be called if x or X are altered
  *  update: Guarantees that any internal changes made filter are reflected in x,X.
- *  This allows considerable flexibility so filter implemtations can use different numerical representations
+ *  This allows considerable flexibility so filter implementations can use different numerical representations
  *
- * Derived filters supply definititions for the abstract functions and determine the algorithm used
+ * Derived filters supply definitions for the abstract functions and determine the algorithm used
  * to implement the filter.
  */
 
@@ -549,7 +549,7 @@ public:
  * Linearizable filter models - Abstract filtering property
  *  Linrz == A linear, or gradient Linearized filter
  *
- * Predict uses a Linrz_predict_model that maintains a Jacobian matrix Fx and addative noise
+ * Predict uses a Linrz_predict_model that maintains a Jacobian matrix Fx and additive noise
  * NOTE: Functional (non-stochastic) predict is NOT possible as predict requires Fx.
  *
  * Observe uses a Linrz_observe_model and a variable size observation (z)
@@ -572,7 +572,7 @@ public:
 	virtual Float observe (Linrz_uncorrelated_observe_model& h, const FM::Vec& z) = 0;
 	virtual Float observe (Linrz_correlated_observe_model& h, const FM::Vec& z) = 0;
 	/* Observation z(k) and with (Un)correlated observation noise model
-	    Requires x(k|k), X(k|k) or internal equivilent
+	    Requires x(k|k), X(k|k) or internal equivalent
 	    Returns: Reciprocal condition number of primary matrix used in observe computation (1. if none)
 	*/
 };
@@ -582,7 +582,7 @@ public:
  * Linearizable Kalman Filter
  *  Kalman state representation and linearizable models
  *
- * Common abstration for many linear filters
+ * Common abstraction for many linear filters
  *  Has a virtual base to represent the common state
  */
 class Linrz_kalman_filter : public Linrz_filter, virtual public Kalman_state_filter
@@ -598,9 +598,9 @@ protected:
  *  Kalman state representation and linearizable models
  *
  * Observe is implemented using an innovation computed from the non-linear part of the
- * obseve model and linear part of the Linrz_observe_model
+ * observe model and linear part of the Linrz_observe_model
  *
- * Common abstration for many linear filters
+ * Common abstraction for many linear filters
  *  Has a virtual base to represent the common state
  */
 class Extended_kalman_filter : public Linrz_kalman_filter
@@ -612,7 +612,7 @@ public:
 	virtual Float observe (Linrz_uncorrelated_observe_model& h, const FM::Vec& z);
 	virtual Float observe (Linrz_correlated_observe_model& h, const FM::Vec& z);
 	/* Observation z(k) and with (Un)correlated observation noise model
-	    Requires x(k|k), X(k|k) or internal equivilent
+	    Requires x(k|k), X(k|k) or internal equivalent
 	    Returns: Reciprocal condition number of primary matrix used in observe computation (1. if none)
 	    Default implementation simple computes innovation for observe_innovation
 	*/
@@ -620,7 +620,7 @@ public:
 	virtual Float observe_innovation (Linrz_uncorrelated_observe_model& h, const FM::Vec& s) = 0;
 	virtual Float observe_innovation (Linrz_correlated_observe_model& h, const FM::Vec& s) = 0;
 	/* Observation innovation s(k) and with (Un)correlated observation noise model
-	    Requires x(k|k), X(k|k) or internal equivilent
+	    Requires x(k|k), X(k|k) or internal equivalent
 	    Returns: Reciprocal condition number of primary matrix used in observe computation (1. if none)
 	*/
 };
@@ -629,7 +629,7 @@ public:
 /*
  * Sample State Filter - Abstract filtering property
  *
- * Probability distributions are represted by a finite sampling
+ * Probability distributions are represented by a finite sampling
  *
  * State (x_size) size and its sampling (s_size) are assumed to remain constant.
  * The state sampling public so they can be directly manipulated.
@@ -640,7 +640,7 @@ public:
 class Sample_state_filter : virtual public Bayes_filter_base
 {
 public:
-	FM::ColMatrix S;		// state sampleing (x_size,s_size)
+	FM::ColMatrix S;		// state sampling (x_size,s_size)
 
 	Sample_state_filter (std::size_t x_size, std::size_t s_size);
 	/* Initialise filter and set constant sizes for
@@ -649,12 +649,12 @@ public:
 	    Exceptions:
 	     bayes_filter_exception is s_size < 1
 	*/
-	~Sample_state_filter() = 0;	// ISSUE Provide unambigues distructor incase S is not distructable
+	~Sample_state_filter() = 0;
 
 	/* Virtual functions for filter algorithm */
 
 	virtual void init_S () = 0;
-	/* Initialise from current sampleing
+	/* Initialise from current sampling
 	*/
 
 	void init_sample (const FM::ColMatrix& initS);
@@ -665,7 +665,7 @@ public:
 	/* Resampling update
 	    Returns lcond, Smallest normalised likelihood weight, represents conditioning of resampling solution
 	            lcond == 1. if no resampling performed
-	            This should by multipled by the number of samples to get the Likelihood function conditioning
+	            This should by multiplied by the number of samples to get the Likelihood function conditioning
 	 */
 
 	std::size_t unique_samples () const;
@@ -678,14 +678,14 @@ public:
 /*
  * Sample Filter: Bayes filter using
  *
- * Probability distributions are represted by a finite sampling
+ * Probability distributions are represented by a finite sampling
  *
  * The filter is operated by performing a
  * 	predict, observe
  * cycle derived from the bayes_filter. observe Likelihoods are merged into a single combined weight.
- *   update: MUST be used to complete a explict resampling of the particles using merged weights
+ *   update: MUST be used to complete a explicit resampling of the particles using merged weights
  *
- * Derived filters supply definititions for the abstract functions and determine the algorithm used
+ * Derived filters supply definitions for the abstract functions and determine the algorithm used
  * to implement the filter.
  */
 
