@@ -29,8 +29,8 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef HAARDISPADA_H
-#define HAARDISPADA_H
+#ifndef OPEN_PTRACK_DETECTION_HAARDISPADA_H
+#define OPEN_PTRACK_DETECTION_HAARDISPADA_H
 
 /*****************************************************************************
  ** Includes
@@ -125,5 +125,5 @@ namespace open_ptrack
   }  // namespace detection
 }  // namespace open_ptrack
 
-#endif /*  HAARDISPADA_H */
+#endif /*  OPEN_PTRACK_DETECTION_HAARDISPADA_H */
 

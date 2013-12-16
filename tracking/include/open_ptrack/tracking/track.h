@@ -34,8 +34,8 @@
  *
  */
 
-#ifndef TRACK_H_
-#define TRACK_H_
+#ifndef OPEN_PTRACK_TRACKING_TRACK_H_
+#define OPEN_PTRACK_TRACKING_TRACK_H_
 
 #include <opencv2/opencv.hpp>
 #include <Eigen/Eigen>
@@ -178,4 +178,4 @@ namespace open_ptrack
 
   } /* namespace tracking */
 } /* namespace open_ptrack */
-#endif /* TRACK_H_ */
+#endif /* OPEN_PTRACK_TRACKING_TRACK_H_ */
