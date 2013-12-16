@@ -1,7 +1,8 @@
 /*
  * Software License Agreement (BSD License)
  *
- * Copyright (c) 2013-, Matteo Munaro [matteo.munaro@dei.unipd.it], Filippo Basso
+ * Copyright (c) 2011-2012, Matteo Munaro [matteo.munaro@dei.unipd.it], Filippo Basso [filippo.basso@dei.unipd.it]
+ * Copyright (c) 2013-, Open Perception, Inc.
  *
  * All rights reserved.
  *
@@ -31,6 +32,8 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Author: Matteo Munaro [matteo.munaro@dei.unipd.it], Filippo Basso [filippo.basso@dei.unipd.it]
  *
  */
 

@@ -37,83 +37,106 @@
  *
  */
 
-#include <ros/ros.h>
-#include <open_ptrack/detection/conversions.h>
+#include <open_ptrack/detection/detection.h>
 
 namespace open_ptrack
 {
   namespace detection
   {
-    geometry_msgs::Vector3 Conversions::Vector3dToVector3(const Eigen::Vector3d& v)
+
+    Detection::Detection(opt_msgs::Detection detection, open_ptrack::detection::DetectionSource* source) :
+		    detection_msg_(detection), source_(source)
     {
-      geometry_msgs::Vector3 out;
-      out.x = v(0);
-      out.y = v(1);
-      out.z = v(2);
-      return  out;
+      Eigen::Vector3d v;
+      v(0) = detection.centroid.x;
+      v(1) = detection.centroid.y;
+      v(2) = detection.centroid.z;
+      world_centroid_ = source->transform(v);
+
+      v(0) = detection.top.x;
+      v(1) = detection.top.y;
+      v(2) = detection.top.z;
+      world_top_ = source->transform(v);
+
+      v(0) = detection.bottom.x;
+      v(1) = detection.bottom.y;
+      v(2) = detection.bottom.z;
+      world_bottom_ = source->transform(v);
     }
 
-    geometry_msgs::Vector3 Conversions::Vector3fToVector3(const Eigen::Vector3f& v)
+    Detection::~Detection()
     {
-      geometry_msgs::Vector3 out;
-      out.x = v(0);
-      out.y = v(1);
-      out.z = v(2);
-      return  out;
+
     }
 
-    void Conversions::Vector3dToVector3(const Eigen::Vector3d& v, geometry_msgs::Vector3& out)
+    open_ptrack::detection::DetectionSource* Detection::getSource()
     {
-      out.x = v(0);
-      out.y = v(1);
-      out.z = v(2);
+      return source_;
     }
 
-    void Conversions::Vector3fToVector3(const Eigen::Vector3f& v, geometry_msgs::Vector3& out)
+    Eigen::Vector3d& Detection::getWorldCentroid()
     {
-      out.x = v(0);
-      out.y = v(1);
-      out.z = v(2);
+      return world_centroid_;
     }
 
-    Eigen::Vector3d
-    Conversions::world2cam(
-        const Eigen::Vector3d& world,
-        const Eigen::Matrix3d& intrinsics)
+    Eigen::Vector3d& Detection::getWorldTop()
     {
-      Eigen::Vector3d v = intrinsics * world;
-      v /= v(2);
-      return v;
+      return world_top_;
     }
 
-    Eigen::Vector3f
-    Conversions::world2cam(
-        const Eigen::Vector3f& world,
-        const Eigen::Matrix3f& intrinsics)
+    Eigen::Vector3d& Detection::getWorldBottom()
     {
-      Eigen::Vector3f v = intrinsics * world;
-      v /= v(2);
-      return v;
+      return world_bottom_;
     }
 
-    void
-    Conversions::world2cam(
-        const Eigen::Vector3d& world,
-        Eigen::Vector3d& cam,
-        const Eigen::Matrix3d& intrinsics)
+    double Detection::getHeight()
     {
-      cam = intrinsics * world;
-      cam /= cam(2);
+      return detection_msg_.height;
     }
 
-    void
-    Conversions::world2cam(
-        const Eigen::Vector3f& world,
-        Eigen::Vector3f& cam,
-        const Eigen::Matrix3f& intrinsics)
+    double Detection::getConfidence()
     {
-      cam = intrinsics * world;
-      cam /= cam(2);
+      return detection_msg_.confidence;
+    }
+
+    double Detection::getDistance()
+    {
+      return detection_msg_.distance;
+    }
+
+    bool Detection::isOccluded()
+    {
+      return detection_msg_.occluded;
+    }
+
+    cv::Rect Detection::getBox2D()
+    {
+      return BoundingBox2D2cvRect(detection_msg_.box_2D);
+    }
+
+    cv::Mat& Detection::getImage()
+    {
+      return source_->getImage();
+    }
+
+    /************************ protected methods ************************/
+
+    cv::Rect Detection::BoundingBox2D2cvRect(const opt_msgs::BoundingBox2D& bb)
+    {
+      cv::Rect rect;
+      rect.x = bb.x;
+      rect.y = bb.y;
+      rect.width = bb.width;
+      rect.height = bb.height;
+      return rect;
+    }
+
+    void Detection::BoundingBox2D2cvRect(const opt_msgs::BoundingBox2D& bb, cv::Rect& rect)
+    {
+      rect.x = bb.x;
+      rect.y = bb.y;
+      rect.width = bb.width;
+      rect.height = bb.height;
     }
 
   } /* namespace detection */

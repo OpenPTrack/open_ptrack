@@ -8,7 +8,7 @@ generate_messages(DEPENDENCIES std_msgs geometry_msgs sensor_msgs)
 
 catkin_package(
    INCLUDE_DIRS 
-   LIBRARIES #opt_msgs
+   LIBRARIES 
    CATKIN_DEPENDS roscpp
 )
 

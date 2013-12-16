@@ -1,7 +1,8 @@
 /*
  * Software License Agreement (BSD License)
  *
- * Copyright (c) 2011-, Filippo Basso and Matteo Munaro
+ * Copyright (c) 2011-2012, Matteo Munaro [matteo.munaro@dei.unipd.it], Filippo Basso [filippo.basso@dei.unipd.it]
+ * Copyright (c) 2013-, Open Perception, Inc.
  *
  * All rights reserved.
  *
@@ -32,8 +33,8 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * conversions.h
- * Author: Filippo Basso and Matteo Munaro
+ * Author: Matteo Munaro [matteo.munaro@dei.unipd.it], Filippo Basso [filippo.basso@dei.unipd.it]
+ *
  */
 
 #ifndef OPEN_PTRACK_DETECTION_CONVERSIONS_H_

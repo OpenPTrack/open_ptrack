@@ -1,7 +1,8 @@
 /*
  * Software License Agreement (BSD License)
  *
- * Copyright (c) 2011-, Matteo Munaro [matteo.munaro@dei.unipd.it] and Filippo Basso
+ * Copyright (c) 2011-2012, Matteo Munaro [matteo.munaro@dei.unipd.it], Filippo Basso [filippo.basso@dei.unipd.it]
+ * Copyright (c) 2013-, Open Perception, Inc.
  *
  * All rights reserved.
  *
@@ -32,6 +33,8 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
+ * Author: Matteo Munaro [matteo.munaro@dei.unipd.it], Filippo Basso [filippo.basso@dei.unipd.it]
+ *
  */
 
 #ifndef OPEN_PTRACK_TRACKING_TRACK_H_
@@ -45,10 +48,10 @@
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
 
-#include <open_ptrack/tracking/kalman_filter.h>
-#include <open_ptrack/detection/detection_source.h>
-#include <open_ptrack/bayes/bayesFlt.hpp>
 #include <open_ptrack/detection/conversions.h>
+#include <open_ptrack/tracking/kalman_filter.h>
+#include <open_ptrack/bayes/bayesFlt.hpp>
+#include <open_ptrack/detection/detection_source.h>
 #include <opt_msgs/Track.h>
 
 namespace open_ptrack

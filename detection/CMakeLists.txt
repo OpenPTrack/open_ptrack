@@ -24,8 +24,8 @@ catkin_package(
 )
 
 
-add_library(${PROJECT_NAME} src/conversions.cpp src/detection_source.cpp)
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBS} )
+add_library(${PROJECT_NAME} src/conversions.cpp src/detection_source.cpp src/detection.cpp)
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBS})
 
 add_executable(ground_based_people_detector apps/ground_based_people_detector_node.cpp)
 target_link_libraries(ground_based_people_detector ${PROJECT_NAME} ${catkin_LIBRARIES} vtkHybrid vtkRendering)
