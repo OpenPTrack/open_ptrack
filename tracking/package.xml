@@ -32,6 +32,8 @@
   <build_depend>tf_conversions</build_depend>
   <build_depend>visualization_msgs</build_depend>
   <build_depend>bayes</build_depend>
+  <build_depend>detection</build_depend>
+  <build_depend>pcl_ros</build_depend>
   <run_depend>roscpp</run_depend> 
   <run_depend>sensor_msgs</run_depend>
   <run_depend>std_msgs</run_depend>
@@ -42,5 +44,7 @@
   <run_depend>tf_conversions</run_depend>
   <run_depend>visualization_msgs</run_depend>
   <run_depend>bayes</run_depend>
+  <run_depend>detection</run_depend>
+  <run_depend>pcl_ros</run_depend>
 
 </package>

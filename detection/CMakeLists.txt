@@ -15,15 +15,15 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 link_directories(${OpenCV_LIB_DIR})
 
 find_package(Eigen REQUIRED)
-include_directories(${Eigen_INCLUDE_DIRS} include ${catkin_INCLUDE_DIRS})
+include_directories(${Eigen_INCLUDE_DIRS} include include/open_ptrack include/open_ptrack/detection ${catkin_INCLUDE_DIRS})
 
 catkin_package(
-   INCLUDE_DIRS 
+   INCLUDE_DIRS include include/open_ptrack include/open_ptrack/detection
    LIBRARIES ${PROJECT_NAME}
    CATKIN_DEPENDS roscpp pcl_ros pcl_conversions
 )
 
-add_executable(ground_based_people_detector apps/ground_based_people_detector_node.cpp 
+add_executable(ground_based_people_detector apps/ground_based_people_detector_node.cpp
 src/conversions.cpp)
 target_link_libraries(ground_based_people_detector ${catkin_LIBRARIES} vtkHybrid vtkRendering)
 
@@ -32,4 +32,3 @@ target_link_libraries(haar_disp_ada ${catkin_LIBRARIES})
 
 add_executable(HaarDispAda174 apps/haardispada_node.cpp)
 target_link_libraries(HaarDispAda174 haar_disp_ada ${catkin_LIBRARIES} ${OpenCV_LIBS} boost_system boost_signals)
-

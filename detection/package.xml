@@ -49,7 +49,7 @@
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib" />
+    <!--cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib" /-->
     <!--cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lhaar_disp_ada "/-->    
     <nodelet plugin="${prefix}/nodelet_plugins.xml" />
   </export>
