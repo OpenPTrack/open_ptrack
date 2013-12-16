@@ -19,13 +19,16 @@ include_directories(${Eigen_INCLUDE_DIRS} include ${catkin_INCLUDE_DIRS})
 
 catkin_package(
    INCLUDE_DIRS include
-   LIBRARIES 
+   LIBRARIES ${PROJECT_NAME}
    CATKIN_DEPENDS roscpp pcl_ros pcl_conversions
 )
 
-add_executable(ground_based_people_detector apps/ground_based_people_detector_node.cpp
-src/conversions.cpp)
-target_link_libraries(ground_based_people_detector ${catkin_LIBRARIES} vtkHybrid vtkRendering)
+
+add_library(${PROJECT_NAME} src/conversions.cpp src/detection_source.cpp)
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBS} )
+
+add_executable(ground_based_people_detector apps/ground_based_people_detector_node.cpp)
+target_link_libraries(ground_based_people_detector ${PROJECT_NAME} ${catkin_LIBRARIES} vtkHybrid vtkRendering)
 
 add_library(haar_disp_ada src/haardispada.cpp apps/haardispada_nodelet.cpp)
 target_link_libraries(haar_disp_ada ${catkin_LIBRARIES})

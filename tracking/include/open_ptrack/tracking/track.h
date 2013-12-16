@@ -46,7 +46,7 @@
 #include <pcl/point_types.h>
 
 #include <open_ptrack/tracking/kalman_filter.h>
-#include <open_ptrack/tracking/detection_source.h>
+#include <open_ptrack/detection/detection_source.h>
 #include <open_ptrack/bayes/bayesFlt.hpp>
 #include <open_ptrack/detection/conversions.h>
 #include <opt_msgs/Track.h>
@@ -105,7 +105,7 @@ namespace open_ptrack
         double last_detector_confidence_;
 
         Eigen::Vector3f color_;
-        open_ptrack::tracking::DetectionSource* detection_source_;
+        open_ptrack::detection::DetectionSource* detection_source_;
 
         bool velocity_in_motion_term_;
         int low_confidence_consecutive_frames_;		// count the number of consecutive updates with low confidence detections
@@ -130,7 +130,7 @@ namespace open_ptrack
             double z,
             double height,
             double distance,
-            open_ptrack::tracking::DetectionSource* detection_source);
+            open_ptrack::detection::DetectionSource* detection_source);
 
        void predict(
             double& x,
@@ -150,7 +150,7 @@ namespace open_ptrack
             double confidence,
             double min_confidence,
             double min_confidence_detections,
-            open_ptrack::tracking::DetectionSource* detection_source,
+            open_ptrack::detection::DetectionSource* detection_source,
             bool first_update = false);
 
         double getMahalanobisDistance(double x, double y, const ros::Time& when);
@@ -173,7 +173,7 @@ namespace open_ptrack
         void createMarker(visualization_msgs::MarkerArray::Ptr& msg);
         bool getPointXYZRGB(pcl::PointXYZRGB& p);
         void toMsg(opt_msgs::Track& track_msg, bool vertical);
-        open_ptrack::tracking::DetectionSource* getDetectionSource();
+        open_ptrack::detection::DetectionSource* getDetectionSource();
     };
 
   } /* namespace tracking */

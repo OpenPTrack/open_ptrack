@@ -34,8 +34,8 @@
  *
  */
 
-#ifndef DETECTION_SOURCE_H_
-#define DETECTION_SOURCE_H_
+#ifndef OPEN_PTRACK_DETECTION_DETECTION_SOURCE_H_
+#define OPEN_PTRACK_DETECTION_DETECTION_SOURCE_H_
 
 #include <opencv2/opencv.hpp>
 #include <Eigen/Eigen>
@@ -45,7 +45,7 @@
 
 namespace open_ptrack
 {
-  namespace tracking
+  namespace detection
   {
 
     class DetectionSource
@@ -81,7 +81,7 @@ namespace open_ptrack
         void setImage(cv::Mat& image);
     };
 
-  } /* namespace tracking */
+  } /* namespace detection */
 } /* namespace open_ptrack */
 
-#endif /* DETECTION_SOURCE_H_ */
+#endif /* OPEN_PTRACK_DETECTION_DETECTION_SOURCE_H_ */

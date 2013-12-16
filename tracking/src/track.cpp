@@ -112,7 +112,7 @@ namespace open_ptrack
     }
 
     void Track::init(double x, double y, double z, double height, double distance,
-        open_ptrack::tracking::DetectionSource* detection_source)
+        open_ptrack::detection::DetectionSource* detection_source)
     {
       //Init Kalman filter
       filter_->init(x, y, distance, velocity_in_motion_term_);
@@ -145,7 +145,7 @@ namespace open_ptrack
         double confidence,
         double min_confidence,
         double min_confidence_detections,
-        open_ptrack::tracking::DetectionSource* detection_source,
+        open_ptrack::detection::DetectionSource* detection_source,
         bool first_update)
     {
       //Update Kalman filter
@@ -567,7 +567,7 @@ namespace open_ptrack
       }
     }
 
-    open_ptrack::tracking::DetectionSource* Track::getDetectionSource()
+    open_ptrack::detection::DetectionSource* Track::getDetectionSource()
     {
       return detection_source_;
     }

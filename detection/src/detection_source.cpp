@@ -34,11 +34,11 @@
  *
  */
 
-#include <open_ptrack/tracking/detection_source.h>
+#include <open_ptrack/detection/detection_source.h>
 
 namespace open_ptrack
 {
-  namespace tracking
+  namespace detection
   {
 
     DetectionSource::DetectionSource(cv::Mat image, tf::StampedTransform transform,
@@ -147,5 +147,5 @@ namespace open_ptrack
     {
       image_ = image;
     }
-  } /* namespace tracking */
+  } /* namespace detection */
 } /* namespace open_ptrack */
