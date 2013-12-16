@@ -15,6 +15,6 @@ catkin_package(
    CATKIN_DEPENDS roscpp bayes opencv2 pcl_ros detection tf tf_conversions opt_msgs
 )
 
-add_library(${PROJECT_NAME} src/munkres.cpp src/kalman_filter.cpp src/track.cpp)# src/tracker.cpp)
+add_library(${PROJECT_NAME} src/munkres.cpp src/kalman_filter.cpp src/track.cpp src/tracker.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 

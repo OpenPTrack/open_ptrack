@@ -172,7 +172,7 @@ namespace open_ptrack
         float getLowConfidenceConsecutiveFrames();
         int getUpdatesWithEnoughConfidence();
 
-        void draw(bool vertical, int colorspace);
+        void draw(bool vertical);
         void createMarker(visualization_msgs::MarkerArray::Ptr& msg);
         bool getPointXYZRGB(pcl::PointXYZRGB& p);
         void toMsg(opt_msgs::Track& track_msg, bool vertical);

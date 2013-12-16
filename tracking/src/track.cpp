@@ -347,7 +347,7 @@ namespace open_ptrack
 
     }
 
-    void Track::draw(bool vertical, int colorspace)
+    void Track::draw(bool vertical)
     {
       cv::Scalar color(int(255.0 * color_(0)), int(255.0 * color_(1)), int(255.0 * color_(2)));
 
