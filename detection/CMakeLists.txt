@@ -15,11 +15,11 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 link_directories(${OpenCV_LIB_DIR})
 
 find_package(Eigen REQUIRED)
-include_directories(${Eigen_INCLUDE_DIRS} include include/open_ptrack include/open_ptrack/detection ${catkin_INCLUDE_DIRS})
+include_directories(${Eigen_INCLUDE_DIRS} include ${catkin_INCLUDE_DIRS})
 
 catkin_package(
-   INCLUDE_DIRS include include/open_ptrack include/open_ptrack/detection
-   LIBRARIES ${PROJECT_NAME}
+   INCLUDE_DIRS include
+   LIBRARIES 
    CATKIN_DEPENDS roscpp pcl_ros pcl_conversions
 )
 
