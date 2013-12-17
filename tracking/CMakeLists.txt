@@ -18,3 +18,6 @@ catkin_package(
 add_library(${PROJECT_NAME} src/munkres.cpp src/kalman_filter.cpp src/track.cpp src/tracker.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
+add_executable(tracker apps/tracker_node.cpp)
+target_link_libraries(tracker ${PROJECT_NAME} ${catkin_LIBRARIES})
+

@@ -142,7 +142,7 @@ int main (int argc, char** argv)
 
 	// Publishers:
 	ros::Publisher detection_pub;
-	detection_pub= nh.advertise<DetectionArray>("detections",3);
+	detection_pub= nh.advertise<DetectionArray>("/detector/detections",3);
 	ros::Publisher pub_rois_;
 	pub_rois_= nh.advertise<Rois>("GroundBasedPeopleDetectorOutputRois",3);
 
@@ -230,24 +230,33 @@ int main (int argc, char** argv)
 					Detection detection_msg;
 					converter.Vector3fToVector3(it->getMin(), detection_msg.box_3D.p1);
 					converter.Vector3fToVector3(it->getMax(), detection_msg.box_3D.p2);
+
+					float head_centroid_compensation = 0.05;
+
 					// theoretical person centroid:
-					Eigen::Vector3f centroid = converter.world2cam(it->getTCenter(), rgb_intrinsics_matrix);
+					Eigen::Vector3f centroid3d = it->getTCenter();
+					Eigen::Vector3f centroid2d = converter.world2cam(centroid3d, rgb_intrinsics_matrix);
 					// theoretical person top point:
-					Eigen::Vector3f top = converter.world2cam(it->getTTop(), rgb_intrinsics_matrix);
+					Eigen::Vector3f top3d = it->getTTop();
+					Eigen::Vector3f top2d = converter.world2cam(top3d, rgb_intrinsics_matrix);
 					// theoretical person bottom point:
-					Eigen::Vector3f bottom = converter.world2cam(it->getTBottom(), rgb_intrinsics_matrix);
+					Eigen::Vector3f bottom3d = it->getTBottom();
+					Eigen::Vector3f bottom2d = converter.world2cam(bottom3d, rgb_intrinsics_matrix);
           float enlarge_factor = 1.1;
-          float pixel_xc = centroid(0);
-					float pixel_yc = centroid(1);
-					float pixel_height = (bottom(1) - top(1)) * enlarge_factor;
+          float pixel_xc = centroid2d(0);
+					float pixel_yc = centroid2d(1);
+					float pixel_height = (bottom2d(1) - top2d(1)) * enlarge_factor;
 					float pixel_width = pixel_height / 2;
-					detection_msg.box_2D.x = int(centroid(0) - pixel_width/2.0);
-					detection_msg.box_2D.y = int(centroid(1) - pixel_height/2.0);
+					detection_msg.box_2D.x = int(centroid2d(0) - pixel_width/2.0);
+					detection_msg.box_2D.y = int(centroid2d(1) - pixel_height/2.0);
 					detection_msg.box_2D.width = int(pixel_width);
 					detection_msg.box_2D.height = int(pixel_height);
 					detection_msg.height = it->getHeight();
 					detection_msg.confidence = it->getPersonConfidence();
 					detection_msg.distance = it->getDistance();
+					converter.Vector3fToVector3((1+head_centroid_compensation/centroid3d.norm())*centroid3d, detection_msg.centroid);
+					converter.Vector3fToVector3((1+head_centroid_compensation/top3d.norm())*top3d, detection_msg.top);
+					converter.Vector3fToVector3((1+head_centroid_compensation/bottom3d.norm())*bottom3d, detection_msg.bottom);
 
 					// Add message:
 					detection_array_msg->detections.push_back(detection_msg);

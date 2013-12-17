@@ -92,10 +92,8 @@ namespace open_ptrack
     {
       detections_.clear();
       unassociated_detections_.clear();
-
       lost_tracks_.clear();
       new_tracks_.clear();
-
       detections_ = detections;
 
       ros::Time current_detections_time = detections_[0].getSource()->getTime();
@@ -298,17 +296,17 @@ namespace open_ptrack
         track++;
       }
 
-      //	std::cout << "Distance matrix:" << std::endl;
-      //	for(int row = 0; row < distance_matrix_.rows; row++)
-      //	{
-      //		for(int col = 0; col < distance_matrix_.cols; col++)
-      //		{
-      //			std::cout.width(8);
-      //			std::cout << distance_matrix_(row,col) << ",";
-      //		}
-      //		std::cout << std::endl;
-      //	}
-      //	std::cout << std::endl;
+//      	std::cout << "Distance matrix:" << std::endl;
+//      	for(int row = 0; row < distance_matrix_.rows; row++)
+//      	{
+//      		for(int col = 0; col < distance_matrix_.cols; col++)
+//      		{
+//      			std::cout.width(8);
+//      			std::cout << distance_matrix_(row,col) << ",";
+//      		}
+//      		std::cout << std::endl;
+//      	}
+//      	std::cout << std::endl;
     }
 
     void Tracker::createCostMatrix()
@@ -431,7 +429,9 @@ namespace open_ptrack
     {
       for(std::list<open_ptrack::detection::Detection>::iterator dit = unassociated_detections_.begin();
           dit != unassociated_detections_.end(); dit++)
+      {
         createNewTrack(*dit);
+      }
     }
   } /* namespace tracking */
 } /* namespace open_ptrack */

@@ -1,0 +1,9 @@
+<launch>
+
+  <!-- People detection -->
+  <include file="$(find detection)/launch/detector_depth.launch"/>
+
+  <!-- People tracking -->
+  <include file="$(find tracking)/launch/tracker.launch"/>
+
+</launch>
