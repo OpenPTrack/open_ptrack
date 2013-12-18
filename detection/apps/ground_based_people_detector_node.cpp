@@ -57,7 +57,7 @@
 
 // Open PTrack includes:
 #include <open_ptrack/detection/ground_based_people_detection_app.h>
-#include <open_ptrack/detection/conversions.h>
+#include <open_ptrack/opt_utils/conversions.h>
 
 //Publish Messages
 #include <opt_msgs/RoiRect.h>
@@ -147,7 +147,7 @@ int main (int argc, char** argv)
 	pub_rois_= nh.advertise<Rois>("GroundBasedPeopleDetectorOutputRois",3);
 
 	Rois output_rois_;
-	open_ptrack::detection::Conversions converter;
+	open_ptrack::opt_utils::Conversions converter;
 
 	ros::Rate rate(rate_value);
 	while(ros::ok() && !new_cloud_available_flag)

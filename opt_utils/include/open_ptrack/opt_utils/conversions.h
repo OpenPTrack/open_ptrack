@@ -37,15 +37,15 @@
  *
  */
 
-#ifndef OPEN_PTRACK_DETECTION_CONVERSIONS_H_
-#define OPEN_PTRACK_DETECTION_CONVERSIONS_H_
+#ifndef OPEN_PTRACK_OPT_UTILS_CONVERSIONS_H_
+#define OPEN_PTRACK_OPT_UTILS_CONVERSIONS_H_
 
 #include <geometry_msgs/Vector3.h>
 #include <Eigen/Eigen>
 
 namespace open_ptrack
 {
-  namespace detection
+  namespace opt_utils
   {
 
     class Conversions
@@ -107,6 +107,6 @@ namespace open_ptrack
         }
 
     };
-  } /* namespace detection */
+  } /* namespace opt_utils */
 } /* namespace open_ptrack */
-#endif /* OPEN_PTRACK_DETECTION_CONVERSIONS_H_ */
+#endif /* OPEN_PTRACK_OPT_UTILS_CONVERSIONS_H_ */

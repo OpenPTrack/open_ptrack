@@ -66,7 +66,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <opencv2/highgui/highgui.hpp>
 
 // Open PTrack
-#include "open_ptrack/detection/conversions.h"
+#include "open_ptrack/opt_utils/conversions.h"
 
 using namespace sensor_msgs;
 using namespace stereo_msgs;
@@ -102,7 +102,7 @@ class roiViewerNode
     bool show_confidence;
 
     // Object of class Conversions:
-    open_ptrack::detection::Conversions converter;
+    open_ptrack::opt_utils::Conversions converter;
 
   public:
 

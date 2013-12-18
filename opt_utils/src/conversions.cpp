@@ -38,11 +38,11 @@
  */
 
 #include <ros/ros.h>
-#include <open_ptrack/detection/conversions.h>
+#include <open_ptrack/opt_utils/conversions.h>
 
 namespace open_ptrack
 {
-  namespace detection
+  namespace opt_utils
   {
     geometry_msgs::Vector3 Conversions::Vector3dToVector3(const Eigen::Vector3d& v)
     {
@@ -116,5 +116,5 @@ namespace open_ptrack
       cam /= cam(2);
     }
 
-  } /* namespace detection */
+  } /* namespace opt_utils */
 } /* namespace open_ptrack */

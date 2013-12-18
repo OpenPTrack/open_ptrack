@@ -43,7 +43,7 @@
 #include <opencv2/opencv.hpp>
 #include <Eigen/Eigen>
 
-#include <open_ptrack/detection/conversions.h>
+#include <open_ptrack/opt_utils/conversions.h>
 #include <tf/tf.h>
 
 namespace open_ptrack

@@ -50,7 +50,7 @@
 #include <sstream>
 #include <fstream>
 
-#include <open_ptrack/detection/conversions.h>
+#include <open_ptrack/opt_utils/conversions.h>
 #include <open_ptrack/detection/detection.h>
 #include <open_ptrack/detection/detection_source.h>
 #include <open_ptrack/tracking/tracker.h>

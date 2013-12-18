@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(detection)
-find_package(catkin REQUIRED COMPONENTS roscpp pcl_ros pcl_conversions nodelet rosconsole image_transport)
+find_package(catkin REQUIRED COMPONENTS roscpp pcl_ros pcl_conversions nodelet rosconsole image_transport opt_utils)
 
 find_package(VTK REQUIRED)
 if(VTK_FOUND)
@@ -20,11 +20,11 @@ include_directories(${Eigen_INCLUDE_DIRS} include ${catkin_INCLUDE_DIRS})
 catkin_package(
    INCLUDE_DIRS include
    LIBRARIES ${PROJECT_NAME}
-   CATKIN_DEPENDS roscpp pcl_ros pcl_conversions
+   CATKIN_DEPENDS roscpp pcl_ros pcl_conversions opt_utils opt_msgs
 )
 
 
-add_library(${PROJECT_NAME} src/conversions.cpp src/detection_source.cpp src/detection.cpp)
+add_library(${PROJECT_NAME} src/detection_source.cpp src/detection.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBS})
 
 add_executable(ground_based_people_detector apps/ground_based_people_detector_node.cpp)

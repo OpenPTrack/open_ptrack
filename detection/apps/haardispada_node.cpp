@@ -30,7 +30,7 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include "open_ptrack/detection/haardispada.h"
-#include "open_ptrack/detection/conversions.h"
+#include "open_ptrack/opt_utils/conversions.h"
 
 #include "ros/ros.h"
 #include <sstream>
@@ -115,7 +115,7 @@ class HaarDispAdaNode
     double min_confidence;
 
     // Object of class Conversions:
-    open_ptrack::detection::Conversions converter;
+    open_ptrack::opt_utils::Conversions converter;
 
     // Output detections message:
     DetectionArray::Ptr output_detection_msg_;

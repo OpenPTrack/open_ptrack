@@ -48,7 +48,7 @@
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
 
-#include <open_ptrack/detection/conversions.h>
+#include <open_ptrack/opt_utils/conversions.h>
 #include <open_ptrack/tracking/kalman_filter.h>
 #include <open_ptrack/bayes/bayesFlt.hpp>
 #include <open_ptrack/detection/detection_source.h>
