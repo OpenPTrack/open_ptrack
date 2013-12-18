@@ -116,7 +116,6 @@ namespace open_ptrack
           int rtn = haar_features_fast(HF); // compute haar features
           if(rtn== 1){
             result = HDAC_.predict(HF, cv::Mat(), cv::Range::all(), false, true);
-            ROS_ERROR("Results: %f", result);
           }
           else{
             ROS_ERROR("WHY O WHY");

@@ -30,6 +30,7 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include "open_ptrack/detection/haardispada.h"
+#include "open_ptrack/detection/conversions.h"
 
 #include "ros/ros.h"
 #include <sstream>
@@ -37,6 +38,7 @@ POSSIBILITY OF SUCH DAMAGE.
 //Publish Messages
 #include "opt_msgs/RoiRect.h"
 #include "opt_msgs/Rois.h"
+#include "opt_msgs/DetectionArray.h"
 #include "std_msgs/String.h"
 
 //Time Synchronizer
@@ -82,10 +84,10 @@ class HaarDispAdaNode
     // Subscribe to Messages
     message_filters::Subscriber<DisparityImage> sub_disparity_;
     message_filters::Subscriber<Image> sub_image_;
-    message_filters::Subscriber<Rois> sub_rois_;
+    message_filters::Subscriber<opt_msgs::DetectionArray> sub_detections_;
 
     // Define the Synchronizer
-    typedef ApproximateTime<Image, DisparityImage, Rois> ApproximatePolicy;
+    typedef ApproximateTime<Image, DisparityImage, opt_msgs::DetectionArray> ApproximatePolicy;
     typedef message_filters::Synchronizer<ApproximatePolicy> ApproximateSync;
     boost::shared_ptr<ApproximateSync> approximate_sync_;
 
@@ -93,6 +95,7 @@ class HaarDispAdaNode
     ros::Publisher pub_rois_;
     ros::Publisher pub_Color_Image_;
     ros::Publisher pub_Disparity_Image_;
+    ros::Publisher pub_detections_;
 
     Rois output_rois_;
 
@@ -110,6 +113,12 @@ class HaarDispAdaNode
 
     // Minimum classifier confidence for people detection:
     double min_confidence;
+
+    // Object of class Conversions:
+    open_ptrack::detection::Conversions converter;
+
+    // Output detections message:
+    DetectionArray::Ptr output_detection_msg_;
 
   public:
 
@@ -141,21 +150,24 @@ class HaarDispAdaNode
       }
       HDAC_.setMaxSamples(NS);
 
+      output_detection_msg_ = DetectionArray::Ptr(new DetectionArray);
+
       // Published Messages
       pub_rois_           = node_.advertise<Rois>("HaarDispAdaOutputRois",qs);
       pub_Color_Image_    = node_.advertise<Image>("HaarDispAdaColorImage",qs);
       pub_Disparity_Image_= node_.advertise<DisparityImage>("HaarDispAdaDisparityImage",qs);
+      pub_detections_ = node_.advertise<DetectionArray>("/detector/detections",3);
 
       // Subscribe to Messages
       sub_image_.subscribe(node_,"Color_Image",qs);
       sub_disparity_.subscribe(node_, "Disparity_Image",qs);
-      sub_rois_.subscribe(node_,"input_rois",qs);
+      sub_detections_.subscribe(node_,"input_detections",qs);
 
       // Sync the Synchronizer
       approximate_sync_.reset(new ApproximateSync(ApproximatePolicy(qs),
           sub_image_,
           sub_disparity_,
-          sub_rois_));
+          sub_detections_));
 
       approximate_sync_->registerCallback(boost::bind(&HaarDispAdaNode::imageCb,
           this,
@@ -195,9 +207,30 @@ class HaarDispAdaNode
       }
       return(callback_mode);
     }
+
+    void createOutputDetectionsMessage(const DetectionArray::ConstPtr& input_msg, vector<float> confidences, DetectionArray::Ptr& output_msg)
+    {
+      // Set camera-specific fields:
+      output_msg->detections.clear();
+      output_msg->header = input_msg->header;
+      output_msg->intrinsic_matrix = input_msg->intrinsic_matrix;
+
+      // Add all valid detections:
+      int k = 0;
+      for(unsigned int i = 0; i < input_msg->detections.size(); i++)
+      {
+        if(confidences[i] > min_confidence)            // keep only people with confidence above a threshold
+        {
+          output_msg->detections.push_back(input_msg->detections[i]);
+          output_msg->detections[k].confidence = confidences[i];
+          k++;
+        }
+      }
+    }
+
     void imageCb(const ImageConstPtr& image_msg,
         const DisparityImageConstPtr& disparity_msg,
-        const RoisConstPtr& rois_msg){
+        const opt_msgs::DetectionArray::ConstPtr& detection_msg){
 
       bool label_all;
       vector<int> L_in;
@@ -252,25 +285,49 @@ class HaarDispAdaNode
       }
       // **********************************************************************//
 
-      // take the region of interest message and create vectors of ROIs and labels
+      // take the detection message and create vectors of ROIs and labels
       R_in.clear();
       L_in.clear();
-      for(unsigned int i=0;i<rois_msg->rois.size();i++){
-        int x = rois_msg->rois[i].x;
-        int y = rois_msg->rois[i].y;
-        int w = rois_msg->rois[i].width;
-        int h = rois_msg->rois[i].height;
-        int l = rois_msg->rois[i].label;
+
+      // Read camera intrinsic parameters:
+      Eigen::Matrix3f intrinsic_matrix;
+      for(int i = 0; i < 3; i++)
+        for(int j = 0; j < 3; j++)
+          intrinsic_matrix(i, j) = detection_msg->intrinsic_matrix[i * 3 + j];
+
+      // Read detections:
+      for(unsigned int i=0;i<detection_msg->detections.size();i++)
+      {
+        // theoretical person centroid:
+        Eigen::Vector3f centroid3d(detection_msg->detections[i].centroid.x, detection_msg->detections[i].centroid.y, detection_msg->detections[i].centroid.z);
+        Eigen::Vector3f centroid2d = converter.world2cam(centroid3d, intrinsic_matrix);
+
+        // theoretical person top point:
+        Eigen::Vector3f top3d(detection_msg->detections[i].top.x, detection_msg->detections[i].top.y, detection_msg->detections[i].top.z);
+        Eigen::Vector3f top2d = converter.world2cam(top3d, intrinsic_matrix);
+
+        // Define Rect and make sure it is not out of the image:
+        int h = centroid2d(1) - top2d(1);
+        int w = h * 2 / 3.0;
+        int x = std::max(0, int(centroid2d(0) - w / 2.0));
+        int y = std::max(0, int(top2d(1)));
+        h = std::min(int(disparity_msg->image.height - y), int(h));
+        w = std::min(int(disparity_msg->image.width - x), int(w));
+
         Rect R(x,y,w,h);
         R_in.push_back(R);
-        L_in.push_back(l);
+        L_in.push_back(1);
       }
 
       // do the work of the node
       switch(get_mode()){
         case DETECT:
-          label_all = false;
+          label_all = true;
           HDAC_.detect(R_in,L_in,dmatrix,R_out,L_out,C_out,label_all);
+
+          // Build output detections message:
+          createOutputDetectionsMessage(detection_msg, C_out, output_detection_msg_);
+
           output_rois_.rois.clear();
           output_rois_.header.stamp = image_msg->header.stamp;
           output_rois_.header.frame_id = image_msg->header.frame_id;
@@ -288,6 +345,7 @@ class HaarDispAdaNode
           pub_rois_.publish(output_rois_);
           pub_Color_Image_.publish(image_msg);
           pub_Disparity_Image_.publish(disparity_msg);
+          pub_detections_.publish(output_detection_msg_);
           break;
         case ACCUMULATE:
           numSamples = HDAC_.addToTraining(R_in,L_in,dmatrix);

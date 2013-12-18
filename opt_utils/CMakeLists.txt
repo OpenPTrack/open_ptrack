@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(opt_utils)
-find_package(catkin REQUIRED COMPONENTS roscpp rosconsole image_transport cv_bridge)
+find_package(catkin REQUIRED COMPONENTS roscpp rosconsole image_transport cv_bridge detection)
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 link_directories(${OpenCV_LIB_DIR})
@@ -10,7 +10,7 @@ include_directories(include ${catkin_INCLUDE_DIRS})
 catkin_package(
    INCLUDE_DIRS 
    LIBRARIES ${PROJECT_NAME}
-   CATKIN_DEPENDS roscpp
+   CATKIN_DEPENDS roscpp detection
 )
 
 add_executable(roi_viewer src/roi_viewer.cpp)

@@ -19,7 +19,7 @@
 	<param name="Q_Size" value="20" />
         <remap from="Color_Image" to="/camera/rgb/image_color"/>	
        <remap from="Disparity_Image" to="/camera/depth_registered/disparity"/>
-       <remap from="input_rois" to="/ground_based_people_detector/GroundBasedPeopleDetectorOutputRois"/>
+       <remap from="input_detections" to="/ground_based_people_detector/detections"/>
         <param name="mode" value="load"/>
         <param name="classifier_file" value="$(find detection)/data/HaarDispAda.xml"/>
         <param name="num_Training_Samples" value="350"/>
@@ -35,7 +35,7 @@
     <param name="label" type="int" value="1" />
     <param name="show_confidence" type="bool" value="true" />
     <remap from ="input_image" to="/camera/rgb/image_color"/>
-	<remap from ="input_rois" to="/ground_based_people_detector/GroundBasedPeopleDetectorOutputRois"/>  
+	<remap from ="input_detections" to="/ground_based_people_detector/detections"/>  
   </node-->
 
    <!-- display the rois -->
@@ -44,7 +44,7 @@
      <param name="label" type="int" value="1" />
      <param name="show_confidence" type="bool" value="true" />
 	 <remap from ="input_image" to="HaarDispAdaColorImage"/>
-	 <remap from ="input_rois" to="HaarDispAdaOutputRois"/>  
+	 <remap from ="input_detections" to="/detector/detections"/>  
    </node>
 
 </launch>

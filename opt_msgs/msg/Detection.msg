@@ -9,4 +9,3 @@ float64 height
 float64 confidence
 float64 distance
 bool occluded
-

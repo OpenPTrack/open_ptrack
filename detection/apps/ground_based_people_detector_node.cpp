@@ -142,7 +142,7 @@ int main (int argc, char** argv)
 
 	// Publishers:
 	ros::Publisher detection_pub;
-	detection_pub= nh.advertise<DetectionArray>("/detector/detections",3);
+	detection_pub= nh.advertise<DetectionArray>("/ground_based_people_detector/detections",3);
 	ros::Publisher pub_rois_;
 	pub_rois_= nh.advertise<Rois>("GroundBasedPeopleDetectorOutputRois",3);
 
@@ -263,33 +263,6 @@ int main (int argc, char** argv)
 				}
 			}
 			detection_pub.publish(detection_array_msg);		 // publish message
-
-			// Write ROIs message and publish it:
-			output_rois_.rois.clear();
-			output_rois_.header = cloud_header;
-			for(std::vector<pcl::people::PersonCluster<PointT> >::iterator it = clusters.begin(); it != clusters.end(); ++it)
-			{
-				if((!use_rgb) | (it->getPersonConfidence() > min_confidence))            // if RGB is used, keep only people with confidence above a threshold
-				{
-					// theoretical person centroid:
-				  Eigen::Vector3f centroid = converter.world2cam(it->getTCenter(), rgb_intrinsics_matrix);
-					// theoretical person top point:
-				  Eigen::Vector3f top = converter.world2cam(it->getTTop(), rgb_intrinsics_matrix);
-
-					// Define RoiRect and make sure it is not out of the image:
-					RoiRect R;
-					R.height = centroid(1) - top(1);
-					R.width  = R.height * 2 / 3.0;
-					R.x      = std::max(0, int(centroid(0) - R.width / 2.0));
-					R.y      = std::max(0, int(top(1)));
-					R.height = std::min(int(ROWS - R.y), int(R.height));
-					R.width = std::min(int(COLS - R.x), int(R.width));
-					R.label  = 1;
-					R.confidence  = it->getPersonConfidence();
-					output_rois_.rois.push_back(R);
-				}
-			}
-			pub_rois_.publish(output_rois_);  // publish message
 		}
 
 		// Execute callbacks:

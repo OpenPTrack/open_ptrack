@@ -40,9 +40,8 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "dirent.h"
 
 //Publish Messages
-#include "opt_msgs/RoiRect.h"
-#include "opt_msgs/Rois.h"
 #include "std_msgs/String.h"
+#include "opt_msgs/DetectionArray.h"
 
 //Time Synchronizer
 // NOTE: Time Synchronizer conflicts with QT includes may need to investigate
@@ -66,6 +65,9 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+// Open PTrack
+#include "open_ptrack/detection/conversions.h"
+
 using namespace sensor_msgs;
 using namespace stereo_msgs;
 using namespace message_filters::sync_policies;
@@ -88,16 +90,19 @@ class roiViewerNode
 
     // Subscribe to Messages
     message_filters::Subscriber<Image> sub_image_;
-    message_filters::Subscriber<Rois> sub_rois_;
+    message_filters::Subscriber<opt_msgs::DetectionArray> sub_detections_;
 
     // Define the Synchronizer
-    typedef ApproximateTime<Image, Rois> ApproximatePolicy;
+    typedef ApproximateTime<Image, opt_msgs::DetectionArray> ApproximatePolicy;
     typedef message_filters::Synchronizer<ApproximatePolicy> ApproximateSync;
     boost::shared_ptr<ApproximateSync> approximate_sync_;
 
     // Launch file Parameters
     int label;
     bool show_confidence;
+
+    // Object of class Conversions:
+    open_ptrack::detection::Conversions converter;
 
   public:
 
@@ -124,12 +129,12 @@ class roiViewerNode
 
         // Subscribe to Messages
         sub_image_.subscribe(node_,"input_image",20);
-        sub_rois_.subscribe(node_,"input_rois",20);
+        sub_detections_.subscribe(node_,"input_detections",20);
 
         // Sync the Synchronizer
         approximate_sync_.reset(new ApproximateSync(ApproximatePolicy(20),
             sub_image_,
-            sub_rois_));
+            sub_detections_));
 
         approximate_sync_->registerCallback(boost::bind(&roiViewerNode::imageCb,
             this,
@@ -146,7 +151,7 @@ class roiViewerNode
     }
 
     void imageCb(const ImageConstPtr& image_msg,
-        const RoisConstPtr& rois_msg){
+        const opt_msgs::DetectionArray::ConstPtr& detection_msg){
 
       std::string filename = image_msg->header.frame_id.c_str();
       std::string imgName = filename.substr(filename.find_last_of("/")+1);
@@ -157,39 +162,53 @@ class roiViewerNode
 
       cv_bridge::CvImagePtr cv_color = cv_bridge::toCvCopy(image_msg,
           sensor_msgs::image_encodings::BGR8);
-      RoiRect roi;
+
+      // Read camera intrinsic parameters:
+      Eigen::Matrix3f intrinsic_matrix;
+      for(int i = 0; i < 3; i++)
+        for(int j = 0; j < 3; j++)
+          intrinsic_matrix(i, j) = detection_msg->intrinsic_matrix[i * 3 + j];
 
       //For each roi in rois message
       //ROS_INFO("ROIS size: %d",rois_msg->rois.size());
-      for(unsigned int i=0;i<rois_msg->rois.size();i++)
+      for(unsigned int i=0;i<detection_msg->detections.size();i++)
       {
-        roi = rois_msg->rois[i];
-        //Check to see if the label is to be displayed
-        if(roi.label==label){
-          //Add the roi label to the image
-          //ROS_INFO("ROI found for image");
-          Point ptUpperLeft = Point(roi.x,roi.y);
-          Point ptLowerRight = Point(roi.x+roi.width,roi.y+roi.height);
+        // theoretical person centroid:
+        Eigen::Vector3f centroid3d(detection_msg->detections[i].centroid.x, detection_msg->detections[i].centroid.y, detection_msg->detections[i].centroid.z);
+        Eigen::Vector3f centroid2d = converter.world2cam(centroid3d, intrinsic_matrix);
 
-          rectangle(cv_color->image,ptUpperLeft,ptLowerRight,Scalar(255,255,255));
+        // theoretical person top point:
+        Eigen::Vector3f top3d(detection_msg->detections[i].top.x, detection_msg->detections[i].top.y, detection_msg->detections[i].top.z);
+        Eigen::Vector3f top2d = converter.world2cam(top3d, intrinsic_matrix);
 
-          if (show_confidence)
-          {
-            // Draw roi confidence
-            float confidenceToDisplay = float(int(roi.confidence*100))/100;
-            std::stringstream conf_ss;
-            conf_ss << confidenceToDisplay;
-            cv::rectangle(cv_color->image, cv::Point(roi.x, roi.y-15),	cv::Point(roi.x +60, roi.y), darkBlue, CV_FILLED, 8);
-            cv::putText(cv_color->image, conf_ss.str(), cv::Point(roi.x, roi.y), cv::FONT_HERSHEY_SIMPLEX, 0.5, white, 1.7, CV_AA);
-          }
+        // Define Rect and make sure it is not out of the image:
+        int h = centroid2d(1) - top2d(1);
+        int w = h * 2 / 3.0;
+        int x = std::max(0, int(centroid2d(0) - w / 2.0));
+        int y = std::max(0, int(top2d(1)));
+        h = std::min(int(image_msg->height - y), int(h));
+        w = std::min(int(image_msg->width - x), int(w));
+
+        Point ptUpperLeft = Point(x,y);
+        Point ptLowerRight = Point(x+w,y+h);
+
+        rectangle(cv_color->image,ptUpperLeft,ptLowerRight,Scalar(255,255,255));
+
+        if (show_confidence)
+        {
+          // Draw roi confidence
+          float confidenceToDisplay = float(int(detection_msg->detections[i].confidence*100))/100;
+          std::stringstream conf_ss;
+          conf_ss << confidenceToDisplay;
+          cv::rectangle(cv_color->image, cv::Point(x, y-15),	cv::Point(x +60, y), darkBlue, CV_FILLED, 8);
+          cv::putText(cv_color->image, conf_ss.str(), cv::Point(x, y), cv::FONT_HERSHEY_SIMPLEX, 0.5, white, 1.7, CV_AA);
         }
       }
 
       // Display the cv image
-      //cv::namedWindow("ROI Color Image",1);
       cv::imshow("Detections",cv_color->image);
-      //                cv::waitKey(1);
     }
+
     ~roiViewerNode()
     {
     }
