@@ -108,6 +108,9 @@ class HaarDispAdaNode
     int num_TP_class0;
     int num_FP_class0;
 
+    // Minimum classifier confidence for people detection:
+    double min_confidence;
+
   public:
 
     explicit HaarDispAdaNode(const ros::NodeHandle& nh):
@@ -125,6 +128,11 @@ class HaarDispAdaNode
       if(!node_.getParam(nn + "/Q_Size",qs)){
         qs=3;
       }
+
+      if(!node_.getParam(nn + "/min_confidence", min_confidence)){
+        min_confidence = 3.0;
+      }
+      HDAC_.setMinConfidence(min_confidence);
 
       int NS;
       if(!node_.getParam(nn + "/num_Training_Samples",NS)){
@@ -194,6 +202,7 @@ class HaarDispAdaNode
       bool label_all;
       vector<int> L_in;
       vector<int> L_out;
+      vector<float> C_out;
       vector<Rect> R_in;
       vector<Rect> R_out;
       string param_name;
@@ -261,7 +270,7 @@ class HaarDispAdaNode
       switch(get_mode()){
         case DETECT:
           label_all = false;
-          HDAC_.detect(R_in,L_in,dmatrix,R_out,L_out,label_all);
+          HDAC_.detect(R_in,L_in,dmatrix,R_out,L_out,C_out,label_all);
           output_rois_.rois.clear();
           output_rois_.header.stamp = image_msg->header.stamp;
           output_rois_.header.frame_id = image_msg->header.frame_id;
@@ -273,6 +282,7 @@ class HaarDispAdaNode
             R.width  = R_out[i].width;
             R.height = R_out[i].height;
             R.label  = L_out[i];
+            R.confidence = C_out[i];
             output_rois_.rois.push_back(R);
           }
           pub_rois_.publish(output_rois_);

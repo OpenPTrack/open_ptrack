@@ -94,6 +94,53 @@ namespace open_ptrack
       }
     }
 
+    void HaarDispAdaClassifier::detect(vector<Rect> &R_in,
+        vector<int>  &L_in,
+        Mat &D_in,
+        vector<Rect> &R_out,
+        vector<int> &L_out,
+        vector<float> &C_out,
+        bool label_all)
+    {
+      int count =0;
+      Mat HF(1,num_filters_,CV_32F);
+      Mat MH(1,num_filters_,CV_8UC1);
+
+      R_out.clear();
+      L_out.clear();
+      if(!loaded) return;
+      for(unsigned int i=0;i<R_in.size();i++){// for each roi
+        float result = 0;
+        if(R_in[i].width > 2 && R_in[i].height > 2){
+          setDImageROI_fast(R_in[i],D_in); // copy region of interest from disparity
+          int rtn = haar_features_fast(HF); // compute haar features
+          if(rtn== 1){
+            result = HDAC_.predict(HF, cv::Mat(), cv::Range::all(), false, true);
+            ROS_ERROR("Results: %f", result);
+          }
+          else{
+            ROS_ERROR("WHY O WHY");
+            result = 0;
+          }
+        }
+
+        if(result>min_confidence_ || label_all == true){
+          R_out.push_back(R_in[i]);
+          C_out.push_back(result);                // write classifier confidence
+          if(label_all)
+          {
+            if (result > min_confidence_)
+              L_out.push_back(1);  // apply the label
+            else
+              L_out.push_back(0);
+          }
+          if(!label_all)
+            L_out.push_back(L_in[i]); // give the same label it came in with to allow evalì
+          if(result>min_confidence_) count++;
+        }
+      }
+    }
+
     int HaarDispAdaClassifier::addToTraining(vector<Rect> &R_in, vector<int> &L_in, Mat &D_in)
     {
       Mat HF(1,num_filters_,CV_32F);
@@ -189,6 +236,16 @@ namespace open_ptrack
       trainingSamples_.create(maxSamples_,num_filters_,CV_32FC1);
       trainingLabels_.create(maxSamples_,1,CV_32SC1);
 
+    }
+
+    void HaarDispAdaClassifier::setMinConfidence(float min_confidence)
+    {
+      min_confidence_ = min_confidence;
+    }
+
+    float HaarDispAdaClassifier::getMinConfidence()
+    {
+      return min_confidence_;
     }
 
     void HaarDispAdaClassifier::init()

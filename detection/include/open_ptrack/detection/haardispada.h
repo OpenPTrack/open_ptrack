@@ -84,11 +84,21 @@ namespace open_ptrack
             vector<int> &L_out,
             bool label_all);
 
+        void detect(vector<Rect> &R_in,
+            vector<int> &L_in,
+            Mat &D_in,
+            vector<Rect> &R_out,
+            vector<int> &L_out,
+            vector<float> &C_out,
+            bool label_all);
+
         int test();
         int numSamples_;
         float HaarDispAdaPrior_;
         void setMaxSamples(int n);
         int getMaxSamples(){ return(maxSamples_);};
+        void setMinConfidence(float min_confidence);
+        float getMinConfidence();
 
       private:
         CvBoost HDAC_;
@@ -109,6 +119,9 @@ namespace open_ptrack
         Mat haar16x16;
         Mat haar8x8;
         Mat haar4x4;
+
+        // Minimum classifier confidence for people detection:
+        float min_confidence_;
 
         // private functions
         void setDImageRoi(Rect &R_in, Mat &I_in);
