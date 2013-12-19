@@ -14,9 +14,9 @@ kalman:
   
 jointLikelihood:
   detector_likelihood: true
-  velocity_in_motion_term: true
-  detector_weight: -1
-  motion_weight: 0.5
+  velocity_in_motion_term: false
+  detector_weight: -1.0
+  motion_weight: 0.25
   
 target:
   sec_before_old: 8

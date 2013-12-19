@@ -281,7 +281,7 @@ namespace open_ptrack
 
           // Compute joint likelihood and put it in the distance matrix:
 
-          distance_matrix_(track, measure++) = likelihood_weights_[0] * detector_likelihood + likelihood_weights_[2] * motion_likelihood;
+          distance_matrix_(track, measure++) = likelihood_weights_[0] * detector_likelihood + likelihood_weights_[1] * motion_likelihood;
 
           //std::cout << (*it)->getId() << ": " << "Motion likelihood: " << motionWeight * motionLikelihood << std::endl;
           //if (detector_likelihood_)
@@ -322,30 +322,30 @@ namespace open_ptrack
       }
 
 
-      //	std::cout << "OLD - Munkres input matrix:" << std::endl;
-      //	for(int row = 0; row < cost_matrix_.rows; row++)
-      //	{
-      //		for(int col = 0; col < cost_matrix_.cols; col++)
-      //		{
-      //			std::cout.width(8);
-      //			std::cout << cost_matrix_(row,col) << ",";
-      //		}
-      //		std::cout << std::endl;
-      //	}
-      //	std::cout << std::endl;
+//      	std::cout << "Munkres input matrix:" << std::endl;
+//      	for(int row = 0; row < cost_matrix_.rows; row++)
+//      	{
+//      		for(int col = 0; col < cost_matrix_.cols; col++)
+//      		{
+//      			std::cout.width(8);
+//      			std::cout << cost_matrix_(row,col) << ",";
+//      		}
+//      		std::cout << std::endl;
+//      	}
+//      	std::cout << std::endl;
     }
 
     void Tracker::updateDetectedTracks()
     {
-      //	std::cout << "OLD - Munkres output matrix:" << std::endl;
-      //	for(int row = 0; row < cost_matrix_.rows; row++) {
-      //		for(int col = 0; col < cost_matrix_.cols; col++) {
-      //			std::cout.width(1);
-      //			std::cout << cost_matrix_(row,col) << ",";
-      //		}
-      //		std::cout << std::endl;
-      //	}
-      //	std::cout << std::endl;
+//      	std::cout << "Munkres output matrix:" << std::endl;
+//      	for(int row = 0; row < cost_matrix_.rows; row++) {
+//      		for(int col = 0; col < cost_matrix_.cols; col++) {
+//      			std::cout.width(1);
+//      			std::cout << cost_matrix_(row,col) << ",";
+//      		}
+//      		std::cout << std::endl;
+//      	}
+//      	std::cout << std::endl;
 
 
       int track = 0;
