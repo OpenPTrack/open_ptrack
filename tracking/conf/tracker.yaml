@@ -1,8 +1,9 @@
-min_confidence: 4.0
-min_confidence_detections: 1.0
+min_confidence: 2.5
+min_confidence_detections: 1.5
 rate: 30
-world_frame_id: "/camera_rgb_optical_frame"
+world_frame_id: "/world"
 voxel_size: 0.06
+extrinsic_calibration: false
 
 orientation:
   vertical: false
@@ -12,10 +13,10 @@ kalman:
   acceleration_variance: 100
   
 jointLikelihood:
-  detector_likelihood: false
-  velocity_in_motion_term: false
+  detector_likelihood: true
+  velocity_in_motion_term: true
   detector_weight: -1
-  motion_weight: 1
+  motion_weight: 0.5
   
 target:
   sec_before_old: 8
@@ -28,12 +29,9 @@ debug:
 
 output:
   history_pointcloud: true
-  history_size: 10
+  history_size: 1000
   markers: true
   image_rgb: false
   tracking_results: true
-  
-dataset:
-  surveillance_mode: false
 
 

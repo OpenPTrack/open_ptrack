@@ -26,7 +26,7 @@
         <param name="HaarDispAdaPrior" value="7.5"/>
         <param name="Kinect_Disparity_Fix" value="false"/>	
         <param name="UseMissingDataMask" value="false"/>
-        <param name="min_confidence" value="3.0"/>
+        <param name="min_confidence" value="1.5"/>
    </node>  
 
   <!-- display the rois -->

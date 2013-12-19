@@ -46,6 +46,7 @@
 #include <pcl/point_types.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
+#include <tf/transform_broadcaster.h>
 #include <list>
 #include <sstream>
 #include <fstream>
@@ -74,9 +75,9 @@ ros::Publisher marker_pub_tmp;
 ros::Publisher marker_pub;
 ros::Publisher pointcloud_pub;
 size_t starting_index;
-tf::Transform rgb_frame_to_base_link_transform;
-tf::Transform base_link_to_rgb_frame_transform;
-bool surveillance_mode;
+tf::Transform camera_frame_to_world_transform;
+tf::Transform world_to_camera_frame_transform;
+bool extrinsic_calibration;
 double period;
 open_ptrack::tracking::Tracker* tracker;
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr history_pointcloud(new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -100,29 +101,17 @@ void detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
   try
   {
     // Read transforms between camera frame and world frame:
-    if (surveillance_mode)
+    if (!extrinsic_calibration)
     {
-      tf::Vector3 variable_translation(0.0, 0.0, 0.0);
-      tf::Quaternion variable_rotation = tf::createQuaternionFromRPY(0.0, 0.0, 0.0);
-      tf::Vector3 inv_variable_translation = - variable_translation;
-      tf::Quaternion invVariableRotation = tf::createQuaternionFromRPY(0.0, 0.0, 0.0);
-      tf::Transform base_link_to_odom_transform(variable_rotation, variable_translation);
-      tf::Transform odom_to_base_link_transform(invVariableRotation, inv_variable_translation);
-
-      transform.child_frame_id_ = "/odom";
-      transform.frame_id_ = "/openni_rgb_optical_frame";
-      transform.mult(base_link_to_odom_transform, rgb_frame_to_base_link_transform);
-
-      inverse_transform.child_frame_id_ = "/openni_rgb_optical_frame";
-      inverse_transform.frame_id_ = "/odom";
-      inverse_transform.mult(base_link_to_rgb_frame_transform, odom_to_base_link_transform);
+      static tf::TransformBroadcaster world_to_camera_tf_publisher;
+//      world_to_camera_tf_publisher.sendTransform(tf::StampedTransform(camera_frame_to_world_transform, ros::Time::now(), "/world", "/camera_rgb_optical_frame"));
+      world_to_camera_tf_publisher.sendTransform(tf::StampedTransform(world_to_camera_frame_transform, ros::Time::now(), "/camera_rgb_optical_frame", "/world"));
     }
-    else
-    {
-      //Calculate direct and inverse transforms
-      tf_listener->lookupTransform(world_frame_id, frame_id, ros::Time(0), transform);
-      tf_listener->lookupTransform(frame_id, world_frame_id, ros::Time(0), inverse_transform);
-    }
+
+    //Calculate direct and inverse transforms
+    tf_listener->lookupTransform(world_frame_id, frame_id, ros::Time(0), transform);
+    tf_listener->lookupTransform(frame_id, world_frame_id, ros::Time(0), inverse_transform);
+
     //		cvPtr = cv_bridge::toCvCopy(msg->image, sensor_msgs::image_encodings::BGR8);
 
     // Read camera intrinsic parameters:
@@ -286,7 +275,7 @@ int main(int argc, char** argv)
   nh.param("world_frame_id", world_frame_id, std::string("/odom"));
 
   nh.param("orientation/vertical", vertical, false);
-  nh.param("dataset/surveillance_mode", surveillance_mode, false);
+  nh.param("extrinsic_calibration", extrinsic_calibration, false);
 
   double voxel_size;
   nh.param("voxel_size", voxel_size, 0.075);
@@ -377,15 +366,15 @@ int main(int argc, char** argv)
 
   starting_index = 0;
 
-  // If surveillance mode:
-  if (surveillance_mode)
+  // If extrinsic calibration is not available:
+  if (!extrinsic_calibration)
   { // Set fixed transformation from rgb frame and base_link
-    tf::Vector3 fixed_translation(0, 0, 0);                  // camera_rgb_optical_frame -> base_link
-    tf::Quaternion fixed_rotation(-0.5, 0.5, -0.5, -0.5);	// camera_rgb_optical_frame -> base_link
-    tf::Vector3 inv_fixed_translation(0.0, 0.0, 0);			// base_link -> camera_rgb_optical_frame
-    tf::Quaternion inv_fixed_rotation(-0.5, 0.5, -0.5, 0.5);	// base_link -> camera_rgb_optical_frame
-    base_link_to_rgb_frame_transform = tf::Transform(fixed_rotation, fixed_translation);
-    rgb_frame_to_base_link_transform = tf::Transform(inv_fixed_rotation, inv_fixed_translation);
+    tf::Vector3 fixed_translation(0, 0, 0);                  // camera_rgb_optical_frame -> world
+    tf::Quaternion fixed_rotation(-0.5, 0.5, -0.5, -0.5);	// camera_rgb_optical_frame -> world
+    tf::Vector3 inv_fixed_translation(0.0, 0.0, 0);			// world -> camera_rgb_optical_frame
+    tf::Quaternion inv_fixed_rotation(-0.5, 0.5, -0.5, 0.5);	// world -> camera_rgb_optical_frame
+    world_to_camera_frame_transform = tf::Transform(fixed_rotation, fixed_translation);
+    camera_frame_to_world_transform = tf::Transform(inv_fixed_rotation, inv_fixed_translation);
   }
 
   ros::spin();
