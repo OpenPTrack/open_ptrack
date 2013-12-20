@@ -52,10 +52,12 @@ namespace open_ptrack
 {
   namespace detection
   {
+    /** \brief Detection represents information about a people detection */
     class Detection
     {
 
       protected:
+        /** \brief  */
         opt_msgs::Detection detection_msg_;		///The Detection3D message
         open_ptrack::detection::DetectionSource* source_;		///The source of the detection
         Eigen::Vector3d world_centroid_;				///The centroid point in world coordinates

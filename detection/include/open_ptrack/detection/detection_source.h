@@ -42,7 +42,6 @@
 
 #include <opencv2/opencv.hpp>
 #include <Eigen/Eigen>
-
 #include <open_ptrack/opt_utils/conversions.h>
 #include <tf/tf.h>
 
@@ -50,37 +49,130 @@ namespace open_ptrack
 {
   namespace detection
   {
-
+    /** \brief DetectionSource represents information about a source of people detections */
     class DetectionSource
     {
       protected:
+        /** \brief last image associated to the detection source */
         cv::Mat image_;
+
+        /** \brief transform between camera and world reference frames */
         tf::StampedTransform transform_;
+
+        /** \brief transform between world and camera reference frames */
         tf::StampedTransform inverse_transform_;
+
+        /** \brief intrinsic parameters of the camera associated to the detection source */
         Eigen::Matrix3d intrinsic_matrix_;
+
+        /** \brief last time detections arrived from the detection source */
         ros::Time time_;
+
+        /** \brief time passed between last two detection messages */
         ros::Duration duration_;
+
+        /** \brief frame id associated to the detection source */
         std::string frame_id_;
 
       public:
+        /** \brief Constructor. */
         DetectionSource(cv::Mat image, tf::StampedTransform transform, tf::StampedTransform inverse_transform,
             Eigen::Matrix3d intrinsic_matrix, ros::Time time, std::string frame_id);
 
+        /** \brief Destructor. */
         virtual ~DetectionSource();
 
+        /**
+         * \brief Update detection source information with last received message.
+         *
+         * \param[in] image Image.
+         * \param[in] transform Transform between camera and world reference frames.
+         * \param[in] inverse_transform Transform between world and camera reference frames.
+         * \param[in] intrinsic_matrix Intrinsic parameters of the camera associated to the detection source.
+         * \param[in] time ROS time.
+         * \param[in] frame_id Frame id.
+         */
         void update(cv::Mat image, tf::StampedTransform transform, tf::StampedTransform inverse_transform,
             Eigen::Matrix3d intrinsic_matrix, ros::Time time, std::string frame_id);
 
+        /**
+         * \brief Apply camera to world transformation to the input vector.
+         *
+         * \param[in] v 3D vector.
+         *
+         * return Transformed vector.
+         */
         Eigen::Vector3d transform(const Eigen::Vector3d& v);
+
+        /**
+         * \brief Apply camera to world transformation to the input vector.
+         *
+         * \param[in] v 3D vector.
+         *
+         * return Transformed vector.
+         */
         Eigen::Vector3d transform(const geometry_msgs::Vector3& v);
+
+        /**
+         * \brief Apply world to camera transformation to the input vector.
+         *
+         * \param[in] v 3D vector.
+         *
+         * return Transformed vector.
+         */
         Eigen::Vector3d inverseTransform(const Eigen::Vector3d& v);
+
+        /**
+         * \brief Apply world to camera transformation to the input vector.
+         *
+         * \param[in] v 3D vector.
+         *
+         * return Transformed vector.
+         */
         Eigen::Vector3d inverseTransform(const geometry_msgs::Vector3& v);
-        Eigen::Vector3d world2cam(const Eigen::Vector3d& v);
+
+        /**
+         * \brief Project 3D point in world frame to pixel position in image associated to the detection source.
+         *
+         * \param[in] v 3D point in world frame.
+         *
+         * return image point in homogeneous coordinates [x y 1].
+         */
         Eigen::Vector3d transformToCam(const Eigen::Vector3d& v);
+
+        /**
+         * \brief Get last image associated to the detection source.
+         *
+         * return the image as OpenCV matrix.
+         */
         cv::Mat& getImage();
+
+        /**
+         * \brief Get last time detections from this detection source arrived.
+         *
+         * return time as ros::Time.
+         */
         ros::Time getTime();
+
+        /**
+         * \brief Get time passed between last two detection messages.
+         *
+         * return
+         */
         ros::Duration getDuration();
+
+        /**
+         * \brief Get frame id associated to the detection source.
+         *
+         * return the frame id as a string.
+         */
         std::string getFrameId();
+
+        /**
+         * \brief Set the image associated to the detection source with the value of the input image.
+         *
+         * \param[in] image The input image.
+         */
         void setImage(cv::Mat& image);
     };
 

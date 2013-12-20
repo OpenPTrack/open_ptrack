@@ -354,9 +354,7 @@ namespace open_ptrack
       double _x2, _y2;
       tmp_filter_->getState(_x2, _y2);
       Eigen::Vector3d centroid2(_x2, _y2, z_);
-      centroid2 = detection_source_->inverseTransform(centroid2);
-
-      centroid2 = detection_source_->world2cam(centroid2);
+      centroid2 = detection_source_->transformToCam(centroid2);
 
       if(visibility_ == Track::NOT_VISIBLE)
         return;
@@ -383,10 +381,7 @@ namespace open_ptrack
 
       //TODO loop for each detection source
 
-      centroid = detection_source_->inverseTransform(centroid);
-
-      centroid = detection_source_->world2cam(centroid);
-
+      centroid = detection_source_->transformToCam(centroid);
       cv::circle(detection_source_->getImage(), cv::Point(centroid(0), centroid(1)), 5, color, 1);
       top = detection_source_->transformToCam(top);
       bottom = detection_source_->transformToCam(bottom);

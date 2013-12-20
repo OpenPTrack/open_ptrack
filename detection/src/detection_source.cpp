@@ -116,11 +116,6 @@ namespace open_ptrack
       return ret;
     }
 
-    Eigen::Vector3d DetectionSource::world2cam(const Eigen::Vector3d& v)
-    {
-      return open_ptrack::opt_utils::Conversions::world2cam(v, intrinsic_matrix_);
-    }
-
     Eigen::Vector3d DetectionSource::transformToCam(const Eigen::Vector3d& v)
     {
       return open_ptrack::opt_utils::Conversions::world2cam(inverseTransform(v), intrinsic_matrix_);
