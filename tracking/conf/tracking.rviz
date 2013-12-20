@@ -9,7 +9,7 @@ Panels:
         - /PointCloud21
         - /Marker1
         - /MarkerArray1
-      Splitter Ratio: 0.5
+      Splitter Ratio: 0.526846
     Tree Height: 747
   - Class: rviz/Selection
     Name: Selection
@@ -29,7 +29,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: PointCloud2
 Visualization Manager:
   Class: ""
   Displays:
@@ -102,15 +102,15 @@ Visualization Manager:
       Enabled: true
       Frame Timeout: 15
       Frames:
-        All Enabled: true
+        All Enabled: false
         camera_depth_frame:
-          Value: true
+          Value: false
         camera_depth_optical_frame:
-          Value: true
+          Value: false
         camera_link:
-          Value: true
+          Value: false
         camera_rgb_frame:
-          Value: true
+          Value: false
         camera_rgb_optical_frame:
           Value: true
         world:
@@ -135,7 +135,7 @@ Visualization Manager:
   Global Options:
     Background Color: 48; 48; 48
     Fixed Frame: world
-    Frame Rate: 30
+    Frame Rate: 60
   Name: root
   Tools:
     - Class: rviz/Interact
@@ -162,10 +162,10 @@ Visualization Manager:
         Z: 1.23964
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 1.5698
+      Pitch: 1.5598
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.1504
+      Yaw: 3.1454
     Saved: ~
 Window Geometry:
   Displays:

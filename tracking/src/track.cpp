@@ -475,7 +475,7 @@ namespace open_ptrack
       marker.color.b = color_(0);
       marker.color.a = 1.0;
 
-      marker.lifetime = ros::Duration(60.0);
+      marker.lifetime = ros::Duration(0.2);
 
       msg->markers.push_back(marker);
 
@@ -513,7 +513,7 @@ namespace open_ptrack
       text_marker.color.b = color_(0);
       text_marker.color.a = 1.0;
 
-      text_marker.lifetime = ros::Duration(60.0);
+      text_marker.lifetime = ros::Duration(0.2);
 
       msg->markers.push_back(text_marker);
 
