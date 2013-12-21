@@ -41,10 +41,8 @@
 #define OPEN_PTRACK_DETECTION_DETECTION_H_
 
 #include <Eigen/Eigen>
-
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
-
 #include <opt_msgs/Detection.h>
 #include <open_ptrack/detection/detection_source.h>
 
@@ -57,92 +55,113 @@ namespace open_ptrack
     {
 
       protected:
-        /** \brief  */
-        opt_msgs::Detection detection_msg_;		///The Detection3D message
-        open_ptrack::detection::DetectionSource* source_;		///The source of the detection
-        Eigen::Vector3d world_centroid_;				///The centroid point in world coordinates
-        Eigen::Vector3d world_bottom_;				///The bottom point in world coordinates
-        Eigen::Vector3d world_top_;					///The top point in world coordinates
+        /** \brief ROS message containing detection information */
+        opt_msgs::Detection detection_msg_;
+
+        /** \brief Detection source which produced the detection */
+        open_ptrack::detection::DetectionSource* source_;
+
+        /** \brief Detection centroid in world reference frame */
+        Eigen::Vector3d world_centroid_;
+
+        /** \brief Detection bottom point in world reference frame */
+        Eigen::Vector3d world_bottom_;
+
+        /** \brief Detection top point in world reference frame */
+        Eigen::Vector3d world_top_;
 
         /**
-         * Converts a BoundingBox2D message into a cv::Rect.
-         * @return the converted cv::Rect.
-         * @param bb the BoundingBox2D to convert.
+         * \brief Converts a BoundingBox2D message into a cv::Rect.
+         *
+         * \param[in] bb The BoundingBox2D to convert.
+         *
+         * \return the converted cv::Rect.
          */
         cv::Rect BoundingBox2D2cvRect(const opt_msgs::BoundingBox2D& bb);
 
         /**
-         * Converts a BoundingBox2D message into a cv::Rect.
-         * @param bb the BoundingBox2D to convert.
-         * @param rect the converted cv::Rect as a returning param.
+         * \brief Converts a BoundingBox2D message into a cv::Rect.
+         *
+         * \param[in] bb The BoundingBox2D to convert.
+         * \param[in] rect The converted cv::Rect.
          */
         void BoundingBox2D2cvRect(const opt_msgs::BoundingBox2D& bb, cv::Rect& rect);
 
       public:
 
-        /**
-         *
-         */
+        /** \brief Constructor. */
         Detection(opt_msgs::Detection detection, open_ptrack::detection::DetectionSource* source);
 
-        /**
-         * Default destructor.
-         */
+        /** \brief Destructor. */
         virtual ~Detection();
 
-        //const people_tracking::Detection3D& getDetection();
-
         /**
-         * Returns the pointer to the DetectionSource which generated the detection.
+         * \brief Returns a pointer to the DetectionSource which generated the detection.
+         *
+         * \return a pointer to the DetectionSource which generated the detection.
          */
         open_ptrack::detection::DetectionSource* getSource();
 
         /**
-         * Returns the centroid location in world coordinates.
+         * \brief Returns the detection centroid in world reference frame.
+         *
+         * \return the detection centroid in world reference frame.
          */
         Eigen::Vector3d& getWorldCentroid();
 
         /**
-         * Returns the top point location in world coordinates.
+         * \brief Returns the detection top point in world reference frame.
+         *
+         * \return the detection top point in world reference frame.
          */
         Eigen::Vector3d& getWorldTop();
 
         /**
-         * Returns the bottom point location in world coordinates.
+         * \brief Returns the detection bottom point in world reference frame.
+         *
+         * \return the detection bottom point in world reference frame.
          */
         Eigen::Vector3d& getWorldBottom();
 
         /**
-         * Returns the height of the object detected.
+         * \brief Returns the detection height from the ground plane.
+         *
+         * \return the detection height from the ground plane.
          */
         double getHeight();
 
         /**
-         * Returns the confidence given by the HOG classifier.
+         * \brief Returns the confidence of the people detector associated to the detection.
+         *
+         * \return the confidence of the people detector associated to the detection.
          */
         double getConfidence();
 
         /**
-         * Returns the distance of the object from the sensor.
-         * @return the distance of the object from the sensor.
+         * \brief Returns the distance of the detection from the sensor.
+         *
+         * \return the distance of the detection from the sensor.
          */
         double getDistance();
 
         /**
-         * Returns whether the object is occluded or not.
-         * @return whether the object is occluded or not.
+         * \brief Returns if the detection corresponds to an occluded person or not.
+         *
+         * \return true if the detection corresponds to an occluded person, false otherwise.
          */
         bool isOccluded();
 
         /**
-         * Returns the bounding box of the detected object in pixel coordinates.
-         * @return the bounding box of the detected object in pixel coordinates.
+         * \brief Returns the bounding box of the detection in pixel coordinates.
+         *
+         * \return the bounding box of the detection in pixel coordinates.
          */
         cv::Rect getBox2D();
 
         /**
-         * Returns the cv::Mat of the detected object.
-         * @return the cv::Mat of the detected object.
+         * \brief The image where the detection has been found.
+         *
+         * \return the image where the detection has been found.
          */
         cv::Mat& getImage();
     };

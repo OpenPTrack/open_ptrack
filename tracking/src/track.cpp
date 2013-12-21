@@ -104,7 +104,6 @@ namespace open_ptrack
       detection_source_ = old_track.detection_source_;
       velocity_in_motion_term_ = old_track.velocity_in_motion_term_;
       validated_ = validated_ || old_track.validated_;
-      log_likelihood_ = old_track.log_likelihood_;
       low_confidence_consecutive_frames_ = old_track.low_confidence_consecutive_frames_;
 
       first_time_detected_ = old_track.first_time_detected_;
@@ -123,7 +122,6 @@ namespace open_ptrack
       z_ = z;
       height_ = height;
       distance_ = distance;
-      log_likelihood_ = 0;
 
       status_ = NEW;
       visibility_ = VISIBLE;
@@ -144,7 +142,6 @@ namespace open_ptrack
         double z,
         double height,
         double distance,
-        double log_likelihood,
         double confidence,
         double min_confidence,
         double min_confidence_detections,
@@ -208,7 +205,6 @@ namespace open_ptrack
       z_ = z_ * 0.9 + z * 0.1;
       height_ = height_ * 0.9 + height * 0.1;
       distance_ = distance;
-      log_likelihood_ = log_likelihood;
 
       if(confidence > min_confidence)
       {

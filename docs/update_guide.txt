@@ -5,6 +5,7 @@ Guide for updating Open PTrack code:
 
 1) Go to the directory where you cloned Open PTrack repository last time and type:
 git pull
+rm -R ~/workspace/ros/catkin/src/open_ptrack/*
 cp -R ./* ~/workspace/ros/catkin/src/open_ptrack/
 (or you can clone the open_ptrack repository directly into '~/workspace/ros/catkin/src')
 cd ~/workspace/ros/catkin

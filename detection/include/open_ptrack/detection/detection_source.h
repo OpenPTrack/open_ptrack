@@ -100,7 +100,7 @@ namespace open_ptrack
          *
          * \param[in] v 3D vector.
          *
-         * return Transformed vector.
+         * \return Transformed vector.
          */
         Eigen::Vector3d transform(const Eigen::Vector3d& v);
 
@@ -109,7 +109,7 @@ namespace open_ptrack
          *
          * \param[in] v 3D vector.
          *
-         * return Transformed vector.
+         * \return Transformed vector.
          */
         Eigen::Vector3d transform(const geometry_msgs::Vector3& v);
 
@@ -118,7 +118,7 @@ namespace open_ptrack
          *
          * \param[in] v 3D vector.
          *
-         * return Transformed vector.
+         * \return Transformed vector.
          */
         Eigen::Vector3d inverseTransform(const Eigen::Vector3d& v);
 
@@ -127,7 +127,7 @@ namespace open_ptrack
          *
          * \param[in] v 3D vector.
          *
-         * return Transformed vector.
+         * \return Transformed vector.
          */
         Eigen::Vector3d inverseTransform(const geometry_msgs::Vector3& v);
 
@@ -136,35 +136,35 @@ namespace open_ptrack
          *
          * \param[in] v 3D point in world frame.
          *
-         * return image point in homogeneous coordinates [x y 1].
+         * \return image point in homogeneous coordinates [x y 1].
          */
         Eigen::Vector3d transformToCam(const Eigen::Vector3d& v);
 
         /**
          * \brief Get last image associated to the detection source.
          *
-         * return the image as OpenCV matrix.
+         * \return the image as OpenCV matrix.
          */
         cv::Mat& getImage();
 
         /**
          * \brief Get last time detections from this detection source arrived.
          *
-         * return time as ros::Time.
+         * \return time as ros::Time.
          */
         ros::Time getTime();
 
         /**
          * \brief Get time passed between last two detection messages.
          *
-         * return
+         * \return
          */
         ros::Duration getDuration();
 
         /**
          * \brief Get frame id associated to the detection source.
          *
-         * return the frame id as a string.
+         * \return the frame id as a string.
          */
         std::string getFrameId();
 
