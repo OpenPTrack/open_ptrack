@@ -120,7 +120,8 @@ namespace open_ptrack
       *this = orig;
     }
 
-    KalmanFilter& KalmanFilter::operator=(const KalmanFilter& orig)
+    KalmanFilter&
+    KalmanFilter::operator=(const KalmanFilter& orig)
     {
       this->dt_ = orig.dt_;
       this->position_variance_ = orig.position_variance_;
@@ -188,7 +189,8 @@ namespace open_ptrack
       delete filter_;
     }
 
-    void KalmanFilter::init(double x, double y, double distance, bool velocity_in_motion_term)
+    void
+    KalmanFilter::init(double x, double y, double distance, bool velocity_in_motion_term)
     {
 
       Bayesian_filter_matrix::Vec state(4);
@@ -206,7 +208,10 @@ namespace open_ptrack
       cov(2, 2) = 100; //1000.0;
       cov(3, 3) = 100; //1000.0;
 
+      // Filter initialization:
       filter_->init_kalman(state, cov);
+
+      // First update:
       if (velocity_in_motion_term)
         update(x, y, 0, 0, distance);
       else
@@ -214,12 +219,14 @@ namespace open_ptrack
 
     }
 
-    void KalmanFilter::predict()
+    void
+    KalmanFilter::predict()
     {
       filter_->predict(*predict_model_);
     }
 
-    void KalmanFilter::predict(double& x, double& y, double& vx, double& vy)
+    void
+    KalmanFilter::predict(double& x, double& y, double& vx, double& vy)
     {
       predict();
 
@@ -229,13 +236,15 @@ namespace open_ptrack
       vy = filter_->x[3];
     }
 
-    void KalmanFilter::update()
+    void
+    KalmanFilter::update()
     {
       filter_->update();
       //filter_->update_XX(2.0);
     }
 
-    void KalmanFilter::update(double x, double y, double distance)
+    void
+    KalmanFilter::update(double x, double y, double distance)
     {
 
       Bayesian_filter_matrix::Vec observation(2);
@@ -253,7 +262,8 @@ namespace open_ptrack
 
     }
 
-    void KalmanFilter::update(double x, double y, double vx, double vy, double distance)
+    void
+    KalmanFilter::update(double x, double y, double vx, double vy, double distance)
     {
 
       Bayesian_filter_matrix::Vec observation(4);
@@ -275,14 +285,16 @@ namespace open_ptrack
 
     }
 
-    void KalmanFilter::getMahalanobisParameters(MahalanobisParameters2d& mp)
+    void
+    KalmanFilter::getMahalanobisParameters(MahalanobisParameters2d& mp)
     {
       mp.SI = filter_->SI;
       mp.x = filter_->x[0];
       mp.y = filter_->x[1];
     }
 
-    void KalmanFilter::getMahalanobisParameters(MahalanobisParameters4d& mp)
+    void
+    KalmanFilter::getMahalanobisParameters(MahalanobisParameters4d& mp)
     {
       mp.SI = filter_->SI;
       mp.x = filter_->x[0];
@@ -291,7 +303,8 @@ namespace open_ptrack
       mp.vy = filter_->x[3];
     }
 
-    double KalmanFilter::performMahalanobisDistance(double x, double y, const MahalanobisParameters2d& mp)
+    double
+    KalmanFilter::performMahalanobisDistance(double x, double y, const MahalanobisParameters2d& mp)
     {
       Bayesian_filter_matrix::Vec v(2);
       v[0] = x - mp.x;
@@ -299,22 +312,27 @@ namespace open_ptrack
       return Bayesian_filter_matrix::prod_SPDT(v, mp.SI);
     }
 
-    double KalmanFilter::performMahalanobisDistance(double x, double y, double vx, double vy, const MahalanobisParameters4d& mp)
+    double
+    KalmanFilter::performMahalanobisDistance(double x, double y, double vx, double vy, const MahalanobisParameters4d& mp)
     {
       Bayesian_filter_matrix::Vec v(4);
       v[0] = x - mp.x;
       v[1] = y - mp.y;
       v[2] = vx - mp.vx;
       v[3] = vy - mp.vy;
+
+      // Symmetric Positive (Semi) Definite multiply: p = v'*(mp.SI)*v
       return Bayesian_filter_matrix::prod_SPDT(v, mp.SI);
     }
 
-    Bayesian_filter::FM::SymMatrix KalmanFilter::getInnovationCovariance()
+    Bayesian_filter::FM::SymMatrix
+    KalmanFilter::getInnovationCovariance()
     {
       return filter_->SI;
     }
 
-    void KalmanFilter::getState(double& x, double& y, double& vx, double& vy)
+    void
+    KalmanFilter::getState(double& x, double& y, double& vx, double& vy)
     {
       x = filter_->x[0];
       y = filter_->x[1];
@@ -322,7 +340,8 @@ namespace open_ptrack
       vy = filter_->x[3];
     }
 
-    void KalmanFilter::getState(double& x, double& y)
+    void
+    KalmanFilter::getState(double& x, double& y)
     {
       x = filter_->x[0];
       y = filter_->x[1];

@@ -192,6 +192,7 @@ class roiViewerNode
         Point ptUpperLeft = Point(x,y);
         Point ptLowerRight = Point(x+w,y+h);
 
+        // Draw a rectangle around the detected person:
         rectangle(cv_color->image,ptUpperLeft,ptLowerRight,Scalar(255,255,255));
 
         if (show_confidence)

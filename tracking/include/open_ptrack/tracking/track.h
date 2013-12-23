@@ -168,7 +168,8 @@ namespace open_ptrack
         virtual ~Track();
 
         /** \brief Track initialization with an old track. */
-        void init(const Track& old_track);
+        void
+        init(const Track& old_track);
 
         /**
          * \brief Track initialization.
@@ -180,7 +181,8 @@ namespace open_ptrack
          * \param[in] distance Track distance from the sensor
          * \param[in] detection_source DetectionSource which provided the last detection associated to the track
          */
-        void init(
+        void
+        init(
             double x,
             double y,
             double z,
@@ -201,7 +203,8 @@ namespace open_ptrack
          * \param[in] min_confidence_detections Minimum confidence for detection
          * \param[in] detection_source DetectionSource which provided the detection
          */
-        void update(
+        void
+        update(
             double x,
             double y,
             double z,
@@ -222,101 +225,116 @@ namespace open_ptrack
          *
          * \return the Mahalanobis distance.
          */
-        double getMahalanobisDistance(double x, double y, const ros::Time& when);
+        double
+        getMahalanobisDistance(double x, double y, const ros::Time& when);
 
         /* Validate a track */
-        void validate();
+        void
+        validate();
 
         /**
          * \brief Get track validation flag
          *
          * \return true if the track has been validated, false otherwise.
          */
-        bool isValidated();
+        bool
+        isValidated();
 
         /**
          * \brief Get track ID
          *
          * \return track ID
          */
-        int getId();
+        int
+        getId();
 
         /**
          * \brief Set track status to s
          *
          * \param[in] s status
          */
-        void setStatus(Status s);
+        void
+        setStatus(Status s);
 
         /**
          * \brief Get track status
          *
          * \return track status
          */
-        Status getStatus();
+        Status
+        getStatus();
 
         /**
          * \brief Set track Visibility.
          *
          * \param[in] v Visibility status.
          */
-        void setVisibility(Visibility v);
+        void
+        setVisibility(Visibility v);
 
         /**
          * \brief Get track Visibility.
          *
          * \return track Visibility.
          */
-        Visibility getVisibility();
+        Visibility
+        getVisibility();
 
         /**
          * \brief Get time passed from first detection-track association.
          *
          * \return time passed from first detection-track association.
          */
-        float getSecFromFirstDetection(ros::Time current_time);
+        float
+        getSecFromFirstDetection(ros::Time current_time);
 
         /**
          * \brief Get time passed from last detection-track association.
          *
          * \return time passed from last detection-track association.
          */
-        float getSecFromLastDetection(ros::Time current_time);
+        float
+        getSecFromLastDetection(ros::Time current_time);
 
         /**
          * \brief Get time passed from last detection-track association with a high confidence detection.
          *
          * \return time passed from last detection-track association with a high confidence detection.
          */
-        float getSecFromLastHighConfidenceDetection(ros::Time current_time);
+        float
+        getSecFromLastHighConfidenceDetection(ros::Time current_time);
 
         /**
          * \brief Get the number of consecutive updates with low confidence detections.
          *
          * \return the number of consecutive updates with low confidence detections.
          */
-        float getLowConfidenceConsecutiveFrames();
+        float
+        getLowConfidenceConsecutiveFrames();
 
         /**
          * \brief Get the number of updates with enough confidence detections.
          *
          * \return the number of updates with enough confidence detections.
          */
-        int getUpdatesWithEnoughConfidence();
+        int
+        getUpdatesWithEnoughConfidence();
 
         /**
          * \brief Draw track bounding box in the image.
          *
          * \param[in] vertical States if the camera is vertically oriented (true) or not (false).
          */
-        void draw(bool vertical);
+        void
+        draw(bool vertical);
 
         /**
          * \brief Create RViz visualization marker with the track position.
          *
          * \param[in/out] msg Array containing markers of every track.
          */
-        void createMarker(visualization_msgs::MarkerArray::Ptr& msg);
+        void
+        createMarker(visualization_msgs::MarkerArray::Ptr& msg);
 
         /**
          * \brief Get a XYZRGB point from a point cloud.
@@ -325,7 +343,8 @@ namespace open_ptrack
          *
          * \return true if track is visible, false if not visible.
          */
-        bool getPointXYZRGB(pcl::PointXYZRGB& p);
+        bool
+        getPointXYZRGB(pcl::PointXYZRGB& p);
 
         /**
          * \brief Create track ROS message.
@@ -333,14 +352,16 @@ namespace open_ptrack
          * \param[in/out] track_msg Track ROS message.
          * \param[in] vertical States if the camera is vertically oriented (true) or not (false).
          */
-        void toMsg(opt_msgs::Track& track_msg, bool vertical);
+        void
+        toMsg(opt_msgs::Track& track_msg, bool vertical);
 
         /**
          * \brief Get the DetectionSource corresponding to the last associated detection.
          *
          * \return the DetectionSource corresponding to the last associated detection.
          */
-        open_ptrack::detection::DetectionSource* getDetectionSource();
+        open_ptrack::detection::DetectionSource*
+        getDetectionSource();
     };
 
   } /* namespace tracking */

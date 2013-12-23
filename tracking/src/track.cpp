@@ -85,7 +85,8 @@ namespace open_ptrack
       delete tmp_filter_;
     }
 
-    void Track::init(const Track& old_track)
+    void
+    Track::init(const Track& old_track)
     {
       double x, y;
       old_track.filter_->getState(x, y);
@@ -113,30 +114,27 @@ namespace open_ptrack
       last_time_predicted_index_ = old_track.last_time_predicted_index_;
     }
 
-    void Track::init(double x, double y, double z, double height, double distance,
+    void
+    Track::init(double x, double y, double z, double height, double distance,
         open_ptrack::detection::DetectionSource* detection_source)
     {
       //Init Kalman filter
       filter_->init(x, y, distance, velocity_in_motion_term_);
-
       z_ = z;
       height_ = height;
       distance_ = distance;
-
       status_ = NEW;
       visibility_ = VISIBLE;
       validated_ = false;
-
       updates_with_enough_confidence_ = low_confidence_consecutive_frames_ = 0;
-
       detection_source_ = detection_source;
-
       first_time_detected_ = detection_source->getTime();
       last_time_predicted_ = last_time_detected_ = last_time_detected_with_high_confidence_ = detection_source->getTime();
       last_time_predicted_index_ = 0;
     }
 
-    void Track::update(
+    void
+    Track::update(
         double x,
         double y,
         double z,
@@ -176,6 +174,7 @@ namespace open_ptrack
         }
       }
 
+      // Update Kalman filter from the last time the track was visible:
       int framesLost = int(round((detection_source->getTime() - last_time_detected_).toSec() / period_)) - 1;
       for(int i = 0; i < framesLost; i++)
       {
@@ -202,6 +201,7 @@ namespace open_ptrack
       else
         filter_->getMahalanobisParameters(mahalanobis_map2d_[last_time_predicted_index_]);
 
+      // Update z_ and height_ with a weighted combination of current and new values:
       z_ = z_ * 0.9 + z * 0.1;
       height_ = height_ * 0.9 + height * 0.1;
       distance_ = distance;
@@ -225,67 +225,80 @@ namespace open_ptrack
       detection_source_ = detection_source;
     }
 
-    void Track::validate()
+    void
+    Track::validate()
     {
       validated_ = true;
     }
 
-    bool Track::isValidated()
+    bool
+    Track::isValidated()
     {
       return validated_;
     }
 
-    int Track::getId()
+    int
+    Track::getId()
     {
       return id_;
     }
 
-    void Track::setStatus(Track::Status s)
+    void
+    Track::setStatus(Track::Status s)
     {
       status_ = s;
     }
 
-    Track::Status Track::getStatus()
+    Track::Status
+    Track::getStatus()
     {
       return status_;
     }
 
-    void Track::setVisibility(Track::Visibility v)
+    void
+    Track::setVisibility(Track::Visibility v)
     {
       visibility_ = v;
     }
 
-    Track::Visibility Track::getVisibility()
+    Track::Visibility
+    Track::getVisibility()
     {
       return visibility_;
     }
 
-    float Track::getSecFromFirstDetection(ros::Time current_time)
+    float
+    Track::getSecFromFirstDetection(ros::Time current_time)
     {
       return (current_time - first_time_detected_).toSec();
     }
 
-    float Track::getSecFromLastDetection(ros::Time current_time)
+    float
+    Track::getSecFromLastDetection(ros::Time current_time)
     {
       return (current_time - last_time_detected_).toSec();
     }
 
-    float Track::getSecFromLastHighConfidenceDetection(ros::Time current_time)
+    float
+    Track::getSecFromLastHighConfidenceDetection(ros::Time current_time)
     {
       return (current_time - last_time_detected_with_high_confidence_).toSec();
     }
 
-    float Track::getLowConfidenceConsecutiveFrames()
+    float
+    Track::getLowConfidenceConsecutiveFrames()
     {
       return low_confidence_consecutive_frames_;
     }
 
-    int Track::getUpdatesWithEnoughConfidence()
+    int
+    Track::getUpdatesWithEnoughConfidence()
     {
       return updates_with_enough_confidence_;
     }
 
-    double Track::getMahalanobisDistance(double x, double y, const ros::Time& when)
+    double
+    Track::getMahalanobisDistance(double x, double y, const ros::Time& when)
     {
       int difference = int(round((when - last_time_predicted_).toSec() / period_));
       int index;
@@ -343,7 +356,8 @@ namespace open_ptrack
 
     }
 
-    void Track::draw(bool vertical)
+    void
+    Track::draw(bool vertical)
     {
       cv::Scalar color(int(255.0 * color_(0)), int(255.0 * color_(1)), int(255.0 * color_(2)));
 
@@ -384,6 +398,7 @@ namespace open_ptrack
       for(std::vector<Eigen::Vector3d>::iterator it = points.begin(); it != points.end(); it++)
         *it = detection_source_->transformToCam(*it);
 
+      // Draw a paralellepiped around the person:
       for(size_t i = 0; i < 4; i++)
       {
         cv::line(detection_source_->getImage(), cv::Point(points[i](0), points[i](1)),
@@ -430,7 +445,8 @@ namespace open_ptrack
       //TODO end loop
     }
 
-    void Track::createMarker(visualization_msgs::MarkerArray::Ptr& msg)
+    void
+    Track::createMarker(visualization_msgs::MarkerArray::Ptr& msg)
     {
       if(visibility_ == Track::NOT_VISIBLE)
         return;
@@ -510,7 +526,8 @@ namespace open_ptrack
 
     }
 
-    bool Track::getPointXYZRGB(pcl::PointXYZRGB& p)
+    bool
+    Track::getPointXYZRGB(pcl::PointXYZRGB& p)
     {
       if(visibility_ == Track::NOT_VISIBLE)
         return false;
@@ -528,7 +545,8 @@ namespace open_ptrack
       return true;
     }
 
-    void Track::toMsg(opt_msgs::Track& track_msg, bool vertical)
+    void
+    Track::toMsg(opt_msgs::Track& track_msg, bool vertical)
     {
 
       double _x, _y;
@@ -561,7 +579,8 @@ namespace open_ptrack
       }
     }
 
-    open_ptrack::detection::DetectionSource* Track::getDetectionSource()
+    open_ptrack::detection::DetectionSource*
+    Track::getDetectionSource()
     {
       return detection_source_;
     }

@@ -50,105 +50,179 @@ namespace open_ptrack
 {
   namespace tracking
   {
-
+    /** \brief Tracker performs tracking-by-detection */
     class Tracker
     {
       protected:
-
-        const double gate_distance_;
-        const bool detector_likelihood_;
-        const std::vector<double> likelihood_weights_;
-        const bool velocity_in_motion_term_;
-        const double min_confidence_;
-        const double min_confidence_detections_;
-        const int detections_to_validate_;
-
-        const double sec_before_old_;
-        const double sec_before_fake_;
-        const double sec_remain_new_;
-
-        const double period_;
-        const double position_variance_;
-        const double acceleration_variance_;
-
-        const bool debug_mode_;
-
+        /** \brief List of all active tracks */
         std::list<open_ptrack::tracking::Track*> tracks_;
+
+        /** \brief List of lost tracks */
         std::list<open_ptrack::tracking::Track*> lost_tracks_;
+
+        /** \brief List of tracks with Status = NEW */
         std::list<open_ptrack::tracking::Track*> new_tracks_;
-        std::list<open_ptrack::detection::Detection> unassociated_detections_;
+
+        /** \brief List of current detections */
         std::vector<open_ptrack::detection::Detection> detections_;
 
+        /** \brief List of current detections not associated to any track */
+        std::list<open_ptrack::detection::Detection> unassociated_detections_;
+
+        /** \brief Track ID counter */
         int tracks_counter_;
 
+        /** \brief World reference frame used for tracking */
         std::string world_frame_id_;
 
+        /** \brief Minimum confidence for track initialization */
+        const double min_confidence_;
+
+        /** \brief Minimum confidence of detections sent to tracking */
+        const double min_confidence_detections_;
+
+        /** \brief Minimum number of detection<->track association needed for validating a track */
+        const int detections_to_validate_;
+
+        /** \brief Time after which a not visible track becomes old */
+        const double sec_before_old_;
+
+        /** \brief Time after which a visible track obtain NORMAL status */
+        const double sec_remain_new_;
+
+        /** \brief Time within which a track should be validated (otherwise it is discarded) */
+        const double sec_before_fake_;
+
+        /** \brief Gate distance for joint likelihood in data association */
+        const double gate_distance_;
+
+        /** \brief Flag stating if people detection confidence should be used in data association (true) or not (false) */
+        const bool detector_likelihood_;
+
+        /** \brief Weights for the single terms of the joint likelihood */
+        const std::vector<double> likelihood_weights_;
+
+        /** \brief If true, people velocity is also used in motion term for data association */
+        const bool velocity_in_motion_term_;
+
+        /** \brief Minimum time period between two detections messages */
+        const double period_;
+
+        /** \brief Position variance (for Kalman Filter) */
+        const double position_variance_;
+
+        /** \brief Acceleration variance (for Kalman Filter) */
+        const double acceleration_variance_;
+
+        /** \brief Flag enabling debug mode */
+        const bool debug_mode_;
+
+        /** \brief Detections<->tracks distance matrix for data association */
         cv::Mat_<double> distance_matrix_;
+
+        /** \brief Detections<->tracks cost matrix to be used to solve the Global Nearest Neighbor problem */
         cv::Mat_<double> cost_matrix_;
 
-        ros::Time last_time_;
-
+        /** \brief if true, the sensor is considered to be vertically placed (portrait mode) */
         bool vertical_;
 
-        int createNewTrack(open_ptrack::detection::Detection& detection);
-        void createDistanceMatrix();
-        void createCostMatrix();
-        void updateDetectedTracks();
-        void fillUnassociatedDetections();
-        void updateLostTracks();
-        void createNewTracks();
+        /** \brief Create detections<->tracks distance matrix for data association */
+        void
+        createDistanceMatrix();
+
+        /** \brief Create detections<->tracks cost matrix to be used to solve the Global Nearest Neighbor problem */
+        void
+        createCostMatrix();
+
+        /** \brief Update tracks associated to a detection in the current frame */
+        void
+        updateDetectedTracks();
+
+        /** \brief Fill list containing unassociated detections */
+        void
+        fillUnassociatedDetections();
+
+        /** \brief Create new tracks with high confidence unassociated detections */
+        void
+        createNewTracks();
+
+        /** \brief Create a new track with detection information */
+        int
+        createNewTrack(open_ptrack::detection::Detection& detection);
+
+        /** \brief Update lost tracks */
+        void
+        updateLostTracks();
 
       public:
+        /** \brief Constructor */
         Tracker(double gate_distance, bool detector_likelihood, std::vector<double> likelihood_weights, bool velocity_in_motion_term,
             double min_confidence, double min_confidence_detections, double sec_before_old, double sec_before_fake,
             double sec_remain_new, int detections_to_validate, double period, double position_variance,
             double acceleration_variance, std::string world_frame_id, bool debug_mode, bool vertical);
+
+        /** \brief Destructor */
         virtual ~Tracker();
 
         /**
-         * Initializes a new frame starting from the vector containing the detections.
-         * @param detections the vector containing the detections to analyze.
+         * \brief Initialization when a new set of detections arrive.
+         *
+         * \param[in] detections Vector of current detections.
+         *
          */
-        void newFrame(const std::vector<open_ptrack::detection::Detection>& detections);
+        void
+        newFrame(const std::vector<open_ptrack::detection::Detection>& detections);
 
         /**
-         * Update the set of tracks after the new frame is created.
+         * \brief Update the list of tracks according to the current set of detections.
          */
-        void updateTracks();
+        void
+        updateTracks();
+
+//        /**
+//         * \brief Draw the tracks into the RGB image given by its sensor.
+//         */
+//        void
+//        drawRgb();
 
         /**
-         * Draws the tracks into the RGB image given by its sensor.
-         * @see DetectionSource
-         */
-        void drawRgb();
-
-        /**
-         * Fills the MarkerArray message given with a marker for each visible cluster (in correspondance
+         * \brief Fills the MarkerArray message with a marker for each visible track (in correspondance
          * of its centroid) and its number.
-         * @param msg the MarkerArray message to fill.
+         *
+         * \param[in] msg The MarkerArray message to fill.
          */
-        void toMarkerArray(visualization_msgs::MarkerArray::Ptr& msg);
+        void
+        toMarkerArray(visualization_msgs::MarkerArray::Ptr& msg);
 
         /**
-         * Writes the state of each track into a TrackingResult message.
-         * @param msg the TrackingResult message to fill.
+         * \brief Writes the state of each track into a TrackArray message.
+         *
+         * \param[in] msg The TrackArray message to fill.
          */
-        void toMsg(opt_msgs::TrackArray::Ptr& msg);
+        void
+        toMsg(opt_msgs::TrackArray::Ptr& msg);
 
         /**
-         * Writes the state of each track into a TrackingResult message.
-         * @param msg the TrackingResult message to fill.
+         * \brief Writes the state of tracks with a given frame id into a TrackArray message.
+         *
+         * \param[in] msg The TrackArray message to fill.
+         * \param[in] source_frame_id Frame id of tracks that have to be written to msg.
          */
-        void toMsg(opt_msgs::TrackArray::Ptr& msg, std::string& source_frame_id);
+        void
+        toMsg(opt_msgs::TrackArray::Ptr& msg, std::string& source_frame_id);
 
         /**
-         * Appends the location of each track to the given point cloud starting from starting_index (using
+         * \brief Appends the location of each track to a point cloud starting from starting_index (using
          * a circular array)
-         * @param pointcloud the point cloud where to append the locations.
-         * @param starting_index the starting index of the array.
-         * @param max_size the maximum size of the point cloud (when reached the points overwrite the initial ones)
+         *
+         * \param[in] pointcloud The point cloud where to append the locations.
+         * \param[in] starting_index The starting index of the array.
+         * \param[in] max_size The maximum size of the point cloud (when reached the points overwrite the initial ones)
+         *
+         * \return the new starting_index.
          */
-        size_t appendToPointCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pointcloud,
+        size_t
+        appendToPointCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pointcloud,
             size_t starting_index, size_t max_size);
     };
 

@@ -77,7 +77,8 @@ namespace open_ptrack
          *
          * \return the converted cv::Rect.
          */
-        cv::Rect BoundingBox2D2cvRect(const opt_msgs::BoundingBox2D& bb);
+        cv::Rect
+        BoundingBox2D2cvRect(const opt_msgs::BoundingBox2D& bb);
 
         /**
          * \brief Converts a BoundingBox2D message into a cv::Rect.
@@ -85,7 +86,8 @@ namespace open_ptrack
          * \param[in] bb The BoundingBox2D to convert.
          * \param[in] rect The converted cv::Rect.
          */
-        void BoundingBox2D2cvRect(const opt_msgs::BoundingBox2D& bb, cv::Rect& rect);
+        void
+        BoundingBox2D2cvRect(const opt_msgs::BoundingBox2D& bb, cv::Rect& rect);
 
       public:
 
@@ -100,70 +102,80 @@ namespace open_ptrack
          *
          * \return a pointer to the DetectionSource which generated the detection.
          */
-        open_ptrack::detection::DetectionSource* getSource();
+        open_ptrack::detection::DetectionSource*
+        getSource();
 
         /**
          * \brief Returns the detection centroid in world reference frame.
          *
          * \return the detection centroid in world reference frame.
          */
-        Eigen::Vector3d& getWorldCentroid();
+        Eigen::Vector3d&
+        getWorldCentroid();
 
         /**
          * \brief Returns the detection top point in world reference frame.
          *
          * \return the detection top point in world reference frame.
          */
-        Eigen::Vector3d& getWorldTop();
+        Eigen::Vector3d&
+        getWorldTop();
 
         /**
          * \brief Returns the detection bottom point in world reference frame.
          *
          * \return the detection bottom point in world reference frame.
          */
-        Eigen::Vector3d& getWorldBottom();
+        Eigen::Vector3d&
+        getWorldBottom();
 
         /**
          * \brief Returns the detection height from the ground plane.
          *
          * \return the detection height from the ground plane.
          */
-        double getHeight();
+        double
+        getHeight();
 
         /**
          * \brief Returns the confidence of the people detector associated to the detection.
          *
          * \return the confidence of the people detector associated to the detection.
          */
-        double getConfidence();
+        double
+        getConfidence();
 
         /**
          * \brief Returns the distance of the detection from the sensor.
          *
          * \return the distance of the detection from the sensor.
          */
-        double getDistance();
+        double
+        getDistance();
 
         /**
          * \brief Returns if the detection corresponds to an occluded person or not.
          *
          * \return true if the detection corresponds to an occluded person, false otherwise.
          */
-        bool isOccluded();
+        bool
+        isOccluded();
 
         /**
          * \brief Returns the bounding box of the detection in pixel coordinates.
          *
          * \return the bounding box of the detection in pixel coordinates.
          */
-        cv::Rect getBox2D();
+        cv::Rect
+        getBox2D();
 
         /**
          * \brief The image where the detection has been found.
          *
          * \return the image where the detection has been found.
          */
-        cv::Mat& getImage();
+        cv::Mat&
+        getImage();
     };
   } /* namespace detection */
 } /* namespace open_ptrack */

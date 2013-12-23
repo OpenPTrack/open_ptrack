@@ -58,7 +58,8 @@ namespace open_ptrack
       init();
     }
 
-    void HaarDispAdaClassifier::detect(vector<Rect> &R_in,
+    void
+    HaarDispAdaClassifier::detect(vector<Rect> &R_in,
         vector<int>  &L_in,
         Mat &D_in,
         vector<Rect> &R_out,
@@ -78,6 +79,7 @@ namespace open_ptrack
           setDImageROI_fast(R_in[i],D_in); // copy region of interest from disparity
           int rtn = haar_features_fast(HF); // compute haar features
           if(rtn== 1){
+            // Compute classifier score:
             result = HDAC_.predict(HF);
           }
           else{
@@ -86,6 +88,7 @@ namespace open_ptrack
           }
         }
         if(result>0 || label_all == true){
+          // Insert in output detections:
           R_out.push_back(R_in[i]);
           if(label_all) L_out.push_back(result); // apply the label
           if(!label_all)L_out.push_back(L_in[i]); // give the same label it came in with to allow eval
@@ -94,7 +97,8 @@ namespace open_ptrack
       }
     }
 
-    void HaarDispAdaClassifier::detect(vector<Rect> &R_in,
+    void
+    HaarDispAdaClassifier::detect(vector<Rect> &R_in,
         vector<int>  &L_in,
         Mat &D_in,
         vector<Rect> &R_out,
@@ -115,6 +119,7 @@ namespace open_ptrack
           setDImageROI_fast(R_in[i],D_in); // copy region of interest from disparity
           int rtn = haar_features_fast(HF); // compute haar features
           if(rtn== 1){
+            // Compute classifier score:
             result = HDAC_.predict(HF, cv::Mat(), cv::Range::all(), false, true);
           }
           else{
@@ -124,6 +129,7 @@ namespace open_ptrack
         }
 
         if(result>min_confidence_ || label_all == true){
+          // Insert in output detections:
           R_out.push_back(R_in[i]);
           C_out.push_back(result);                // write classifier confidence
           if(label_all)
@@ -140,7 +146,8 @@ namespace open_ptrack
       }
     }
 
-    int HaarDispAdaClassifier::addToTraining(vector<Rect> &R_in, vector<int> &L_in, Mat &D_in)
+    int
+    HaarDispAdaClassifier::addToTraining(vector<Rect> &R_in, vector<int> &L_in, Mat &D_in)
     {
       Mat HF(1,num_filters_,CV_32F);
       Mat MH(1,num_filters_,CV_8UC1);
@@ -168,7 +175,8 @@ namespace open_ptrack
       return(numSamples_);
     }// end addToTraining
 
-    void HaarDispAdaClassifier::setDImageRoi(Rect &R_in, Mat &I_in)
+    void
+    HaarDispAdaClassifier::setDImageRoi(Rect &R_in, Mat &I_in)
     {
       int xmin = R_in.x;
       int xmax = xmin+R_in.width;
@@ -177,7 +185,8 @@ namespace open_ptrack
       Image4Haar = I_in(Range(ymin,ymax),Range(xmin,xmax));
     }
 
-    void HaarDispAdaClassifier::train(string filename)
+    void
+    HaarDispAdaClassifier::train(string filename)
     {
       CvBoostParams bparams = CvBoostParams();
       float priorFloat[] = { 1.0, HaarDispAdaPrior_ };  // preliminary priors based on ROC)
@@ -228,7 +237,8 @@ namespace open_ptrack
       ROS_ERROR("False Positives = %6.2f%c",percent,'%');
     }
 
-    void HaarDispAdaClassifier::setMaxSamples(int n)
+    void
+    HaarDispAdaClassifier::setMaxSamples(int n)
     {
       maxSamples_ = n;
       numSamples_ = 0;
@@ -237,17 +247,20 @@ namespace open_ptrack
 
     }
 
-    void HaarDispAdaClassifier::setMinConfidence(float min_confidence)
+    void
+    HaarDispAdaClassifier::setMinConfidence(float min_confidence)
     {
       min_confidence_ = min_confidence;
     }
 
-    float HaarDispAdaClassifier::getMinConfidence()
+    float
+    HaarDispAdaClassifier::getMinConfidence()
     {
       return min_confidence_;
     }
 
-    void HaarDispAdaClassifier::init()
+    void
+    HaarDispAdaClassifier::init()
     {
       num_filters_ = 174;
       setMaxSamples(350); //use a small number to have a small memory footprint by default
@@ -264,19 +277,22 @@ namespace open_ptrack
 
     }
 
-    void HaarDispAdaClassifier::load(string filename)
+    void
+    HaarDispAdaClassifier::load(string filename)
     {
       HDAC_.load(filename.c_str());
       loaded = true;
     }
 
-    int HaarDispAdaClassifier::test()
+    int
+    HaarDispAdaClassifier::test()
     {
       return(1);
     }
 
     // TODO find out what this function is for
-    void HaarDispAdaClassifier::alpha_map(int idx)
+    void
+    HaarDispAdaClassifier::alpha_map(int idx)
     {
       int i, j, rowWidth, lPower, lPower2, type;
 
@@ -352,7 +368,8 @@ namespace open_ptrack
     }  // alpha map
 
 
-    void HaarDispAdaClassifier::mask_scale(Mat & input, Mat & output)
+    void
+    HaarDispAdaClassifier::mask_scale(Mat & input, Mat & output)
     {
       assert(input.type() == CV_32F);// must be of type CV_8U
       float hratio = (float) input.rows / (float) output.rows;
@@ -383,13 +400,15 @@ namespace open_ptrack
     }  // mask_scale
 
 
-    void HaarDispAdaClassifier::setDImageROI_fast(Rect & R_in, Mat & I_in)
+    void
+    HaarDispAdaClassifier::setDImageROI_fast(Rect & R_in, Mat & I_in)
     {
       Mat ROI = I_in(R_in);
       mask_scale(ROI, haar16x16);
     }
 
-    int HaarDispAdaClassifier::haar_features_fast(Mat &HF)
+    int
+    HaarDispAdaClassifier::haar_features_fast(Mat &HF)
     {
       int jl, idx, i1, j1;
 
@@ -441,7 +460,8 @@ namespace open_ptrack
     }  // haar_features_fast
 
 
-    int HaarDispAdaClassifier::haar_features(Mat &HF, Mat &MH)
+    int
+    HaarDispAdaClassifier::haar_features(Mat &HF, Mat &MH)
     {
       for (int k = 0; k < num_filters_; k++){ // do each feature
         // generate haar map and scale to size of Image4Haar(roi)
@@ -495,7 +515,8 @@ namespace open_ptrack
       }
       return(1);
     }// haar_features
-    void HaarDispAdaClassifier::print_map(int k)
+    void
+    HaarDispAdaClassifier::print_map(int k)
     {
       printf("Map %d :\n",k);
       alpha_map(k);
@@ -506,7 +527,8 @@ namespace open_ptrack
         printf("\n");
       }
     }
-    void HaarDispAdaClassifier::print_scaled_map(cv::Mat &A)
+    void
+    HaarDispAdaClassifier::print_scaled_map(cv::Mat &A)
     {
       printf("SMap = [\n");
       for(int i=0;i<A.rows;i++){
@@ -517,7 +539,8 @@ namespace open_ptrack
       }
       printf("]\n");
     }
-    void HaarDispAdaClassifier::print_Image4Haar()
+    void
+    HaarDispAdaClassifier::print_Image4Haar()
     {
       printf("Image4Haar = [\n");
       for(int i=0;i<Image4Haar.rows;i++){
@@ -529,7 +552,8 @@ namespace open_ptrack
       printf("]\n");
     }
 
-    float HaarDispAdaClassifier::find_central_disparity(int x, int y, int height, int width, Mat &D_in)
+    float
+    HaarDispAdaClassifier::find_central_disparity(int x, int y, int height, int width, Mat &D_in)
     {
       // Insure its a reasonable roi
       if(x+width>D_in.cols || y+height>D_in.rows) return(0.0);

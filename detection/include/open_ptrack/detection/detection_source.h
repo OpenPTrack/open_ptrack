@@ -92,7 +92,8 @@ namespace open_ptrack
          * \param[in] time ROS time.
          * \param[in] frame_id Frame id.
          */
-        void update(cv::Mat image, tf::StampedTransform transform, tf::StampedTransform inverse_transform,
+        void
+        update(cv::Mat image, tf::StampedTransform transform, tf::StampedTransform inverse_transform,
             Eigen::Matrix3d intrinsic_matrix, ros::Time time, std::string frame_id);
 
         /**
@@ -102,7 +103,8 @@ namespace open_ptrack
          *
          * \return Transformed vector.
          */
-        Eigen::Vector3d transform(const Eigen::Vector3d& v);
+        Eigen::Vector3d
+        transform(const Eigen::Vector3d& v);
 
         /**
          * \brief Apply camera to world transformation to the input vector.
@@ -111,7 +113,8 @@ namespace open_ptrack
          *
          * \return Transformed vector.
          */
-        Eigen::Vector3d transform(const geometry_msgs::Vector3& v);
+        Eigen::Vector3d
+        transform(const geometry_msgs::Vector3& v);
 
         /**
          * \brief Apply world to camera transformation to the input vector.
@@ -120,7 +123,8 @@ namespace open_ptrack
          *
          * \return Transformed vector.
          */
-        Eigen::Vector3d inverseTransform(const Eigen::Vector3d& v);
+        Eigen::Vector3d
+        inverseTransform(const Eigen::Vector3d& v);
 
         /**
          * \brief Apply world to camera transformation to the input vector.
@@ -129,7 +133,8 @@ namespace open_ptrack
          *
          * \return Transformed vector.
          */
-        Eigen::Vector3d inverseTransform(const geometry_msgs::Vector3& v);
+        Eigen::Vector3d
+        inverseTransform(const geometry_msgs::Vector3& v);
 
         /**
          * \brief Project 3D point in world frame to pixel position in image associated to the detection source.
@@ -138,42 +143,48 @@ namespace open_ptrack
          *
          * \return image point in homogeneous coordinates [x y 1].
          */
-        Eigen::Vector3d transformToCam(const Eigen::Vector3d& v);
+        Eigen::Vector3d
+        transformToCam(const Eigen::Vector3d& v);
 
         /**
          * \brief Get last image associated to the detection source.
          *
          * \return the image as OpenCV matrix.
          */
-        cv::Mat& getImage();
+        cv::Mat&
+        getImage();
 
         /**
          * \brief Get last time detections from this detection source arrived.
          *
          * \return time as ros::Time.
          */
-        ros::Time getTime();
+        ros::Time
+        getTime();
 
         /**
          * \brief Get time passed between last two detection messages.
          *
          * \return
          */
-        ros::Duration getDuration();
+        ros::Duration
+        getDuration();
 
         /**
          * \brief Get frame id associated to the detection source.
          *
          * \return the frame id as a string.
          */
-        std::string getFrameId();
+        std::string
+        getFrameId();
 
         /**
          * \brief Set the image associated to the detection source with the value of the input image.
          *
          * \param[in] image The input image.
          */
-        void setImage(cv::Mat& image);
+        void
+        setImage(cv::Mat& image);
     };
 
   } /* namespace detection */

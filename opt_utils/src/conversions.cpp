@@ -44,7 +44,8 @@ namespace open_ptrack
 {
   namespace opt_utils
   {
-    geometry_msgs::Vector3 Conversions::Vector3dToVector3(const Eigen::Vector3d& v)
+    geometry_msgs::Vector3
+    Conversions::Vector3dToVector3(const Eigen::Vector3d& v)
     {
       geometry_msgs::Vector3 out;
       out.x = v(0);
@@ -53,7 +54,8 @@ namespace open_ptrack
       return  out;
     }
 
-    geometry_msgs::Vector3 Conversions::Vector3fToVector3(const Eigen::Vector3f& v)
+    geometry_msgs::Vector3
+    Conversions::Vector3fToVector3(const Eigen::Vector3f& v)
     {
       geometry_msgs::Vector3 out;
       out.x = v(0);
@@ -62,14 +64,16 @@ namespace open_ptrack
       return  out;
     }
 
-    void Conversions::Vector3dToVector3(const Eigen::Vector3d& v, geometry_msgs::Vector3& out)
+    void
+    Conversions::Vector3dToVector3(const Eigen::Vector3d& v, geometry_msgs::Vector3& out)
     {
       out.x = v(0);
       out.y = v(1);
       out.z = v(2);
     }
 
-    void Conversions::Vector3fToVector3(const Eigen::Vector3f& v, geometry_msgs::Vector3& out)
+    void
+    Conversions::Vector3fToVector3(const Eigen::Vector3f& v, geometry_msgs::Vector3& out)
     {
       out.x = v(0);
       out.y = v(1);

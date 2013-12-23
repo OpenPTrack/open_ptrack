@@ -57,7 +57,8 @@ namespace open_ptrack
 
     }
 
-    void DetectionSource::update(cv::Mat image, tf::StampedTransform transform,
+    void
+    DetectionSource::update(cv::Mat image, tf::StampedTransform transform,
         tf::StampedTransform inverse_transform, Eigen::Matrix3d intrinsic_matrix, ros::Time time, std::string frame_id)
     {
       image_ = image;
@@ -69,7 +70,8 @@ namespace open_ptrack
       frame_id_ = frame_id;
     }
 
-    Eigen::Vector3d DetectionSource::transform(const Eigen::Vector3d& v)
+    Eigen::Vector3d
+    DetectionSource::transform(const Eigen::Vector3d& v)
     {
       Eigen::Vector3d ret;
       tf::Vector3 t(v(0), v(1), v(2));
@@ -80,7 +82,8 @@ namespace open_ptrack
       return ret;
     }
 
-    Eigen::Vector3d DetectionSource::transform(const geometry_msgs::Vector3& v)
+    Eigen::Vector3d
+    DetectionSource::transform(const geometry_msgs::Vector3& v)
     {
       Eigen::Vector3d ret;
       tf::Vector3 t;
@@ -92,7 +95,8 @@ namespace open_ptrack
       return ret;
     }
 
-    Eigen::Vector3d DetectionSource::inverseTransform(const Eigen::Vector3d& v)
+    Eigen::Vector3d
+    DetectionSource::inverseTransform(const Eigen::Vector3d& v)
     {
       Eigen::Vector3d ret;
       tf::Vector3 t(v(0), v(1), v(2));
@@ -104,7 +108,8 @@ namespace open_ptrack
       return ret;
     }
 
-    Eigen::Vector3d DetectionSource::inverseTransform(const geometry_msgs::Vector3& v)
+    Eigen::Vector3d
+    DetectionSource::inverseTransform(const geometry_msgs::Vector3& v)
     {
       Eigen::Vector3d ret;
       tf::Vector3 t;
@@ -116,32 +121,38 @@ namespace open_ptrack
       return ret;
     }
 
-    Eigen::Vector3d DetectionSource::transformToCam(const Eigen::Vector3d& v)
+    Eigen::Vector3d
+    DetectionSource::transformToCam(const Eigen::Vector3d& v)
     {
       return open_ptrack::opt_utils::Conversions::world2cam(inverseTransform(v), intrinsic_matrix_);
     }
 
-    cv::Mat& DetectionSource::getImage()
+    cv::Mat&
+    DetectionSource::getImage()
     {
       return image_;
     }
 
-    ros::Time DetectionSource::getTime()
+    ros::Time
+    DetectionSource::getTime()
     {
       return time_;
     }
 
-    ros::Duration DetectionSource::getDuration()
+    ros::Duration
+    DetectionSource::getDuration()
     {
       return duration_;
     }
 
-    std::string DetectionSource::getFrameId()
+    std::string
+    DetectionSource::getFrameId()
     {
       return frame_id_;
     }
 
-    void DetectionSource::setImage(cv::Mat& image)
+    void
+    DetectionSource::setImage(cv::Mat& image)
     {
       image_ = image;
     }

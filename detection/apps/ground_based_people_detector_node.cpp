@@ -109,7 +109,8 @@ pp_callback (const pcl::visualization::PointPickingEvent& event, void* args)
 	std::cout << current_point.x << " " << current_point.y << " " << current_point.z << std::endl;
 }
 
-int main (int argc, char** argv)
+int
+main (int argc, char** argv)
 {
 	ros::init(argc, argv, "ground_based_people_detector");
 	ros::NodeHandle nh("~");

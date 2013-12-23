@@ -83,12 +83,12 @@ open_ptrack::tracking::Tracker* tracker;
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr history_pointcloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 
 /**
- * Read the DetectionArray message and append all the detections contained in it to the
- * _detections vector.
- * As soon as a new detection source is discovered, it is added to the _detection_sources_map map.
- * @param msg the Detection3DArray message.
+ * \brief Read the DetectionArray message and use the detections for creating/updating/deleting tracks
+ *
+ * \param[in] msg the DetectionArray message.
  */
-void detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
+void
+detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
 {
   // Read message header information:
   std::string frame_id = msg->header.frame_id;
@@ -108,7 +108,7 @@ void detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
       world_to_camera_tf_publisher.sendTransform(tf::StampedTransform(world_to_camera_frame_transform, ros::Time::now(), "/camera_rgb_optical_frame", "/world"));
     }
 
-    //Calculate direct and inverse transforms
+    //Calculate direct and inverse transforms between camera and world frame:
     tf_listener->lookupTransform(world_frame_id, frame_id, ros::Time(0), transform);
     tf_listener->lookupTransform(frame_id, world_frame_id, ros::Time(0), inverse_transform);
 
@@ -224,9 +224,10 @@ void detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
   }
 }
 
-void fillChiMap(std::map<double, double>& chi_map, bool velocity_in_motion_term)
+void
+fillChiMap(std::map<double, double>& chi_map, bool velocity_in_motion_term)
 {
-  if (velocity_in_motion_term)		// mahalanobis distance with state dimension = 4
+  if (velocity_in_motion_term)		// chi square values with state dimension = 4
   {
     chi_map[0.5] = 3.357;
     chi_map[0.75] = 5.385;
@@ -239,7 +240,7 @@ void fillChiMap(std::map<double, double>& chi_map, bool velocity_in_motion_term)
     chi_map[0.998] = 16.924;
     chi_map[0.999] = 18.467;
   }
-  else							// mahalanobis distance with state dimension = 2
+  else							              // chi square values with state dimension = 2
   {
     chi_map[0.5] = 1.386;
     chi_map[0.75] = 2.773;
@@ -254,9 +255,10 @@ void fillChiMap(std::map<double, double>& chi_map, bool velocity_in_motion_term)
   }
 }
 
-int main(int argc, char** argv)
+int
+main(int argc, char** argv)
 {
-  //Chi squared distribution
+  //Chi square distribution
   std::map<double, double> chi_map;
 
   ros::init(argc, argv, "tracker");
@@ -346,6 +348,7 @@ int main(int argc, char** argv)
 
 //  cv::namedWindow("TRACKER ", CV_WINDOW_NORMAL);
 
+  // Initialize an instance of the Tracker object:
   tracker = new open_ptrack::tracking::Tracker(
       gate_distance,
       detector_likelihood,
@@ -377,6 +380,7 @@ int main(int argc, char** argv)
     camera_frame_to_world_transform = tf::Transform(inv_fixed_rotation, inv_fixed_translation);
   }
 
+  // Spin and execute callbacks:
   ros::spin();
 
   return 0;

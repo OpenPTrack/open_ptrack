@@ -124,7 +124,8 @@ namespace open_ptrack
         int num_FP_class0;
 
       public:
-        virtual void onInit()
+        virtual void
+        onInit()
         {
           node_ = getNodeHandle();
           private_node_ = getPrivateNodeHandle();
@@ -171,7 +172,8 @@ namespace open_ptrack
               _2,
               _3));
         }
-        int get_mode()
+        int
+        get_mode()
         {
 
           int callback_mode;
@@ -206,7 +208,8 @@ namespace open_ptrack
           }
           return(callback_mode);
         }
-        void imageCb(const ImageConstPtr& image_msg,
+        void
+        imageCb(const ImageConstPtr& image_msg,
             const DisparityImageConstPtr& disparity_msg,
             const RoisConstPtr& rois_msg){
 

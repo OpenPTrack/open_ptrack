@@ -47,6 +47,7 @@ namespace open_ptrack
     Detection::Detection(opt_msgs::Detection detection, open_ptrack::detection::DetectionSource* source) :
 		    detection_msg_(detection), source_(source)
     {
+      // Transform centroid, top and bottom points from camera frame to world frame:
       Eigen::Vector3d v;
       v(0) = detection.centroid.x;
       v(1) = detection.centroid.y;
@@ -69,59 +70,70 @@ namespace open_ptrack
 
     }
 
-    open_ptrack::detection::DetectionSource* Detection::getSource()
+    open_ptrack::detection::DetectionSource*
+    Detection::getSource()
     {
       return source_;
     }
 
-    Eigen::Vector3d& Detection::getWorldCentroid()
+    Eigen::Vector3d&
+    Detection::getWorldCentroid()
     {
       return world_centroid_;
     }
 
-    Eigen::Vector3d& Detection::getWorldTop()
+    Eigen::Vector3d&
+    Detection::getWorldTop()
     {
       return world_top_;
     }
 
-    Eigen::Vector3d& Detection::getWorldBottom()
+    Eigen::Vector3d&
+    Detection::getWorldBottom()
     {
       return world_bottom_;
     }
 
-    double Detection::getHeight()
+    double
+    Detection::getHeight()
     {
       return detection_msg_.height;
     }
 
-    double Detection::getConfidence()
+    double
+    Detection::getConfidence()
     {
       return detection_msg_.confidence;
     }
 
-    double Detection::getDistance()
+    double
+    Detection::getDistance()
     {
       return detection_msg_.distance;
     }
 
-    bool Detection::isOccluded()
+    bool
+    Detection::isOccluded()
     {
       return detection_msg_.occluded;
     }
 
-    cv::Rect Detection::getBox2D()
+    cv::Rect
+    Detection::getBox2D()
     {
       return BoundingBox2D2cvRect(detection_msg_.box_2D);
     }
 
-    cv::Mat& Detection::getImage()
+    cv::Mat&
+    Detection::getImage()
     {
       return source_->getImage();
     }
 
     /************************ protected methods ************************/
 
-    cv::Rect Detection::BoundingBox2D2cvRect(const opt_msgs::BoundingBox2D& bb)
+    cv::Rect
+    Detection::BoundingBox2D2cvRect(const opt_msgs::BoundingBox2D& bb)
     {
       cv::Rect rect;
       rect.x = bb.x;
@@ -131,7 +143,8 @@ namespace open_ptrack
       return rect;
     }
 
-    void Detection::BoundingBox2D2cvRect(const opt_msgs::BoundingBox2D& bb, cv::Rect& rect)
+    void
+    Detection::BoundingBox2D2cvRect(const opt_msgs::BoundingBox2D& bb, cv::Rect& rect)
     {
       rect.x = bb.x;
       rect.y = bb.y;

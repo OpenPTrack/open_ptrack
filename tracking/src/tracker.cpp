@@ -88,7 +88,8 @@ namespace open_ptrack
       // TODO Auto-generated destructor stub
     }
 
-    void Tracker::newFrame(const std::vector<open_ptrack::detection::Detection>& detections)
+    void
+    Tracker::newFrame(const std::vector<open_ptrack::detection::Detection>& detections)
     {
       detections_.clear();
       unassociated_detections_.clear();
@@ -143,7 +144,8 @@ namespace open_ptrack
       }
     }
 
-    void Tracker::updateTracks()
+    void
+    Tracker::updateTracks()
     {
       createDistanceMatrix();
       createCostMatrix();
@@ -158,13 +160,14 @@ namespace open_ptrack
       createNewTracks();
     }
 
-    void Tracker::drawRgb()
-    {
-      for(std::list<open_ptrack::tracking::Track*>::iterator it = tracks_.begin(); it != tracks_.end(); it++)
-        (*it)->draw(vertical_);
-    }
+//    void Tracker::drawRgb()
+//    {
+//      for(std::list<open_ptrack::tracking::Track*>::iterator it = tracks_.begin(); it != tracks_.end(); it++)
+//        (*it)->draw(vertical_);
+//    }
 
-    void Tracker::toMarkerArray(visualization_msgs::MarkerArray::Ptr& msg)
+    void
+    Tracker::toMarkerArray(visualization_msgs::MarkerArray::Ptr& msg)
     {
       for(std::list<open_ptrack::tracking::Track*>::iterator it = tracks_.begin(); it != tracks_.end(); it++)
       {
@@ -173,7 +176,8 @@ namespace open_ptrack
       }
     }
 
-    void Tracker::toMsg(opt_msgs::TrackArray::Ptr& msg)
+    void
+    Tracker::toMsg(opt_msgs::TrackArray::Ptr& msg)
     {
       for(std::list<open_ptrack::tracking::Track*>::iterator it = tracks_.begin(); it != tracks_.end(); it++)
       {
@@ -185,7 +189,8 @@ namespace open_ptrack
       }
     }
 
-    void Tracker::toMsg(opt_msgs::TrackArray::Ptr& msg, std::string& source_frame_id)
+    void
+    Tracker::toMsg(opt_msgs::TrackArray::Ptr& msg, std::string& source_frame_id)
     {
       for(std::list<open_ptrack::tracking::Track*>::iterator it = tracks_.begin(); it != tracks_.end(); it++)
       {
@@ -199,7 +204,8 @@ namespace open_ptrack
       }
     }
 
-    size_t Tracker::appendToPointCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pointcloud, size_t starting_index, size_t max_size)
+    size_t
+    Tracker::appendToPointCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pointcloud, size_t starting_index, size_t max_size)
     {
       for(size_t i = 0; i < tracks_.size() && pointcloud->size() < max_size; i++)
       {
@@ -219,7 +225,8 @@ namespace open_ptrack
 
     /************************ protected methods ************************/
 
-    int Tracker::createNewTrack(open_ptrack::detection::Detection& detection)
+    int
+    Tracker::createNewTrack(open_ptrack::detection::Detection& detection)
     {
       if(detection.getConfidence() < min_confidence_)
         return -1;
@@ -247,7 +254,8 @@ namespace open_ptrack
       return tracks_counter_;
     }
 
-    void Tracker::createDistanceMatrix()
+    void
+    Tracker::createDistanceMatrix()
     {
       distance_matrix_ = cv::Mat_<double>(tracks_.size(), detections_.size());
       int track = 0;
@@ -308,7 +316,8 @@ namespace open_ptrack
 //      	std::cout << std::endl;
     }
 
-    void Tracker::createCostMatrix()
+    void
+    Tracker::createCostMatrix()
     {
       cost_matrix_ = distance_matrix_.clone();
       for(int i = 0; i < distance_matrix_.rows; i++)
@@ -334,7 +343,8 @@ namespace open_ptrack
 //      	std::cout << std::endl;
     }
 
-    void Tracker::updateDetectedTracks()
+    void
+    Tracker::updateDetectedTracks()
     {
 //      	std::cout << "Munkres output matrix:" << std::endl;
 //      	for(int row = 0; row < cost_matrix_.rows; row++) {
@@ -346,7 +356,7 @@ namespace open_ptrack
 //      	}
 //      	std::cout << std::endl;
 
-
+      // Iterate over every track:
       int track = 0;
       for(std::list<open_ptrack::tracking::Track*>::iterator it = tracks_.begin(); it != tracks_.end(); it++)
       {
@@ -355,12 +365,15 @@ namespace open_ptrack
 
         for(int measure = 0; measure < cost_matrix_.cols; measure++)
         {
+          // If a detection<->track association has been found:
           if(cost_matrix_(track, measure) == 0.0 && distance_matrix_(track, measure) <= gate_distance_)
           {
             open_ptrack::detection::Detection& d = detections_[measure];
 
+            // If the detection has enough confidence in the current frame or in a recent past:
             if ((t->getLowConfidenceConsecutiveFrames() < 10) || ((d.getConfidence() - 0.5) > min_confidence_detections_))
             {
+              // Update track with the associated detection:
               bool first_update = false;
               t->update(d.getWorldCentroid()(0), d.getWorldCentroid()(1), d.getWorldCentroid()(2),d.getHeight(),
                   d.getDistance(), //distance_matrix_(track, measure),
@@ -390,8 +403,10 @@ namespace open_ptrack
       //	std::cout << std::endl;
     }
 
-    void Tracker::fillUnassociatedDetections()
+    void
+    Tracker::fillUnassociatedDetections()
     {
+      // Fill a list with detections not associated to any track:
       if(cost_matrix_.cols == 0 && detections_.size() > 0)
       {
         for(size_t measure = 0; measure < detections_.size(); measure++)
@@ -419,13 +434,15 @@ namespace open_ptrack
       }
     }
 
-    void Tracker::updateLostTracks()
+    void
+    Tracker::updateLostTracks()
     {
       //for(std::list<open_ptrack::tracking::Track*>::iterator it = lost_tracks_.begin(); it != lost_tracks_.end(); it++)
       //	(*it)->update();
     }
 
-    void Tracker::createNewTracks()
+    void
+    Tracker::createNewTracks()
     {
       for(std::list<open_ptrack::detection::Detection>::iterator dit = unassociated_detections_.begin();
           dit != unassociated_detections_.end(); dit++)

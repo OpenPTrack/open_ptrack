@@ -175,7 +175,9 @@ class HaarDispAdaNode
           _2,
           _3));
     }
-    int get_mode()
+
+    int
+    get_mode()
     {
 
       int callback_mode;
@@ -208,7 +210,8 @@ class HaarDispAdaNode
       return(callback_mode);
     }
 
-    void createOutputDetectionsMessage(const DetectionArray::ConstPtr& input_msg, vector<float> confidences, DetectionArray::Ptr& output_msg)
+    void
+    createOutputDetectionsMessage(const DetectionArray::ConstPtr& input_msg, vector<float> confidences, DetectionArray::Ptr& output_msg)
     {
       // Set camera-specific fields:
       output_msg->detections.clear();
@@ -228,10 +231,12 @@ class HaarDispAdaNode
       }
     }
 
-    void imageCb(const ImageConstPtr& image_msg,
+    void
+    imageCb(const ImageConstPtr& image_msg,
         const DisparityImageConstPtr& disparity_msg,
-        const opt_msgs::DetectionArray::ConstPtr& detection_msg){
-
+        const opt_msgs::DetectionArray::ConstPtr& detection_msg)
+    {
+      // Callback for people detection:
       bool label_all;
       vector<int> L_in;
       vector<int> L_out;
@@ -322,6 +327,7 @@ class HaarDispAdaNode
       // do the work of the node
       switch(get_mode()){
         case DETECT:
+          // Perform people detection within the input rois:
           label_all = true;
           HDAC_.detect(R_in,L_in,dmatrix,R_out,L_out,C_out,label_all);
 
@@ -432,7 +438,8 @@ class HaarDispAdaNode
     }
 };
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
   ros::init(argc, argv, "HaarDispAda");
   ros::NodeHandle n;

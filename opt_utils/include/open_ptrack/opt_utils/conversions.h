@@ -47,65 +47,118 @@ namespace open_ptrack
 {
   namespace opt_utils
   {
-
+    /** \brief Conversions provides useful data conversions */
     class Conversions
     {
       public:
 
+        /**
+         * \brief Conversion from Eigen::Vector3d to geometry_msgs::Vector3.
+         *
+         * \param[in] v Input vector.
+         *
+         * \return the converted vector.
+         */
         static geometry_msgs::Vector3
-        Vector3dToVector3(
-            const Eigen::Vector3d& v);
+        Vector3dToVector3(const Eigen::Vector3d& v);
 
+        /**
+         * \brief Conversion from Eigen::Vector3f to geometry_msgs::Vector3.
+         *
+         * \param[in] v Input vector.
+         *
+         * \return the converted vector.
+         */
         static geometry_msgs::Vector3
-        Vector3fToVector3(
-            const Eigen::Vector3f& v);
+        Vector3fToVector3(const Eigen::Vector3f& v);
 
+        /**
+         * \brief Conversion from Eigen::Vector3d to geometry_msgs::Vector3
+         *
+         * \param[in] v Input vector.
+         * \param[out] out Output vector.
+         */
         static void
-        Vector3dToVector3(
-            const Eigen::Vector3d& v,
-            geometry_msgs::Vector3& out);
+        Vector3dToVector3(const Eigen::Vector3d& v, geometry_msgs::Vector3& out);
 
+        /**
+         * \brief Conversion from Eigen::Vector3f to geometry_msgs::Vector3
+         *
+         * \param[in] v Input vector.
+         * \param[out] out Output vector.
+         */
         static void
-        Vector3fToVector3(
-            const Eigen::Vector3f& v,
-            geometry_msgs::Vector3& out);
+        Vector3fToVector3(const Eigen::Vector3f& v, geometry_msgs::Vector3& out);
 
+        /**
+         * \brief Find projection of a 3D point to an image.
+         *
+         * \param[in] world The 3D point to project.
+         * \param[in] intrinsics Intrinsic parameters of the camera.
+         *
+         * \return the 2D point resulting from the projection (in homogeneous coordinates).
+         */
         static Eigen::Vector3d
-        world2cam(
-            const Eigen::Vector3d& world,
-            const Eigen::Matrix3d& intrinsics);
+        world2cam(const Eigen::Vector3d& world, const Eigen::Matrix3d& intrinsics);
 
+        /**
+         * \brief Find projection of a 3D point to an image.
+         *
+         * \param[in] world The 3D point to project.
+         * \param[in] intrinsics Intrinsic parameters of the camera.
+         *
+         * \return the 2D point resulting from the projection (in homogeneous coordinates).
+         */
         static Eigen::Vector3f
-        world2cam(
-            const Eigen::Vector3f& world,
-            const Eigen::Matrix3f& intrinsics);
+        world2cam(const Eigen::Vector3f& world, const Eigen::Matrix3f& intrinsics);
 
+        /**
+         * \brief Find projection of a 3D point to an image.
+         *
+         * \param[in] world The 3D point to project.
+         * \param[out] cam The 2D point resulting from the projection (in homogeneous coordinates).
+         * \param[in] intrinsics Intrinsic parameters of the camera.
+         *
+         */
         static void
-        world2cam(
-            const Eigen::Vector3d& world,
-            Eigen::Vector3d& cam,
-            const Eigen::Matrix3d& intrinsics);
+        world2cam(const Eigen::Vector3d& world, Eigen::Vector3d& cam, const Eigen::Matrix3d& intrinsics);
 
+        /**
+         * \brief Find projection of a 3D point to an image.
+         *
+         * \param[in] world The 3D point to project.
+         * \param[out] cam The 2D point resulting from the projection (in homogeneous coordinates).
+         * \param[in] intrinsics Intrinsic parameters of the camera.
+         *
+         */
         static void
-        world2cam(
-            const Eigen::Vector3f& world,
-            Eigen::Vector3f& cam,
-            const Eigen::Matrix3f& intrinsics);
+        world2cam(const Eigen::Vector3f& world, Eigen::Vector3f& cam, const Eigen::Matrix3f& intrinsics);
 
+        /**
+         * \brief Conversion from radians to degrees.
+         *
+         * \param[in] radians The angle in radians.
+         *
+         * \return the angle in degrees.
+         */
         static inline double
-        rad2deg(
-            double radians)
+        rad2deg(double radians)
         {
           return radians * 180 / M_PI;
         }
 
+        /**
+         * \brief Conversion from degrees to radians.
+         *
+         * \param[in] degrees Angle in degrees.
+         *
+         * \return the angle in radians.
+         */
         static inline double
-        deg2rad(
-            double degrees)
+        deg2rad(double degrees)
         {
           return degrees * M_PI / 180;
         }
-
     };
   } /* namespace opt_utils */
 } /* namespace open_ptrack */

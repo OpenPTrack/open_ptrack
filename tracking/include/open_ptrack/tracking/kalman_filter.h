@@ -176,12 +176,14 @@ namespace open_ptrack
          * \param[in] distance Distance from the sensor.
          * \param[in] velocity_in_motion_term If true, both target position and velocity constitute the output vector.
          */
-        void init(double x, double y, double distance, bool velocity_in_motion_term);
+        void
+        init(double x, double y, double distance, bool velocity_in_motion_term);
 
         /**
          * \brief Prediction step.
          */
-        void predict();
+        void
+        predict();
 
         /**
          * \brief Prediction step.
@@ -191,12 +193,14 @@ namespace open_ptrack
          * \param[out] vx Velocity x component.
          * \param[out] vy Velocity y component.
          */
-        void predict(double& x, double& y, double& vx, double& vy);
+        void
+        predict(double& x, double& y, double& vx, double& vy);
 
         /**
          * \brief Update step.
          */
-        void update();
+        void
+        update();
 
         /**
          * \brief Update step.
@@ -205,7 +209,8 @@ namespace open_ptrack
          * \param[in] y Position y component.
          * \param[in] distance Distance from the sensor.
          */
-        void update(double x, double y, double distance);
+        void
+        update(double x, double y, double distance);
 
         /**
          * \brief Update step.
@@ -216,7 +221,8 @@ namespace open_ptrack
          * \param[in] vy Velocity y component.
          * \param[in] distance Distance from the sensor.
          */
-        void update(double x, double y, double vx, double vy, double distance);
+        void
+        update(double x, double y, double vx, double vy, double distance);
 
         /**
          * \brief Get filter state.
@@ -226,7 +232,8 @@ namespace open_ptrack
          * \param[out] vx Velocity x component.
          * \param[out] vy Velocity y component.
          */
-        void getState(double& x, double& y, double& vx, double& vy);
+        void
+        getState(double& x, double& y, double& vx, double& vy);
 
         /**
          * \brief Get filter state.
@@ -234,21 +241,24 @@ namespace open_ptrack
          * \param[out] x Position x component.
          * \param[out] y Position y component.
          */
-        void getState(double& x, double& y);
+        void
+        getState(double& x, double& y);
 
         /**
          * \brief Obtain variables for bayesian estimation with output dimension = 2.
          *
          * \param[out] mp Object of class MahalanobisParameters2d.
          */
-        void getMahalanobisParameters(MahalanobisParameters2d& mp);
+        void
+        getMahalanobisParameters(MahalanobisParameters2d& mp);
 
         /**
          * \brief Obtain variables for bayesian estimation with output dimension = 4.
          *
          * \param[out] mp Object of class MahalanobisParameters4d.
          */
-        void getMahalanobisParameters(MahalanobisParameters4d& mp);
+        void
+        getMahalanobisParameters(MahalanobisParameters4d& mp);
 
         /**
          * \brief Compute Mahalanobis distance between measurement and target predicted state.
@@ -259,7 +269,8 @@ namespace open_ptrack
          *
          * \return Mahalanobis distance between measurement (x,y) and target predicted state.
          */
-        static double performMahalanobisDistance(double x, double y, const MahalanobisParameters2d& mp);
+        static double
+        performMahalanobisDistance(double x, double y, const MahalanobisParameters2d& mp);
 
         /**
          * \brief Compute Mahalanobis distance between measurement and target predicted state.
@@ -272,14 +283,16 @@ namespace open_ptrack
          *
          * \return Mahalanobis distance between measurement (x,y,vx,vy) and target predicted state.
          */
-        static double performMahalanobisDistance(double x, double y, double vx, double vy, const MahalanobisParameters4d& mp);
+        static double
+        performMahalanobisDistance(double x, double y, double vx, double vy, const MahalanobisParameters4d& mp);
 
         /**
          * \brief Get filter innovation covariance.
          *
          * \return innovation covariance matrix.
          */
-        Bayesian_filter::FM::SymMatrix getInnovationCovariance();
+        Bayesian_filter::FM::SymMatrix
+        getInnovationCovariance();
 
     };
 
