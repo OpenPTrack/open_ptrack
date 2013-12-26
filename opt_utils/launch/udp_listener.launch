@@ -1,0 +1,6 @@
+<launch>
+  <node pkg="opt_utils" type="udp_listener" name="udp_listener" output="screen">
+    <rosparam command="load" file="$(find opt_utils)/conf/json_udp.yaml" /> 
+  </node>
+</launch>
+

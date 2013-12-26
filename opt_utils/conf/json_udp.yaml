@@ -1,0 +1,10 @@
+udp:
+  port: 21234
+  buffer_length: 2048
+
+json:
+  indent_size: 0
+  newline: false
+  spacing: false
+  use_tabs: false
+  

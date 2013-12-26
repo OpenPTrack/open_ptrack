@@ -40,3 +40,10 @@ roslaunch tracking detection_and_tracking.launch
 
 When the point cloud appears, press Shift+LeftClick on 3 (non collinear) points of the ground plane. Then, press 'Q'. 
 You should see an RGB image with people detections surrounded by white rectangles and ROS visualizer showing a top view of people centroids.
+
+For listening to tracking output messages, two options are available:
+a) for reading tracking messages in YAML format:
+rostopic echo /tracker/tracks
+b) for reading tracking JSON-formatted messages sent via UDP:
+roslaunch opt_utils udp_listener.launch
+For this last option, UDP and JSON parameters can be set in '<open_ptrack_main_folder>/opt_utils/conf/json_udp.yaml'.

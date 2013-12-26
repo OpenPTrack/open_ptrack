@@ -8,5 +8,8 @@
 
   <!-- ROS visualizer -->
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find tracking)/conf/tracking.rviz" />
+  
+  <!-- UDP messaging -->
+  <include file="$(find opt_utils)/launch/ros2udp_converter.launch"/>
 
 </launch>

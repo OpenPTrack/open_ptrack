@@ -23,5 +23,8 @@ target_link_libraries(roi_viewer boost_system boost_filesystem boost_signals ${P
 #add_executable(tracking_viewer apps/tracking_viewer.cpp)
 #target_link_libraries(tracking_viewer boost_system boost_filesystem boost_signals ${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBS})
 
-#add_executable(ros2udp_converter apps/main_ros2udp_converter.cpp src/udp.cpp)
-#target_link_libraries(ros2udp_converter ${catkin_LIBRARIES})
+add_executable(ros2udp_converter apps/ros2udp_converter.cpp src/udp_messaging.cpp src/json.cpp)
+target_link_libraries(ros2udp_converter ${catkin_LIBRARIES})
+
+add_executable(udp_listener apps/udp_listener.cpp src/udp_messaging.cpp)
+target_link_libraries(udp_listener ${catkin_LIBRARIES})
