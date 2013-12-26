@@ -13,9 +13,22 @@ endif()
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 link_directories(${OpenCV_LIB_DIR})
+add_definitions(${OpenCV_DEFINITIONS})
 
 find_package(Eigen REQUIRED)
 include_directories(${Eigen_INCLUDE_DIRS} include ${catkin_INCLUDE_DIRS})
+
+find_package(PCL 1.7 REQUIRED)
+include_directories(BEFORE ${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+MESSAGE("PCL_INCLUDE_DIRS\n${PCL_INCLUDE_DIRS}\n")
+MESSAGE("PCL_LIBRARY_DIRS\n${PCL_LIBRARY_DIRS}\n")
+MESSAGE("PCL_DEFINITIONS\n${PCL_DEFINITIONS}\n")
+MESSAGE("PCL_COMMON_LIBRARIES\n${PCL_COMMON_LIBRARIES}\n")
+if (NOT PCL_FOUND)
+    MESSAGE(FATAL_ERROR "PCL not found.\n")
+endif (NOT PCL_FOUND)
 
 catkin_package(
    INCLUDE_DIRS include
@@ -28,7 +41,8 @@ add_library(${PROJECT_NAME} src/detection_source.cpp src/detection.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBS})
 
 add_executable(ground_based_people_detector apps/ground_based_people_detector_node.cpp)
-target_link_libraries(ground_based_people_detector ${PROJECT_NAME} ${catkin_LIBRARIES} vtkHybrid vtkRendering)
+SET_TARGET_PROPERTIES(ground_based_people_detector PROPERTIES LINK_FLAGS -L${PCL_LIBRARY_DIRS})
+target_link_libraries(ground_based_people_detector ${PROJECT_NAME} ${catkin_LIBRARIES} ${PCL_LIBRARIES} vtkHybrid vtkRendering)
 
 add_library(haar_disp_ada src/haardispada.cpp apps/haardispada_nodelet.cpp)
 target_link_libraries(haar_disp_ada ${catkin_LIBRARIES})
