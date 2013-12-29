@@ -74,7 +74,7 @@ namespace open_ptrack
     }
 
     int
-    UDPMessaging::closeSocketServerUDP(ComData* udp_data)
+    UDPMessaging::closeSocketUDP(ComData* udp_data)
     {
       close(udp_data->si_socket_);
     }

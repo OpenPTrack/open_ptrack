@@ -95,12 +95,12 @@ namespace open_ptrack
         createSocketServerUDP(ComData* udp_data);
 
         /*
-         * \brief Close a server UDP connection.
+         * \brief Close a UDP connection.
          *
          * param[in] udp_data Struct with UDP parameters.
          */
         int
-        closeSocketServerUDP(ComData* udp_data);
+        closeSocketUDP(ComData* udp_data);
 
         /*
          * \brief Send a UDP message.

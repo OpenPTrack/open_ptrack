@@ -87,7 +87,7 @@ trackingCallback(const opt_msgs::TrackArray::ConstPtr& tracking_msg)
   Jzon::Writer writer(root, message_format);
   writer.Write();
   std::string json_string = writer.GetResult();
-//  std::cout << json_string << std::endl;
+//  std::cout << "String sent: " << json_string << std::endl;
 
   /// Initialize UDP data structure:
   char buf[udp_buffer_length];
@@ -95,7 +95,7 @@ trackingCallback(const opt_msgs::TrackArray::ConstPtr& tracking_msg)
 
   struct ComData udp_data;
   udp_data.si_port_ = udp_port;      // port
-  udp_data.si_retry_ = 1;
+  udp_data.si_retry_ = 4;
   udp_data.si_num_byte_ = udp_buffer_length; // number of bytes to write (2048 -> about 30 tracks)
   udp_data.pc_pck_ = buf;         // buffer where the message is written
   udp_data.si_timeout_ = 4;
@@ -107,6 +107,7 @@ trackingCallback(const opt_msgs::TrackArray::ConstPtr& tracking_msg)
   /// Create client and send message:
   udp_messaging.createSocketClientUDP(&udp_data);
   udp_messaging.sendFromSocketUDP(&udp_data);
+  udp_messaging.closeSocketUDP(&udp_data);
 }
 
 int

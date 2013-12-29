@@ -82,8 +82,9 @@ int main(int argc, char **argv)
 
     ros::spinOnce();
   }
+
   // Close UDP server:
-  udp_messaging.closeSocketServerUDP(&udp_data);
+  udp_messaging.closeSocketUDP(&udp_data);
 
   return 0;
 }
