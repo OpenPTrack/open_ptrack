@@ -48,6 +48,8 @@ int json_indent_size;   // indent size for JSON message
 bool json_newline;      // use newlines (true) or not (false) in JSON messages
 bool json_spacing;      // use spacing (true) or not (false) in JSON messages
 bool json_use_tabs;     // use tabs (true) or not (false) in JSON messages
+struct ComData udp_data;  // parameters for UDP messaging
+open_ptrack::opt_utils::UDPMessaging udp_messaging(udp_data);   // instance of class UDPMessaging
 
 void
 trackingCallback(const opt_msgs::TrackArray::ConstPtr& tracking_msg)
@@ -89,25 +91,13 @@ trackingCallback(const opt_msgs::TrackArray::ConstPtr& tracking_msg)
   std::string json_string = writer.GetResult();
 //  std::cout << "String sent: " << json_string << std::endl;
 
-  /// Initialize UDP data structure:
+  /// Copy string to message buffer:
   char buf[udp_buffer_length];
   sprintf(buf, json_string.c_str());
-
-  struct ComData udp_data;
-  udp_data.si_port_ = udp_port;      // port
-  udp_data.si_retry_ = 4;
-  udp_data.si_num_byte_ = udp_buffer_length; // number of bytes to write (2048 -> about 30 tracks)
   udp_data.pc_pck_ = buf;         // buffer where the message is written
-  udp_data.si_timeout_ = 4;
-  udp_data.sj_addr_ = INADDR_ANY;
 
-  /// Create object for UDP messaging:
-  open_ptrack::opt_utils::UDPMessaging udp_messaging(udp_data);
-
-  /// Create client and send message:
-  udp_messaging.createSocketClientUDP(&udp_data);
+  /// Send message:
   udp_messaging.sendFromSocketUDP(&udp_data);
-  udp_messaging.closeSocketUDP(&udp_data);
 }
 
 int
@@ -128,8 +118,26 @@ main(int argc, char **argv)
   // ROS subscriber:
   ros::Subscriber tracking_sub = nh.subscribe<opt_msgs::TrackArray>("input_topic", 1, trackingCallback);
 
+  // Initialize UDP parameters:
+  char buf[0];
+  udp_data.si_port_ = udp_port;      // port
+  udp_data.si_retry_ = 1;
+  udp_data.si_num_byte_ = udp_buffer_length; // number of bytes to write (2048 -> about 30 tracks)
+  udp_data.pc_pck_ = buf;         // buffer where the message is written
+  udp_data.si_timeout_ = 4;
+  udp_data.sj_addr_ = INADDR_ANY;
+
+  /// Create object for UDP messaging:
+  udp_messaging = open_ptrack::opt_utils::UDPMessaging(udp_data);
+
+  /// Create client socket:
+  udp_messaging.createSocketClientUDP(&udp_data);
+
   // Execute callbacks:
   ros::spin();
+
+  // Close socket:
+  udp_messaging.closeSocketUDP(&udp_data);
 
   return 0;
 }

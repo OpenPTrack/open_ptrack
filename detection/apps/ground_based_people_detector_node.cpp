@@ -172,6 +172,9 @@ main (int argc, char** argv)
 
 	// Spin until 'Q' is pressed:
 	viewer.spin();
+	viewer.setSize(1,1);  // resize viewer in order to make it disappear
+	viewer.spinOnce();
+	viewer.close();       // close method does not work
 	std::cout << "done." << std::endl;
 
 	// Ground plane estimation:
@@ -182,7 +185,8 @@ main (int argc, char** argv)
 		clicked_points_indices.push_back(i);
 	pcl::SampleConsensusModelPlane<PointT> model_plane(clicked_points_3d);
 	model_plane.computeModelCoefficients(clicked_points_indices,ground_coeffs);
-	ROS_ERROR("Ground plane coefficients: %f, %f, %f, %f.", ground_coeffs(0), ground_coeffs(1), ground_coeffs(2), ground_coeffs(3));
+	std::cout << "Ground plane coefficients: " << ground_coeffs(0) << ", " << ground_coeffs(1) << ", " << ground_coeffs(2) <<
+	    ", " << ground_coeffs(3) << "." << std::endl;
 
 	// Create classifier for people detection:
 	pcl::people::PersonClassifier<pcl::RGB> person_classifier;

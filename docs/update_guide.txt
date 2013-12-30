@@ -35,3 +35,6 @@ b) for reading tracking JSON-formatted messages sent via UDP:
 roslaunch opt_utils udp_listener.launch
 For this last option, UDP and JSON parameters can be set in '<open_ptrack_main_folder>/opt_utils/conf/json_udp.yaml'.
 
+For stopping execution, press 'Ctrl'+'C' or kill the people detection process as follows:
+killall -9 ground_based_people_detector
+

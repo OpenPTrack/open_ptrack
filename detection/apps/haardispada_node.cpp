@@ -384,7 +384,7 @@ class HaarDispAdaNode
           if(!HDAC_.loaded){
             param_name = nn + "/classifier_file";
             node_.param(param_name,cfnm,std::string("test.xml"));
-            ROS_ERROR("HaarDispAda LOADING %s",cfnm.c_str());
+            std::cout << "HaarDispAda LOADING " << cfnm.c_str() << std::endl;
             HDAC_.load(cfnm);
           }
           label_all = false;
@@ -426,7 +426,7 @@ class HaarDispAdaNode
         case LOAD:
           param_name = nn + "/classifier_file";
           node_.param(param_name,cfnm,std::string("test.xml"));
-          ROS_ERROR("HaarDispAda LOADING %s",cfnm.c_str());
+          std::cout << "HaarDispAda LOADING " << cfnm.c_str() << std::endl;
           HDAC_.load(cfnm);
           param_name = nn + "/mode";
           node_.setParam(param_name, std::string("detect"));
