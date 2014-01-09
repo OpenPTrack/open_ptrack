@@ -138,7 +138,7 @@ class HaarDispAdaNode
         qs=3;
       }
 
-      if(!node_.getParam(nn + "/min_confidence", min_confidence)){
+      if(!node_.getParam(nn + "/haar_disp_ada_min_confidence", min_confidence)){
         min_confidence = 3.0;
       }
       HDAC_.setMinConfidence(min_confidence);

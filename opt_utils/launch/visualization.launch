@@ -1,0 +1,24 @@
+<launch>
+  
+  <!-- display the rois -->
+  <!--node pkg="opt_utils" type="roi_viewer" name="PeopleDetectionViewer" >
+    <param name="mode" type="string" value="roi_display"/> 
+    <param name="label" type="int" value="1" />
+    <param name="show_confidence" type="bool" value="true" />
+    <remap from ="input_image" to="/camera/rgb/image_color"/>
+	<remap from ="input_detections" to="/ground_based_people_detector/detections"/>  
+  </node-->
+
+   <!-- display the rois -->
+   <node pkg="opt_utils" type="roi_viewer" name="HaarDispAdaViewer" >
+     <param name="mode" type="string" value="roi_display"/> 
+     <param name="label" type="int" value="1" />
+     <param name="show_confidence" type="bool" value="true" />
+	 <remap from ="input_image" to="HaarDispAdaColorImage"/>
+	 <remap from ="input_detections" to="/detector/detections"/>  
+   </node>
+
+  <!-- ROS visualizer -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find tracking)/conf/tracking.rviz" />  
+
+</launch>

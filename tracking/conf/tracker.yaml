@@ -1,5 +1,4 @@
-min_confidence: 3.5
-min_confidence_detections: 1.5
+min_confidence_initialization: 3.5
 rate: 30
 world_frame_id: "/world"
 voxel_size: 0.06

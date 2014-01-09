@@ -56,6 +56,7 @@
 #include <pcl_conversions/pcl_conversions.h>
 
 // Open PTrack includes:
+#include <open_ptrack/detection/ground_segmentation.h>
 #include <open_ptrack/detection/ground_based_people_detection_app.h>
 #include <open_ptrack/opt_utils/conversions.h>
 
@@ -75,38 +76,12 @@ typedef pcl::PointCloud<PointT> PointCloudT;
 bool new_cloud_available_flag = false;
 PointCloudT::Ptr cloud(new PointCloudT);
 
-// PCL viewer //
-pcl::visualization::PCLVisualizer viewer("PCL Viewer");
-
 enum { COLS = 640, ROWS = 480 };
 
 void cloud_cb(const PointCloudT::ConstPtr& callback_cloud)
 {
 	*cloud = *callback_cloud;
 	new_cloud_available_flag = true;
-}
-
-struct callback_args{
-	// structure used to pass arguments to the callback function
-	PointCloudT::Ptr clicked_points_3d;
-	pcl::visualization::PCLVisualizer* viewerPtr;
-};
-
-void
-pp_callback (const pcl::visualization::PointPickingEvent& event, void* args)
-{
-	struct callback_args* data = (struct callback_args *)args;
-	if (event.getPointIndex () == -1)
-		return;
-	PointT current_point;
-	event.getPoint(current_point.x, current_point.y, current_point.z);
-	data->clicked_points_3d->points.push_back(current_point);
-	// Draw clicked points in red:
-	pcl::visualization::PointCloudColorHandlerCustom<PointT> red (data->clicked_points_3d, 255, 0, 0);
-	data->viewerPtr->removePointCloud("clicked_points");
-	data->viewerPtr->addPointCloud(data->clicked_points_3d, red, "clicked_points");
-	data->viewerPtr->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "clicked_points");
-	std::cout << current_point.x << " " << current_point.y << " " << current_point.z << std::endl;
 }
 
 int
@@ -116,12 +91,14 @@ main (int argc, char** argv)
 	ros::NodeHandle nh("~");
 
 	// Read some parameters from launch file:
+	int ground_estimation_mode;
+	nh.param("ground_estimation_mode", ground_estimation_mode, 0);
 	std::string svm_filename;
 	nh.param("classifier_file", svm_filename, std::string("./"));
 	bool use_rgb;
 	nh.param("use_rgb", use_rgb, false);
 	double min_confidence;
-	nh.param("HogSvmThreshold", min_confidence, -1.5);
+	nh.param("ground_based_people_detection_min_confidence", min_confidence, -1.5);
 	double min_height;
 	nh.param("minimum_person_height", min_height, 1.3);
 	double max_height;
@@ -157,36 +134,23 @@ main (int argc, char** argv)
 		rate.sleep();
 	}
 
-	// Display pointcloud:
-	pcl::visualization::PointCloudColorHandlerRGBField<PointT> rgb(cloud);
-	viewer.addPointCloud<PointT> (cloud, rgb, "input_cloud");
-	viewer.setCameraPosition(0,0,-2,0,-1,0,0);
+	// Loop until a valid point cloud is found
+	open_ptrack::detection::GroundplaneEstimation<PointT> ground_estimator(ground_estimation_mode);
+	bool first_valid_frame = false;
+	while (!first_valid_frame)
+	{
+	  if (!ground_estimator.tooManyNaN(cloud, 0.7))
+	  { // A point cloud is valid if the ratio #NaN / #valid points is lower than a threshold
+	    first_valid_frame = true;
+	  }
+	  // Execute callbacks:
+	  ros::spinOnce();
+	  rate.sleep();
+	}
 
-	// Add point picking callback to viewer:
-	struct callback_args cb_args;
-	PointCloudT::Ptr clicked_points_3d (new PointCloudT);
-	cb_args.clicked_points_3d = clicked_points_3d;
-	cb_args.viewerPtr = &viewer;
-	viewer.registerPointPickingCallback (pp_callback, (void*)&cb_args);
-	std::cout << "Shift+click on three floor points, then press 'Q'..." << std::endl;
-
-	// Spin until 'Q' is pressed:
-	viewer.spin();
-	viewer.setSize(1,1);  // resize viewer in order to make it disappear
-	viewer.spinOnce();
-	viewer.close();       // close method does not work
-	std::cout << "done." << std::endl;
-
-	// Ground plane estimation:
-	Eigen::VectorXf ground_coeffs;
-	ground_coeffs.resize(4);
-	std::vector<int> clicked_points_indices;
-	for (unsigned int i = 0; i < clicked_points_3d->points.size(); i++)
-		clicked_points_indices.push_back(i);
-	pcl::SampleConsensusModelPlane<PointT> model_plane(clicked_points_3d);
-	model_plane.computeModelCoefficients(clicked_points_indices,ground_coeffs);
-	std::cout << "Ground plane coefficients: " << ground_coeffs(0) << ", " << ground_coeffs(1) << ", " << ground_coeffs(2) <<
-	    ", " << ground_coeffs(3) << "." << std::endl;
+	// Ground estimation:
+	ground_estimator.setInputCloud(cloud);
+	Eigen::VectorXf ground_coeffs = ground_estimator.compute();
 
 	// Create classifier for people detection:
 	pcl::people::PersonClassifier<pcl::RGB> person_classifier;

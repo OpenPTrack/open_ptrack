@@ -6,10 +6,10 @@
   <!-- People tracking -->
   <include file="$(find tracking)/launch/tracker.launch"/>
 
-  <!-- ROS visualizer -->
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find tracking)/conf/tracking.rviz" />
-  
   <!-- UDP messaging -->
   <include file="$(find opt_utils)/launch/ros2udp_converter.launch"/>
+
+  <!-- Visualization -->
+  <include file="$(find opt_utils)/launch/visualization.launch"/>
 
 </launch>

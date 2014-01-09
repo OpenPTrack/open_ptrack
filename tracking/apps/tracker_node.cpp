@@ -286,10 +286,10 @@ main(int argc, char** argv)
   nh.param("rate", rate, 30.0);
 
   double min_confidence;
-  nh.param("min_confidence", min_confidence, -2.5); //0.0);
+  nh.param("min_confidence_initialization", min_confidence, -2.5); //0.0);
 
   double min_confidence_detections;
-  nh.param("min_confidence_detections", min_confidence_detections, -2.5); //0.0);
+  nh.param("haar_disp_ada_min_confidence", min_confidence_detections, -2.5); //0.0);
 
   double chi_value;
   nh.param("kalman/gate_distance_probability", chi_value, 0.9);

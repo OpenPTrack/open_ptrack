@@ -1,0 +1,8 @@
+# HaarDispAda people detection parameters:
+haar_disp_ada_min_confidence: 1.5
+mode: "load"
+Q_Size: 20
+num_Training_Samples: 350
+HaarDispAdaPrior: 7.5
+Kinect_Disparity_Fix: false
+UseMissingDataMask: false
