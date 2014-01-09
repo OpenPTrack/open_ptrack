@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(tracking)
+set(CMAKE_BUILD_TYPE RelWithDebInfo)
 find_package(catkin REQUIRED COMPONENTS roscpp rosconsole image_transport tf tf_conversions bayes pcl_ros detection opt_msgs opt_utils)
 
 find_package(OpenCV REQUIRED)

@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(detection)
+set(CMAKE_BUILD_TYPE RelWithDebInfo)
 find_package(catkin REQUIRED COMPONENTS roscpp pcl_ros pcl_conversions nodelet rosconsole image_transport opt_utils)
 
 find_package(VTK REQUIRED)
