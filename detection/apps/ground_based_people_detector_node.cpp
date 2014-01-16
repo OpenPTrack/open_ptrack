@@ -107,6 +107,8 @@ main (int argc, char** argv)
 	nh.param("sampling_factor", sampling_factor, 1);
 	std::string pointcloud_topic;
 	nh.param("pointcloud_topic", pointcloud_topic, std::string("/camera/depth_registered/points"));
+	std::string output_topic;
+	nh.param("output_topic", output_topic, std::string("/ground_based_people_detector/detections"));
 	double rate_value;
 	nh.param("rate", rate_value, 30.0);
 
@@ -120,9 +122,7 @@ main (int argc, char** argv)
 
 	// Publishers:
 	ros::Publisher detection_pub;
-	detection_pub= nh.advertise<DetectionArray>("/ground_based_people_detector/detections",3);
-	ros::Publisher pub_rois_;
-	pub_rois_= nh.advertise<Rois>("GroundBasedPeopleDetectorOutputRois",3);
+	detection_pub= nh.advertise<DetectionArray>(output_topic, 3);
 
 	Rois output_rois_;
 	open_ptrack::opt_utils::Conversions converter;

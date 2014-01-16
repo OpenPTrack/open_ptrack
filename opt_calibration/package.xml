@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<package>
+  <name>opt_calibration</name>
+  <version>0.0.0</version>
+  <description>Extrinsic camera calibration for Open PTrack multicamera tracking.</description>
+
+  <maintainer email="munaro@dei.unipd.it">Matteo Munaro</maintainer>
+
+  <license>BSD</license>
+
+  <author email="munaro@dei.unipd.it">Matteo Munaro</author> >
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>roscpp</build_depend>
+  <build_depend>calibration_common</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>eigen_conversions</build_depend>
+  <build_depend>camera_info_manager</build_depend>
+  <build_depend>cv_bridge</build_depend>
+  <build_depend>image_transport</build_depend>
+  
+  <run_depend>roscpp</run_depend>
+  <run_depend>calibration_common</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>eigen_conversions</run_depend>
+  <run_depend>camera_info_manager</run_depend>
+  <run_depend>cv_bridge</run_depend>
+  <run_depend>image_transport</run_depend>
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+  </export>
+</package>

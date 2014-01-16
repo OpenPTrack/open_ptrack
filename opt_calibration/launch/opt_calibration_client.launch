@@ -1,0 +1,16 @@
+<launch>
+
+  <!-- Camera parameters -->
+  <arg name="camera_id" value="A00364907959051A" />
+  <arg name="camera_name" default="$(arg camera_id)" />
+
+  <!-- Launching camera -->
+  <include file="$(find detection)/launch/openni.launch">
+    <arg name="device_id" value="$(arg camera_id)" />
+    <arg name="camera" value="$(arg camera_name)" />
+  </include>	
+
+  <!-- Publish a further transform for every sensor -->
+  <node pkg="tf" type="static_transform_publisher" name="$(arg camera_name)_broadcaster" args="-0.045 0 0 1.57079 -1.57079 0 /$(arg camera_name) /$(arg camera_name)_link  100" />
+ 
+</launch>
