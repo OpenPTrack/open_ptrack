@@ -173,7 +173,11 @@ namespace open_ptrack
 
         /** \brief Save cameras extrinsic calibration in a launch file which can be used for multi-camera tracking */
         void
-        saveCameraAndFrames ();
+        saveExtrinsicCalibration ();
+
+        /** \brief Save cameras position with respect to checkerboard (world) frame (require all cameras see the checkerboard) */
+        void
+        saveWorldToCam ();
 
         /** \brief Handle to the ROS node. */
         ros::NodeHandle node_handle_;
@@ -210,6 +214,9 @@ namespace open_ptrack
 
         /** \brief Flag stating if the world frame has been set or not. */
         bool world_set_;
+
+        /** \brief Frame ID of the base camera (used for global frame calibration). */
+        std::string base_camera_frame_id_;
 
     };
   } /* namespace opt_calibration */

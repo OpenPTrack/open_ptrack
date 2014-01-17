@@ -1,5 +1,5 @@
 # HaarDispAda people detection parameters:
-haar_disp_ada_min_confidence: 1.5
+haar_disp_ada_min_confidence: 2.0
 mode: "load"
 Q_Size: 20
 num_Training_Samples: 350

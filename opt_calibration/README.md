@@ -4,4 +4,4 @@ To save a calibration:
 rostopic pub /opt_calibration/action std_msgs/String "save" -1
 
 # To save camera-world calibration:
-rostopic pub /opt_calibration/action std_msgs/String "saveCam2WorldPose" -1
+rostopic pub /opt_calibration/action std_msgs/String "saveExtrinsicCalibration" -1

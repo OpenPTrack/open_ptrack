@@ -1,6 +1,6 @@
 <launch>
 
   <!-- ROS visualizer -->
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find tracking)/conf/tracking.rviz" />  
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find tracking)/conf/multicamera_tracking.rviz" />  
 
 </launch>

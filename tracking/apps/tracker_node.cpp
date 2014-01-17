@@ -339,7 +339,8 @@ main(int argc, char** argv)
   gate_distance = chi_map.find(chi_value) != chi_map.end() ? chi_map[chi_value] : chi_map[0.999];
 
   double position_variance;
-  position_variance = 3*std::pow(2 * voxel_size, 2) / 12.0;
+//  position_variance = 3*std::pow(2 * voxel_size, 2) / 12.0; // DEFAULT
+  position_variance = 30*std::pow(2 * voxel_size, 2) / 12.0;
   std::vector<double> likelihood_weights;
   likelihood_weights.push_back(detector_weight*chi_map[0.999]/18.467);
   likelihood_weights.push_back(motion_weight);

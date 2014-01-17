@@ -60,6 +60,7 @@ namespace open_ptrack
       action_sub_ = node_handle_.subscribe("action", 1, &MultiCameraCalibration::actionCallback, this);
 
       node_handle_.param("num_cameras", num_cameras_, 0);
+      node_handle_.param("base_camera", base_camera_frame_id_, std::string("./"));
 
       double cell_width, cell_height;
       int rows, cols;
@@ -144,7 +145,7 @@ namespace open_ptrack
         }
         saveTF();
       }
-      if (msg->data == "saveCam2WorldPose"){
+      if (msg->data == "saveExtrinsicCalibration"){
         for (int id = 0; id < num_cameras_; ++id){
           if (camera_vector_[id].level_ == MAX_LEVEL){
             ROS_WARN("Not all camera poses estimated!!! File not saved!!!");
@@ -153,7 +154,7 @@ namespace open_ptrack
             ROS_INFO("Saving...");
           }
         }
-        saveCameraAndFrames();
+        saveExtrinsicCalibration();
       }
     }
 
@@ -290,7 +291,7 @@ namespace open_ptrack
     }
 
     void
-    MultiCameraCalibration::saveCameraAndFrames()
+    MultiCameraCalibration::saveWorldToCam()
     {
       // save tf between camera and world coordinate system ( chessboard ) to launch file
       std::string file_name = ros::package::getPath("opt_calibration") + "/launch/multicamera_calibration_results.launch";
@@ -329,8 +330,6 @@ namespace open_ptrack
           std::stringstream ss;
           ss << id;
 
-          Eigen::Affine3d rotate_depth_frame;
-
           // Read transform between camera optical frame and checkerboard:
           tfListener.lookupTransform("checkerboard_"+ss.str(), camera_vector_[id].sensor_->frameId()+(optical_frame_string.str()), ros::Time(0), transform);
 
@@ -362,6 +361,100 @@ namespace open_ptrack
               << "1.57 -1.57 0 "
               << camera_vector_[id].sensor_->frameId() << " "
               << camera_vector_[id].sensor_->frameId()+link_string.str() << " 100\" />\n\n";
+
+        }
+
+        launch_file << "</launch>" << std::endl;
+      }
+      launch_file.close();
+      ROS_INFO_STREAM(file_name << " created!");
+    }
+
+    void
+    MultiCameraCalibration::saveExtrinsicCalibration()
+    {
+      // save tf between camera and world coordinate system ( chessboard ) to launch file
+      std::string file_name = ros::package::getPath("opt_calibration") + "/launch/multicamera_calibration_results.launch";
+      std::ofstream launch_file;
+      launch_file.open(file_name.c_str());
+
+      std::stringstream optical_frame_string, link_string;
+      optical_frame_string << "_rgb_optical_frame";
+      link_string << "_link";
+
+      if (launch_file.is_open())
+      {
+        launch_file << "<launch>" << std::endl << std::endl;
+
+        tf::StampedTransform transform;
+        tf::Transform transform_final;
+        //        tf::StampedTransform link_transform;
+
+        // Write number of cameras:
+        launch_file << "  <!-- Network parameters -->" << std::endl
+            << "  <arg name=\"num_cameras\" value=\"" << num_cameras_ << "\" />" << std::endl;
+
+        // Write camera ID and names:
+        for (int id = 0; id < num_cameras_; ++id)
+        {
+          launch_file << "  <arg name=\"camera" << id << "_id\" value=\"" << camera_vector_[id].sensor_->frameId() << "\" />" << std::endl;
+          launch_file << "  <arg name=\"camera" << id << "_name\" default=\"$(arg camera" << id << "_id)\" />" << std::endl;
+        }
+        launch_file << std::endl;
+        //        launch_file << "  <arg name=\"period\" default=\"10\" />" << std::endl << std::endl;
+
+        // Write TF transforms between cameras and world frame:
+        launch_file << "  <!-- Transforms tree -->" << std::endl;
+        for (int id = 0; id < num_cameras_; ++id)
+        {
+          // If the parent is not /world, write the transform between two cameras:
+          if (strcmp(camera_vector_[id].sensor_->parent()->frameId().c_str(), world_->frameId().c_str()) != 0)
+          {
+            const Types::Pose & pose = camera_vector_[id].sensor_->pose();
+            Types::Quaternion q(pose.linear());
+            launch_file << "  <node pkg=\"tf\" type=\"static_transform_publisher\" name=\""
+                << camera_vector_[id].sensor_->frameId().substr(1) << "_broadcaster\" args=\""
+                << pose.translation().transpose() << " " << q.coeffs().transpose() << " "
+                << camera_vector_[id].sensor_->parent()->frameId() << " " << camera_vector_[id].sensor_->frameId()
+                << " 100\" />\n\n";
+          }
+
+          // Write transform between camera_link and camera_rgb_optical_frame to file:
+          launch_file << "  <node pkg=\"tf\" type=\"static_transform_publisher\" name=\""
+              << camera_vector_[id].sensor_->frameId().substr(1) << "_broadcaster2\" args=\" -0.045 0 0 "
+              //<< link_transform.getRotation().x() << " " << link_transform.getRotation().y() << " " << link_transform.getRotation().z() << " "
+              << "1.57 -1.57 0 "
+              << camera_vector_[id].sensor_->frameId() << " "
+              << camera_vector_[id].sensor_->frameId()+link_string.str() << " 100\" />\n\n";
+
+          // If the camera is the base camera used to calibrate the network with the ground, write transform to world:
+          if (strcmp(camera_vector_[id].sensor_->frameId().c_str(), ("/" + base_camera_frame_id_).c_str()) == 0)
+          {
+            std::stringstream ss;
+            ss << id;
+
+            // Read transform between camera optical frame and checkerboard:
+            tfListener.lookupTransform("checkerboard_"+ss.str(), camera_vector_[id].sensor_->frameId()+(optical_frame_string.str()), ros::Time(0), transform);
+
+            // Apply rotation of 90° in X and -90° in Z in order to move from optical frame to camera link frame:
+            tf::Matrix3x3 temp_rotation;
+            temp_rotation.setRPY(M_PI, 0, -M_PI/2);
+            tf::Vector3 temp_origin = tf::Vector3(0.0,0.0,0.0);
+            tf::Transform flip_z = tf::Transform(temp_rotation, temp_origin);
+            transform_final = flip_z * tf::Transform(transform);
+
+            // Extract rotation angles from camera pose:
+            double yaw, pitch, roll;
+            tf::Matrix3x3(transform_final.getRotation()).getRPY(roll, pitch, yaw);
+
+            // Write transform between camera and world frame to file:
+            launch_file << "  <node pkg=\"tf\" type=\"static_transform_publisher\" name=\""
+                << "ground_broadcaster\" args=\""
+                << transform_final.getOrigin().x() << " " << transform_final.getOrigin().y() << " " << transform_final.getOrigin().z() << " "
+                << yaw << " " << pitch << " " << roll << " "
+                << world_->frameId() << " " << camera_vector_[id].sensor_->frameId()
+                << " 100\" />\n\n";
+          }
         }
 
         launch_file << "</launch>" << std::endl;
@@ -373,7 +466,7 @@ namespace open_ptrack
     void
     MultiCameraCalibration::saveTF()
     {
-      //save tf to set_transformations.launch file
+      //save tf to launch file
       std::string file_name = ros::package::getPath("opt_calibration") + "/launch/frames.launch";
       std::ofstream launch_file;
       launch_file.open(file_name.c_str());
@@ -390,9 +483,6 @@ namespace open_ptrack
               << pose.translation().transpose() << " " << q.coeffs().transpose() << " "
               << camera_vector_[id].sensor_->parent()->frameId() << " " << camera_vector_[id].sensor_->frameId()
               << " 100\" />\n\n";
-
-
-          std::cout << "Test: " << camera_vector_[id].sensor_->frameId() << std::endl;
         }
         launch_file << "</launch>" << std::endl;
       }

@@ -1,14 +1,15 @@
-min_confidence_initialization: 4.5
+min_confidence_initialization: 6.5
 rate: 30
 world_frame_id: "/world"
 voxel_size: 0.06
-extrinsic_calibration: false
+extrinsic_calibration: true
 
 orientation:
   vertical: false
 
 kalman:
-  gate_distance_probability: 0.999
+  #gate_distance_probability: 0.999
+  gate_distance_probability: 0.9
   acceleration_variance: 100
   
 jointLikelihood:
