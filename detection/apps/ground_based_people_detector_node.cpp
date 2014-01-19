@@ -64,6 +64,7 @@
 #include <opt_msgs/RoiRect.h>
 #include <opt_msgs/Rois.h>
 #include <std_msgs/String.h>
+#include <sensor_msgs/CameraInfo.h>
 #include <opt_msgs/Detection.h>
 #include <opt_msgs/DetectionArray.h>
 
@@ -75,13 +76,28 @@ typedef pcl::PointCloud<PointT> PointCloudT;
 
 bool new_cloud_available_flag = false;
 PointCloudT::Ptr cloud(new PointCloudT);
+bool intrinsics_already_set = false;
+Eigen::Matrix3f intrinsics_matrix;
 
 enum { COLS = 640, ROWS = 480 };
 
-void cloud_cb(const PointCloudT::ConstPtr& callback_cloud)
+void
+cloud_cb (const PointCloudT::ConstPtr& callback_cloud)
 {
 	*cloud = *callback_cloud;
 	new_cloud_available_flag = true;
+}
+
+void
+cameraInfoCallback (const sensor_msgs::CameraInfo::ConstPtr & msg)
+{
+  if (!intrinsics_already_set)
+  {
+    intrinsics_matrix << msg->K.elems[0], msg->K.elems[1], msg->K.elems[2],
+        msg->K.elems[3], msg->K.elems[4], msg->K.elems[5],
+        msg->K.elems[6], msg->K.elems[7], msg->K.elems[8];
+    intrinsics_already_set = true;
+  }
 }
 
 int
@@ -109,16 +125,19 @@ main (int argc, char** argv)
 	nh.param("pointcloud_topic", pointcloud_topic, std::string("/camera/depth_registered/points"));
 	std::string output_topic;
 	nh.param("output_topic", output_topic, std::string("/ground_based_people_detector/detections"));
+	std::string camera_info_topic;
+	nh.param("camera_info_topic", camera_info_topic, std::string("/camera/rgb/camera_info"));
 	double rate_value;
 	nh.param("rate", rate_value, 30.0);
 
 	// Fixed parameters:
 	float voxel_size = 0.06;
-	Eigen::Matrix3f rgb_intrinsics_matrix;
-	rgb_intrinsics_matrix << 525, 0.0, 319.5, 0.0, 525, 239.5, 0.0, 0.0, 1.0; // Kinect RGB camera intrinsics
+//	Eigen::Matrix3f intrinsics_matrix;
+	intrinsics_matrix << 525, 0.0, 319.5, 0.0, 525, 239.5, 0.0, 0.0, 1.0; // Kinect RGB camera intrinsics
 
 	// Subscribers:
 	ros::Subscriber sub = nh.subscribe(pointcloud_topic, 1, cloud_cb);
+	ros::Subscriber camera_info_sub = nh.subscribe(camera_info_topic, 1, cameraInfoCallback);
 
 	// Publishers:
 	ros::Publisher detection_pub;
@@ -159,7 +178,7 @@ main (int argc, char** argv)
 	// People detection app initialization:
 	open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT> people_detector;    // people detection object
 	people_detector.setVoxelSize(voxel_size);                        // set the voxel size
-	people_detector.setIntrinsics(rgb_intrinsics_matrix);            // set RGB camera intrinsic parameters
+	people_detector.setIntrinsics(intrinsics_matrix);            // set RGB camera intrinsic parameters
 	people_detector.setClassifier(person_classifier);                // set person classifier
 	people_detector.setHeightLimits(min_height, max_height);         // set person classifier
 	people_detector.setSamplingFactor(sampling_factor);              // set sampling factor
@@ -189,7 +208,7 @@ main (int argc, char** argv)
 			detection_array_msg->header = cloud_header;
 			for(int i = 0; i < 3; i++)
 				for(int j = 0; j < 3; j++)
-					detection_array_msg->intrinsic_matrix.push_back(rgb_intrinsics_matrix(i, j));
+					detection_array_msg->intrinsic_matrix.push_back(intrinsics_matrix(i, j));
 			// Add all valid detections:
 			for(std::vector<pcl::people::PersonCluster<PointT> >::iterator it = clusters.begin(); it != clusters.end(); ++it)
 			{
@@ -204,13 +223,13 @@ main (int argc, char** argv)
 
 					// theoretical person centroid:
 					Eigen::Vector3f centroid3d = it->getTCenter();
-					Eigen::Vector3f centroid2d = converter.world2cam(centroid3d, rgb_intrinsics_matrix);
+					Eigen::Vector3f centroid2d = converter.world2cam(centroid3d, intrinsics_matrix);
 					// theoretical person top point:
 					Eigen::Vector3f top3d = it->getTTop();
-					Eigen::Vector3f top2d = converter.world2cam(top3d, rgb_intrinsics_matrix);
+					Eigen::Vector3f top2d = converter.world2cam(top3d, intrinsics_matrix);
 					// theoretical person bottom point:
 					Eigen::Vector3f bottom3d = it->getTBottom();
-					Eigen::Vector3f bottom2d = converter.world2cam(bottom3d, rgb_intrinsics_matrix);
+					Eigen::Vector3f bottom2d = converter.world2cam(bottom3d, intrinsics_matrix);
           float enlarge_factor = 1.1;
           float pixel_xc = centroid2d(0);
 					float pixel_yc = centroid2d(1);
