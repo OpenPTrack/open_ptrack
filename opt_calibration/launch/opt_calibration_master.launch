@@ -3,8 +3,8 @@
   <!-- Network parameters -->
   <arg name="num_cameras" value="2" />
   <arg name="camera0_id" value="A00367A01433047A" />
-  <arg name="camera1_id" value="A00364907959051A" />
   <arg name="camera0_name" default="$(arg camera0_id)" />
+  <arg name="camera1_id" value="A00364907959051A" />
   <arg name="camera1_name" default="$(arg camera1_id)" />
   <arg name="base_camera" value="$(arg camera0_name)" />
 
@@ -14,38 +14,27 @@
   <arg name="cell_width" default="0.12" />
   <arg name="cell_height" default="0.12" />
 
-  
-
-  <!-- Launching camera connected to master -->
-  <include file="$(find detection)/launch/openni.launch">
-    <arg name="device_id" value="$(arg camera0_id)" />
-    <arg name="camera" value="$(arg camera0_name)" />
-  </include>	
-
-  <!-- Publish a further transform -->
-  <node pkg="tf" type="static_transform_publisher" name="$(arg camera0_name)_broadcaster" args="-0.045 0 0 1.57079 -1.57079 0 /$(arg camera0_name) /$(arg camera0_name)_link  100" />
-
-
-
   <!-- Opening Rviz for visualization-->
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find opt_calibration)/conf/opt_calibration.rviz"/>
-  
+
   <!-- Launching calibration -->
   <node pkg="opt_calibration" type="opt_calibration" name="opt_calibration" output="screen">
-    <param name="num_cameras" value="$(arg num_cameras)" />  
+    <param name="num_cameras" value="$(arg num_cameras)" /> 
     <param name="rows" value="$(arg rows)" />
     <param name="cols" value="$(arg cols)" />
     <param name="cell_width" value="$(arg cell_width)" />
     <param name="cell_height" value="$(arg cell_height)" />
-    
-    <param name="base_camera" value="$(arg base_camera)" />      
+
+    <param name="base_camera" value="$(arg base_camera)" />
+
     <param name="camera_0/name" value="/$(arg camera0_name)" />
-    <param name="camera_1/name" value="/$(arg camera1_name)" />
     <remap from="~camera_0/image" to="/$(arg camera0_name)/rgb/image_rect_color" />
-    <remap from="~camera_1/image" to="/$(arg camera1_name)/rgb/image_rect_color" />	  
     <remap from="~camera_0/camera_info" to="/$(arg camera0_name)/rgb/camera_info" />
-    <remap from="~camera_1/camera_info" to="/$(arg camera1_name)/rgb/camera_info" />	  
+
+    <param name="camera_1/name" value="/$(arg camera1_name)" />
+    <remap from="~camera_1/image" to="/$(arg camera1_name)/rgb/image_rect_color" />
+    <remap from="~camera_1/camera_info" to="/$(arg camera1_name)/rgb/camera_info" />
+
   </node>
 
 </launch>
-

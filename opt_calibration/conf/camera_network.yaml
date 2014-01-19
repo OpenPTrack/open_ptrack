@@ -1,0 +1,11 @@
+# Camera network parameters
+num_cameras: 2
+camera0_id: "A00367A01433047A"
+camera1_id: "A00364907959051A" 
+base_camera: 0
+
+# Checkerboard parameters 
+rows: 6
+cols: 5
+cell_width: 0.12
+cell_height: 0.12

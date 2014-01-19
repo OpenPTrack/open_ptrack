@@ -39,6 +39,9 @@ include_directories(include
 )
 
 ## Declare a cpp library
+add_executable(calibration_initializer apps/calibration_initializer.cpp)
+target_link_libraries(calibration_initializer ${catkin_LIBRARIES})
+
 add_executable(opt_calibration src/multicamera_calibration.cpp
   include/open_ptrack/opt_calibration/multicamera_calibration.h
 )
@@ -50,3 +53,4 @@ target_link_libraries(opt_calibration
   ${PCL_LIBRARIES}
   ${OpenCV_LIBS}
 )
+

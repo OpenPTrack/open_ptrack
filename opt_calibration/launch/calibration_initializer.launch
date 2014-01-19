@@ -1,0 +1,9 @@
+<launch>
+
+  <!-- Launching calibration initializer -->
+  <node pkg="opt_calibration" type="calibration_initializer" name="calibration_initializer" output="screen" required="true">
+    <rosparam command="load" file="$(find opt_calibration)/conf/camera_network.yaml" /> 	  
+  </node>
+
+</launch>
+
