@@ -48,7 +48,8 @@ The software automatically estimates the ground plane and starts tracking people
 In the file '<open_ptrack_main_folder>/detection/conf/haar_disp_ada_detector.yaml', you can set the threshold for people detection by changing 'haar_disp_ada_min_confidence' parameter.
 
 
-
+--- Change confidence threshold for track initialization ---
+In the file '<open_ptrack_main_folder>/tracking/conf/tracker.yaml', you can set the threshold for track initialization by changing 'min_confidence_initialization' parameter.
 
 
 
