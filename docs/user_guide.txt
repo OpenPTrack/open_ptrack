@@ -1,10 +1,25 @@
 <<< Open PTrack - User Guide >>> 
 
---- People tracking test ---
-Connect a Microsoft Kinect for XBOX360 and run:
+--- People tracking test with one Kinect and without extrinsic calibration ---
+Set the 'extrinsic_calibration' flag in 'tracking/conf/tracker.yaml' to false, connect a Microsoft Kinect for XBOX360 and run:
 roslaunch tracking detection_and_tracking.launch
 
 You should see an RGB image with people detections surrounded by white rectangles and ROS visualizer showing a top view of people centroids.
+
+
+
+--- Change confidence threshold for people detection ---
+In the file '<open_ptrack_main_folder>/detection/conf/haar_disp_ada_detector.yaml', you can set the threshold for people detection by changing 'haar_disp_ada_min_confidence' parameter.
+
+
+
+--- Change confidence threshold for track initialization ---
+In the file '<open_ptrack_main_folder>/tracking/conf/tracker.yaml', you can set the threshold for track initialization by changing 'min_confidence_initialization' parameter.
+
+
+
+--- Multicamera people tracking test with intrinsic and extrinsic calibration ---
+Set the 'extrinsic_calibration' flag in 'tracking/conf/tracker.yaml' to true and follow steps written in 'docs/multicamera_calibration_guide.doc'.
 
 
 
@@ -44,12 +59,7 @@ The software automatically estimates the ground plane and starts tracking people
 
 
 
---- Change confidence threshold for people detection ---
-In the file '<open_ptrack_main_folder>/detection/conf/haar_disp_ada_detector.yaml', you can set the threshold for people detection by changing 'haar_disp_ada_min_confidence' parameter.
 
-
---- Change confidence threshold for track initialization ---
-In the file '<open_ptrack_main_folder>/tracking/conf/tracker.yaml', you can set the threshold for track initialization by changing 'min_confidence_initialization' parameter.
 
 
 
