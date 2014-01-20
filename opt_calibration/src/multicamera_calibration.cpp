@@ -483,6 +483,29 @@ namespace open_ptrack
       }
       launch_file.close();
       ROS_INFO_STREAM(file_name << " created!");
+
+      // Save launch files to be used to perform people detection with every sensor:
+      for (unsigned int i = 0; i < num_cameras_; i++)
+      {
+        std::string serial_number = camera_vector_[i].sensor_->frameId().substr(1, camera_vector_[i].sensor_->frameId().length()-1);
+        std::string file_name = ros::package::getPath("detection") + "/launch/detection_node_" + serial_number + ".launch";
+        std::ofstream launch_file;
+        launch_file.open(file_name.c_str());
+        if (launch_file.is_open())
+        {
+          launch_file << "<launch>" << std::endl << std::endl;
+
+          launch_file << "  <!-- Camera ID -->" << std::endl
+              << "  <arg name=\"camera_id\" value=\"" << serial_number << "\" />" << std::endl << std::endl
+              << "  <!-- Detection node -->" << std::endl
+              << "  <include file=\"$(find detection)/launch/detector_serial.launch\">" << std::endl
+              << "    <arg name=\"camera_id\" value=\"$(arg camera_id)\" />" << std::endl
+              << "  </include>" << std::endl;
+          launch_file << "</launch>" << std::endl;
+        }
+        launch_file.close();
+        ROS_INFO_STREAM(file_name << " created!");
+      }
     }
 
     void
