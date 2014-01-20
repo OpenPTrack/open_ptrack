@@ -285,6 +285,9 @@ main(int argc, char** argv)
   double rate;
   nh.param("rate", rate, 30.0);
 
+  int num_cameras;
+  nh.param("num_cameras", num_cameras, 1);
+
   double min_confidence;
   nh.param("min_confidence_initialization", min_confidence, -2.5); //0.0);
 
@@ -345,7 +348,7 @@ main(int argc, char** argv)
   likelihood_weights.push_back(detector_weight*chi_map[0.999]/18.467);
   likelihood_weights.push_back(motion_weight);
 
-  ros::Rate hz(3*rate);
+  ros::Rate hz(num_cameras*rate);
 
 //  cv::namedWindow("TRACKER ", CV_WINDOW_NORMAL);
 

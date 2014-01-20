@@ -1,0 +1,13 @@
+<launch>
+  
+  <arg name="input_topic" value="/detector/detections" />
+    
+  <!-- Launch the tracking node -->
+  <node pkg="tracking" type="tracker" name="tracker_node" output="screen">
+    <remap from="~input" to="$(arg input_topic)" />
+    <rosparam command="load" file="$(find tracking)/conf/tracker.yaml" /> 
+    <rosparam command="load" file="$(find detection)/conf/haar_disp_ada_detector.yaml" /> 
+    <rosparam command="load" file="$(find opt_calibration)/conf/camera_network.yaml" /> 
+  </node>
+
+</launch>

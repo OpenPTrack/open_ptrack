@@ -4,7 +4,7 @@
   <include file="$(find opt_calibration)/launch/multicamera_calibration_results.launch"/>
 
   <!-- People tracking -->
-  <include file="$(find tracking)/launch/tracker.launch"/>
+  <include file="$(find tracking)/launch/tracker_network.launch"/>
 
   <!-- UDP messaging -->
   <include file="$(find opt_utils)/launch/ros2udp_converter.launch"/>
