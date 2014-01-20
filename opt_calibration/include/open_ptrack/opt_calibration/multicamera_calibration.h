@@ -200,6 +200,9 @@ namespace open_ptrack
         /** \brief Number of cameras connected to the network. */
         int num_cameras_;
 
+        /** \brief Number of cameras extrinsically calibrated. */
+        int calibrated_cameras_;
+
         /** \brief Global reference frame. */
         BaseObject::Ptr world_;
 

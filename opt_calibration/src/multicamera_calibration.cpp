@@ -61,6 +61,7 @@ namespace open_ptrack
 
       node_handle_.param("num_cameras", num_cameras_, 0);
       node_handle_.param("base_camera", base_camera_frame_id_, std::string("./"));
+      calibrated_cameras_ = 0;
 
       double cell_width, cell_height;
       int rows, cols;
@@ -197,7 +198,7 @@ namespace open_ptrack
     MultiCameraCalibration::spin()
     {
       ros::Rate rate(5.0);
-
+      bool finished = false;
       while (ros::ok())
       {
         ros::spinOnce();
@@ -219,7 +220,9 @@ namespace open_ptrack
 
             geometry_msgs::TransformStamped transform_msg;
             if (camera_vector_[id].sensor_->toTF(transform_msg))
+            {
               tf_pub_.sendTransform(transform_msg);
+            }
 
           }
           catch (cv_bridge::Exception & ex)
@@ -236,6 +239,12 @@ namespace open_ptrack
           {
             if (view_map.find(id) != view_map.end())
             {
+              if (camera_vector_[id].level_ == MAX_LEVEL)
+              {
+                std::cout << camera_vector_[id].name_ << " calibrated!"<< std::endl;
+                calibrated_cameras_++;
+              }
+
               camera_vector_[id].sensor_->setParent(world_);
               camera_vector_[id].level_ = 0;
               world_set_ = true;
@@ -276,6 +285,12 @@ namespace open_ptrack
                 //                                                                           camera_vector_[id].sensor_->frameId(),
                 //                                                                           camera_vector_[min_id].sensor_);
 
+                if (camera_vector_[id].level_ == MAX_LEVEL)
+                {
+                  calibrated_cameras_++;
+                  std::cout << camera_vector_[id].name_ << " calibrated!"<< std::endl;
+                }
+
                 camera_vector_[id].sensor_->setParent(camera_vector_[min_id].sensor_);
                 camera_vector_[id].sensor_->setPose(min_checkerboard.pose() * checkerboard.pose().inverse());
 
@@ -284,6 +299,13 @@ namespace open_ptrack
               }
             }
           }
+        }
+
+        // If all cameras calibrated, write to save results:
+        if ((calibrated_cameras_ >= num_cameras_) & !finished)
+        {
+          std::cout << "All cameras calibrated. Now calibrate the global reference frame and save!" << std::endl;
+          finished = true;
         }
 
         rate.sleep();
