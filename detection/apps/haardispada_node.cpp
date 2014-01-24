@@ -337,7 +337,7 @@ class HaarDispAdaNode
           output_rois_.rois.clear();
           output_rois_.header.stamp = image_msg->header.stamp;
           output_rois_.header.frame_id = image_msg->header.frame_id;
-          ROS_INFO("HaarDispAda found %d objects",(int)L_out.size());
+//          ROS_INFO("HaarDispAda found %d objects",(int)L_out.size());
           for(unsigned int i=0; i<R_out.size();i++){
             RoiRect R;
             R.x      = R_out[i].x;

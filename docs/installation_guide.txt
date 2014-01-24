@@ -27,6 +27,7 @@ cp -R <open_ptrack_main_folder> ~/workspace/ros/catkin/src/open_ptrack
 (or you can clone the open_ptrack repository as explained in (1) directly into '~/workspace/ros/catkin/src')
 cd ~/workspace/ros/catkin
 catkin_make --pkg opt_msgs
+catkin_make --pkg opt_msgs
 catkin_make --force-cmake
 
 

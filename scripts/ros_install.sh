@@ -10,4 +10,5 @@ rosdep update
 sudo apt-get install python-rosinstall -y
 sudo apt-get install ros-hydro-robot-state-publisher -y
 sudo apt-get install ros-hydro-openni* -y
+sudo apt-get install ros-hydro-freenect-stack -y
 

@@ -141,7 +141,7 @@ main(int argc, char ** argv)
           << "  <arg name=\"camera_name\" default=\"$(arg camera_id)\" />" << std::endl << std::endl;
 
       launch_file << "  <!-- Launch sensor -->" << std::endl
-          << "  <include file=\"$(find detection)/launch/openni.launch\">" << std::endl
+          << "  <include file=\"$(find detection)/launch/freenect.launch\">" << std::endl
           << "    <arg name=\"device_id\" value=\"$(arg camera_id)\" />" << std::endl
           << "    <arg name=\"camera\" value=\"$(arg camera_name)\" />" << std::endl
           << "  </include>" << std::endl << std::endl;

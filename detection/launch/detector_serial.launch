@@ -5,7 +5,7 @@
 
   <!-- Camera driver -->
   <arg name="camera_name" default="$(arg camera_id)" />
-  <include file="$(find detection)/launch/openni.launch">
+  <include file="$(find detection)/launch/freenect.launch">
     <arg name="device_id" value="$(arg camera_id)" />
     <arg name="camera" value="$(arg camera_name)" />
   </include>
