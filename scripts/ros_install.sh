@@ -7,8 +7,8 @@ sudo apt-get install ros-hydro-desktop-full -y
 apt-cache search ros-hydro
 sudo rosdep init
 rosdep update
-sudo apt-get install python-rosinstall -y
-sudo apt-get install ros-hydro-robot-state-publisher -y
-sudo apt-get install ros-hydro-openni* -y
-sudo apt-get install ros-hydro-freenect-stack -y
+sudo apt-get install python-rosinstall -y --force-yes
+sudo apt-get install ros-hydro-robot-state-publisher -y --force-yes
+sudo apt-get install ros-hydro-openni* -y --force-yes
+sudo apt-get install ros-hydro-freenect-stack -y --force-yes
 
