@@ -200,6 +200,9 @@ namespace open_ptrack
         /** \brief Number of cameras connected to the network. */
         int num_cameras_;
 
+        /** \brief Flag stating if cameras are identified with serial numbers (true) or with names (false). */
+        bool calibration_with_serials_;
+
         /** \brief Number of cameras extrinsically calibrated. */
         int calibrated_cameras_;
 

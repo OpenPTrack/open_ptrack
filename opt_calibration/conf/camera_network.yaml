@@ -1,8 +1,9 @@
 # Camera network parameters
 num_cameras: 2
-camera0_id: "A00367A01433047A"
-camera1_id: "A00364907959051A" 
+camera0_id: "Kinect1"
+camera1_id: "Kinect2" 
 base_camera: 0
+calibration_with_serials: false
 
 # Checkerboard parameters 
 rows: 6

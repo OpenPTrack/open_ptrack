@@ -51,6 +51,8 @@ main(int argc, char ** argv)
   nh.param("num_cameras", num_cameras, 1);
   int base_camera;
   nh.param("base_camera", base_camera, 0);
+  bool calibration_with_serials;
+  nh.param("calibration_with_serials", calibration_with_serials, false);
   int rows;
   nh.param("rows", rows, 6);
   int cols;
@@ -141,9 +143,13 @@ main(int argc, char ** argv)
           << "  <arg name=\"camera_name\" default=\"$(arg camera_id)\" />" << std::endl << std::endl;
 
       launch_file << "  <!-- Launch sensor -->" << std::endl
-          << "  <include file=\"$(find detection)/launch/freenect.launch\">" << std::endl
-          << "    <arg name=\"device_id\" value=\"$(arg camera_id)\" />" << std::endl
-          << "    <arg name=\"camera\" value=\"$(arg camera_name)\" />" << std::endl
+          << "  <include file=\"$(find detection)/launch/freenect.launch\">" << std::endl;
+
+      // If serial numbers can be used to identify cameras, they are added to the launch file:
+      if (calibration_with_serials)
+        launch_file << "    <arg name=\"device_id\" value=\"$(arg camera_id)\" />" << std::endl;
+
+      launch_file << "    <arg name=\"camera\" value=\"$(arg camera_name)\" />" << std::endl
           << "  </include>" << std::endl << std::endl;
 
       launch_file << "  <!-- Publish a further transform -->" << std::endl

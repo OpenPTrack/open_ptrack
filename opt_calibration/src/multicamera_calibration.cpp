@@ -61,6 +61,7 @@ namespace open_ptrack
 
       node_handle_.param("num_cameras", num_cameras_, 0);
       node_handle_.param("base_camera", base_camera_frame_id_, std::string("./"));
+      node_handle_.param("calibration_with_serials", calibration_with_serials_, false);
       calibrated_cameras_ = 0;
 
       double cell_width, cell_height;
@@ -497,9 +498,14 @@ namespace open_ptrack
 
           launch_file << "  <!-- Camera ID -->" << std::endl
               << "  <arg name=\"camera_id\" value=\"" << serial_number << "\" />" << std::endl << std::endl
-              << "  <!-- Detection node -->" << std::endl
-              << "  <include file=\"$(find detection)/launch/detector_serial.launch\">" << std::endl
-              << "    <arg name=\"camera_id\" value=\"$(arg camera_id)\" />" << std::endl
+              << "  <!-- Detection node -->" << std::endl;
+
+          if (calibration_with_serials_)
+            launch_file << "  <include file=\"$(find detection)/launch/detector_serial.launch\">" << std::endl;
+          else
+            launch_file << "  <include file=\"$(find detection)/launch/detector_with_name.launch\">" << std::endl;
+
+          launch_file << "    <arg name=\"camera_id\" value=\"$(arg camera_id)\" />" << std::endl
               << "  </include>" << std::endl;
           launch_file << "</launch>" << std::endl;
         }
