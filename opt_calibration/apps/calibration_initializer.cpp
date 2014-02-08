@@ -61,6 +61,8 @@ main(int argc, char ** argv)
   nh.param("cell_width", cell_width, 0.12);
   double cell_height;
   nh.param("cell_height", cell_height, 0.12);
+  std::string driver_name;
+  nh.param("driver", driver_name, std::string("openni"));
 
   // Read ID of cameras:
   std::vector<std::string> camera_id_vector;
@@ -143,7 +145,7 @@ main(int argc, char ** argv)
           << "  <arg name=\"camera_name\" default=\"$(arg camera_id)\" />" << std::endl << std::endl;
 
       launch_file << "  <!-- Launch sensor -->" << std::endl
-          << "  <include file=\"$(find detection)/launch/freenect.launch\">" << std::endl;
+          << "  <include file=\"$(find detection)/launch/" << driver_name << ".launch\">" << std::endl;
 
       // If serial numbers can be used to identify cameras, they are added to the launch file:
       if (calibration_with_serials)

@@ -5,7 +5,7 @@
 
   <!-- Camera driver -->
   <arg name="camera_name" default="$(arg camera_id)" />
-  <include file="$(find detection)/launch/freenect.launch">
+  <include file="$(find detection)/launch/$(env KINECT_DRIVER).launch"> 
     <arg name="camera" value="$(arg camera_name)" />
   </include>
 

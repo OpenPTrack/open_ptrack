@@ -59,6 +59,13 @@ The software automatically estimates the ground plane and starts tracking people
 
 
 
+ADVANCED TOPICS
+
+--- Kinect driver ---
+Both open source Kinect drivers (OpenNI, Freenect) are installed with OpenPTrack.
+The default driver is OpenNI, but it could not work on all machines (in some cases, the point cloud is not published).
+For using the Freenect driver, you only need to change the KINECT_DRIVER environment variable  written at the bottom of the .bashrc file in your home folder.
+Possible values are: "openni" or "freenect".
 
 
 

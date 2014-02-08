@@ -2,6 +2,7 @@
 
   <!-- Launching calibration initializer -->
   <node pkg="opt_calibration" type="calibration_initializer" name="calibration_initializer" output="screen" required="true">
+    <param name="driver" value="$(env KINECT_DRIVER)"/>
     <rosparam command="load" file="$(find opt_calibration)/conf/camera_network.yaml" /> 	  
   </node>
 
