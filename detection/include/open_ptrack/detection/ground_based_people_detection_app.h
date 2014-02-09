@@ -51,6 +51,8 @@
 #include <pcl/people/head_based_subcluster.h>
 #include <pcl/people/person_classifier.h>
 
+#define XYZRGB_CLOUDS 0
+
 namespace open_ptrack
 {
   namespace detection

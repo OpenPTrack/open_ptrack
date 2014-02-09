@@ -79,8 +79,6 @@ PointCloudT::Ptr cloud(new PointCloudT);
 bool intrinsics_already_set = false;
 Eigen::Matrix3f intrinsics_matrix;
 
-enum { COLS = 640, ROWS = 480 };
-
 void
 cloud_cb (const PointCloudT::ConstPtr& callback_cloud)
 {

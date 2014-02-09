@@ -95,13 +95,45 @@ open_ptrack::detection::GroundplaneEstimation<PointT>::compute ()
 
     // Initialize viewer:
     pcl::visualization::PCLVisualizer viewer("Pick 3 points");
-    pcl::visualization::PointCloudColorHandlerRGBField<PointT> rgb(cloud_);
-    viewer.addPointCloud<PointT> (cloud_, rgb, "input_cloud");
+
+    // Create XYZ cloud:
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_xyzrgb(new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::PointXYZRGB xyzrgb_point;
+    cloud_xyzrgb->points.resize(cloud_->width * cloud_->height, xyzrgb_point);
+    cloud_xyzrgb->width = cloud_->width;
+    cloud_xyzrgb->height = cloud_->height;
+    cloud_xyzrgb->is_dense = false;
+    for (int i=0;i<cloud_->height;i++)
+    {
+      for (int j=0;j<cloud_->width;j++)
+      {
+        cloud_xyzrgb->at(j,i).x = cloud_->at(j,i).x;
+        cloud_xyzrgb->at(j,i).y = cloud_->at(j,i).y;
+        cloud_xyzrgb->at(j,i).z = cloud_->at(j,i).z;
+      }
+    }
+
+//#if (XYZRGB_CLOUDS)
+//    pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(cloud_);
+//    viewer.addPointCloud<pcl::PointXYZRGB> (cloud_, rgb, "input_cloud");
+//#else
+//    viewer.addPointCloud<pcl::PointXYZ> (cloud_, "input_cloud");
+//#endif
+
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> rgb(cloud_xyzrgb, 255, 255, 255);
+    viewer.addPointCloud<pcl::PointXYZRGB> (cloud_xyzrgb, rgb, "input_cloud");
     viewer.setCameraPosition(0,0,-2,0,-1,0,0);
 
     // Add point picking callback to viewer:
-    struct callback_args cb_args;
-    PointCloudPtr clicked_points_3d (new PointCloud);
+    struct callback_args_color cb_args;
+
+//#if (XYZRGB_CLOUDS)
+//    PointCloudPtr clicked_points_3d (new PointCloud);
+//#else
+//    pcl::PointCloud<pcl::PointXYZ>::Ptr clicked_points_3d (new pcl::PointCloud<pcl::PointXYZ>);
+//#endif
+
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr clicked_points_3d (new pcl::PointCloud<pcl::PointXYZRGB>);
     cb_args.clicked_points_3d = clicked_points_3d;
     cb_args.viewerPtr = &viewer;
     viewer.registerPointPickingCallback (GroundplaneEstimation::pp_callback, (void*)&cb_args);
@@ -123,7 +155,8 @@ open_ptrack::detection::GroundplaneEstimation<PointT>::compute ()
     std::vector<int> clicked_points_indices;
     for (unsigned int i = 0; i < clicked_points_3d->points.size(); i++)
       clicked_points_indices.push_back(i);
-    pcl::SampleConsensusModelPlane<PointT> model_plane(clicked_points_3d);
+//    pcl::SampleConsensusModelPlane<PointT> model_plane(clicked_points_3d);
+    pcl::SampleConsensusModelPlane<pcl::PointXYZRGB> model_plane(clicked_points_3d);
     model_plane.computeModelCoefficients(clicked_points_indices,ground_coeffs);
     std::cout << "Ground plane coefficients: " << ground_coeffs(0) << ", " << ground_coeffs(1) << ", " << ground_coeffs(2) <<
         ", " << ground_coeffs(3) << "." << std::endl;
@@ -156,19 +189,19 @@ open_ptrack::detection::GroundplaneEstimation<PointT>::compute ()
     std::cout << "Found " << regions.size() << " planar regions." << std::endl;
 
     // Color planar regions with different colors:
-    PointCloudPtr colored_cloud (new PointCloud);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr colored_cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
     colored_cloud = colorRegions(regions);
     if (regions.size()>0)
     {
       // Viewer initialization:
       pcl::visualization::PCLVisualizer viewer("PCL Viewer");
-      pcl::visualization::PointCloudColorHandlerRGBField<PointT> rgb(colored_cloud);
-      viewer.addPointCloud<PointT> (colored_cloud, rgb, "input_cloud");
+      pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(colored_cloud);
+      viewer.addPointCloud<pcl::PointXYZRGB> (colored_cloud, rgb, "input_cloud");
       viewer.setCameraPosition(0,0,-2,0,-1,0,0);
 
       // Add point picking callback to viewer:
-      struct callback_args cb_args;
-      typename pcl::PointCloud<PointT>::Ptr clicked_points_3d (new pcl::PointCloud<PointT>);
+      struct callback_args_color cb_args;
+      typename pcl::PointCloud<pcl::PointXYZRGB>::Ptr clicked_points_3d (new pcl::PointCloud<pcl::PointXYZRGB>);
       cb_args.clicked_points_3d = clicked_points_3d;
       cb_args.viewerPtr = &viewer;
       viewer.registerPointPickingCallback (GroundplaneEstimation::pp_callback, (void*)&cb_args);
@@ -258,7 +291,7 @@ open_ptrack::detection::GroundplaneEstimation<PointT>::compute ()
     std::sort(regions.begin(), regions.end(), GroundplaneEstimation::planeHeightComparator);
 
     // Color selected planar region in red:
-    PointCloudPtr colored_cloud (new PointCloud);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr colored_cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
     colored_cloud = colorRegions(regions, 0);
 
     // If at least a valid plane remained:
@@ -277,8 +310,8 @@ open_ptrack::detection::GroundplaneEstimation<PointT>::compute ()
       {
         // Viewer initialization:
         pcl::visualization::PCLVisualizer viewer("PCL Viewer");
-        pcl::visualization::PointCloudColorHandlerRGBField<PointT> rgb(colored_cloud);
-        viewer.addPointCloud<PointT> (colored_cloud, rgb, "input_cloud");
+        pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(colored_cloud);
+        viewer.addPointCloud<pcl::PointXYZRGB> (colored_cloud, rgb, "input_cloud");
         viewer.setCameraPosition(0,0,-2,0,-1,0,0);
 
         // Spin until 'Q' is pressed:
@@ -300,14 +333,14 @@ open_ptrack::detection::GroundplaneEstimation<PointT>::compute ()
 template <typename PointT> void
 open_ptrack::detection::GroundplaneEstimation<PointT>::pp_callback (const pcl::visualization::PointPickingEvent& event, void* args)
 {
-  struct callback_args* data = (struct callback_args *)args;
+  struct callback_args_color* data = (struct callback_args_color *)args;
   if (event.getPointIndex () == -1)
     return;
-  PointT current_point;
+  pcl::PointXYZRGB current_point;
   event.getPoint(current_point.x, current_point.y, current_point.z);
   data->clicked_points_3d->points.push_back(current_point);
   // Draw clicked points in red:
-  pcl::visualization::PointCloudColorHandlerCustom<PointT> red (data->clicked_points_3d, 255, 0, 0);
+  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> red (data->clicked_points_3d, 255, 0, 0);
   data->viewerPtr->removePointCloud("clicked_points");
   data->viewerPtr->addPointCloud(data->clicked_points_3d, red, "clicked_points");
   data->viewerPtr->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "clicked_points");
@@ -320,13 +353,31 @@ open_ptrack::detection::GroundplaneEstimation<PointT>::planeHeightComparator (pc
   return region1.getCentroid()[1] > region2.getCentroid()[1];
 }
 
-template <typename PointT> typename open_ptrack::detection::GroundplaneEstimation<PointT>::PointCloudPtr
+template <typename PointT> pcl::PointCloud<pcl::PointXYZRGB>::Ptr
 open_ptrack::detection::GroundplaneEstimation<PointT>::colorRegions (std::vector<pcl::PlanarRegion<PointT>, Eigen::aligned_allocator<pcl::PlanarRegion<PointT> > > regions, int index)
 {
   // Color different planes with different colors:
-  PointCloudPtr colored_cloud (new PointCloud);
-  pcl::copyPointCloud(*cloud_, *colored_cloud);
   float voxel_size = 0.06;
+
+  // Initialize colored point cloud with points from input point cloud:
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr colored_cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+  pcl::PointXYZRGB white_point;
+  white_point.r = 255;
+  white_point.g = 255;
+  white_point.b = 255;
+  colored_cloud->points.resize(cloud_->width * cloud_->height, white_point);
+  colored_cloud->width = cloud_->width;
+  colored_cloud->height = cloud_->height;
+  colored_cloud->is_dense = false;
+  for (int i=0;i<cloud_->height;i++)
+  {
+    for (int j=0;j<cloud_->width;j++)
+    {
+      colored_cloud->at(j,i).x = cloud_->at(j,i).x;
+      colored_cloud->at(j,i).y = cloud_->at(j,i).y;
+      colored_cloud->at(j,i).z = cloud_->at(j,i).z;
+    }
+  }
 
   for (size_t i = 0; i < regions.size (); i++)
   {

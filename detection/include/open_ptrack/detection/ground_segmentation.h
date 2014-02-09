@@ -126,7 +126,7 @@ namespace open_ptrack
          *
          * \return The colored point cloud.
          */
-        PointCloudPtr
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr
         colorRegions (std::vector<pcl::PlanarRegion<PointT>,
             Eigen::aligned_allocator<pcl::PlanarRegion<PointT> > > regions, int index = -1);
 
@@ -139,8 +139,14 @@ namespace open_ptrack
 
         /** \brief structure used to pass arguments to the callback function */
         struct callback_args{
-          PointCloudPtr clicked_points_3d;
-          pcl::visualization::PCLVisualizer* viewerPtr;
+            pcl::PointCloud<pcl::PointXYZ>::Ptr clicked_points_3d;
+            pcl::visualization::PCLVisualizer* viewerPtr;
+        };
+
+        /** \brief structure used to pass arguments to the callback function */
+        struct callback_args_color{
+            pcl::PointCloud<pcl::PointXYZRGB>::Ptr clicked_points_3d;
+            pcl::visualization::PCLVisualizer* viewerPtr;
         };
     };
   } /* namespace detection */
