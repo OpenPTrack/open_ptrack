@@ -1,0 +1,36 @@
+min_confidence_initialization: 6.5
+rate: 30
+world_frame_id: "/world"
+voxel_size: 0.06
+extrinsic_calibration: true
+
+orientation:
+  vertical: false
+
+kalman:
+  gate_distance_probability: 0.9
+  acceleration_variance: 100
+  
+jointLikelihood:
+  detector_likelihood: true
+  velocity_in_motion_term: true
+  detector_weight: -0.25
+  motion_weight: 0.25
+  
+target:
+  sec_before_old: 8
+  sec_before_fake: 2.4
+  sec_remain_new: 1.2
+  detections_to_validate: 3
+
+debug:
+  active: true
+
+output:
+  history_pointcloud: true
+  history_size: 1000
+  markers: true
+  image_rgb: false
+  tracking_results: true
+
+
