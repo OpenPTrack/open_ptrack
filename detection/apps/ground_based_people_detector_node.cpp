@@ -128,7 +128,6 @@ main (int argc, char** argv)
 	double rate_value;
 	nh.param("rate", rate_value, 30.0);
 
-	std::cout << ground_estimation_mode << std::endl;
 	// Fixed parameters:
 	float voxel_size = 0.06;
 //	Eigen::Matrix3f intrinsics_matrix;
