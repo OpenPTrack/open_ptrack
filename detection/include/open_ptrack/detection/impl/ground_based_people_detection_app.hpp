@@ -250,11 +250,9 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
       min_points_ = int(float(min_points_) * std::pow(0.06/voxel_size_, 2));
   }
 
-#if (XYZRGB_CLOUDS)
   // Fill rgb image:
   rgb_image_->points.clear();                            // clear RGB pointcloud
   extractRGBFromPointCloud(cloud_, rgb_image_);          // fill RGB pointcloud
-#endif
 
   // Downsample of sampling_factor in every dimension:
   if (sampling_factor_ != 1)
