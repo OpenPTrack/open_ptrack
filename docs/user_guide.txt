@@ -1,7 +1,7 @@
 <<< Open PTrack - User Guide >>> 
 
 --- People tracking test with one Kinect and without extrinsic calibration ---
-Set the 'extrinsic_calibration' flag in 'tracking/conf/tracker.yaml' to false, connect a Microsoft Kinect for XBOX360 and run:
+Connect a Microsoft Kinect for XBOX360 and run:
 roslaunch tracking detection_and_tracking.launch
 
 You should see an RGB image with people detections surrounded by white rectangles and ROS visualizer showing a top view of people centroids.
@@ -14,12 +14,15 @@ In the file '<open_ptrack_main_folder>/detection/conf/haar_disp_ada_detector.yam
 
 
 --- Change confidence threshold for track initialization ---
+Single-camera tracking:
 In the file '<open_ptrack_main_folder>/tracking/conf/tracker.yaml', you can set the threshold for track initialization by changing 'min_confidence_initialization' parameter.
 
+Multi-camera tracking:
+In the file '<open_ptrack_main_folder>/tracking/conf/tracker_multicamera.yaml', you can set the threshold for track initialization by changing 'min_confidence_initialization' parameter.
 
 
---- Multicamera people tracking test with intrinsic and extrinsic calibration ---
-Set the 'extrinsic_calibration' flag in 'tracking/conf/tracker.yaml' to true and follow steps written in 'docs/multicamera_calibration_guide.doc'.
+--- Multicamera people tracking test with extrinsic calibration ---
+Follow steps written in 'docs/multicamera_calibration_guide.doc'.
 
 
 
