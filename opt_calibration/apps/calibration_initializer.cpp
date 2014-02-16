@@ -114,6 +114,9 @@ main(int argc, char ** argv)
         << "    <param name=\"cell_height\" value=\"$(arg cell_height)\" />" << std::endl << std::endl
         << "    <param name=\"base_camera\" value=\"$(arg base_camera)\" />" << std::endl << std::endl;
 
+    if (calibration_with_serials)
+      launch_file << "    <param name=\"calibration_with_serials\" value=\"true\" />" << std::endl << std::endl;
+
     // Parameters and remapping for every camera:
     for (unsigned int i = 0; i < num_cameras; i++)
     {
