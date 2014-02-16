@@ -11,6 +11,7 @@
   </include>
 
   <arg name="intermediate_topic" value="/ground_based_people_detector_$(arg camera_name)/detections" />
+  <arg name="ground_from_calibration" default="false" />
 
   <!-- Launch ground based people detection node -->
   <node pkg="detection" type="ground_based_people_detector" name="ground_based_people_detector_$(arg camera_name)" output="screen" required="true">
@@ -20,6 +21,7 @@
     <param name="output_topic" value="$(arg intermediate_topic)"/>
     <param name="camera_info_topic" value="/$(arg camera_name)/rgb/camera_info"/>
     <param name="rate" value="60.0"/>  
+    <param name="ground_from_extrinsic_calibration" value="$(arg ground_from_calibration)"/>  
   </node>
 
   <!-- Launch HaarDispAda Node-->

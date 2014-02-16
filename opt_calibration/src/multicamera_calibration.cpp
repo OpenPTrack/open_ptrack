@@ -506,6 +506,7 @@ namespace open_ptrack
             launch_file << "  <include file=\"$(find detection)/launch/detector_with_name.launch\">" << std::endl;
 
           launch_file << "    <arg name=\"camera_id\" value=\"$(arg camera_id)\" />" << std::endl
+              << "    <arg name=\"ground_from_calibration\" value=\"true\" />" << std::endl
               << "  </include>" << std::endl;
           launch_file << "</launch>" << std::endl;
         }

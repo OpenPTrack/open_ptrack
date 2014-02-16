@@ -46,6 +46,7 @@
 #include <pcl/sample_consensus/sac_model_plane.h>
 #include <pcl/sample_consensus/ransac.h>
 #include <pcl/filters/extract_indices.h>
+#include <tf/transform_listener.h>
 
 namespace open_ptrack
 {
@@ -89,6 +90,17 @@ namespace open_ptrack
          */
         bool
         tooManyNaN (PointCloudConstPtr cloud, float max_ratio);
+
+        /**
+         * \brief Compute the ground plane coefficients from the transform between two reference frames.
+         *
+         * \param[in] camera_frame Camera frame id.
+         * \param[in] world_frame Ground frame id.
+         *
+         * \return Vector of ground plane coefficients.
+         */
+        Eigen::VectorXf
+        computeFromTF (std::string camera_frame, std::string ground_frame);
 
         /**
          * \brief Compute the ground plane coefficients.

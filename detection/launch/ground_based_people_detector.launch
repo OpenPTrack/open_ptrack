@@ -20,7 +20,7 @@
     <param name="label" type="int" value="1" />
     <param name="show_confidence" type="bool" value="true" />
     <remap from ="input_image" to="/camera/rgb/image_color"/>
-	<remap from ="input_rois" to="/ground_based_people_detector/GroundBasedPeopleDetectorOutputRois"/>  
+	<remap from ="input_detections" to="/ground_based_people_detector/GroundBasedPeopleDetectorOutputRois"/>  
   </node>
 
 </launch>

@@ -83,6 +83,51 @@ open_ptrack::detection::GroundplaneEstimation<PointT>::tooManyNaN(PointCloudCons
 }
 
 template <typename PointT> Eigen::VectorXf
+open_ptrack::detection::GroundplaneEstimation<PointT>::computeFromTF (std::string camera_frame, std::string ground_frame)
+{
+  // Select 3 points in world reference frame:
+  pcl::PointCloud<pcl::PointXYZ>::Ptr ground_points (new pcl::PointCloud<pcl::PointXYZ>);
+  ground_points->points.push_back(pcl::PointXYZ(0.0, 0.0, 0.0));
+  ground_points->points.push_back(pcl::PointXYZ(1.0, 0.0, 0.0));
+  ground_points->points.push_back(pcl::PointXYZ(0.0, 1.0, 0.0));
+
+  // Read transform between world and camera reference frame:
+  tf::TransformListener tfListener;
+  tf::StampedTransform worldToCamTransform;
+  try
+  {
+    tfListener.waitForTransform(camera_frame, ground_frame, ros::Time(0), ros::Duration(3.0), ros::Duration(0.01));
+    tfListener.lookupTransform(camera_frame, ground_frame, ros::Time(0), worldToCamTransform);
+  }
+  catch (tf::TransformException ex)
+  {
+    ROS_ERROR("%s",ex.what());
+  }
+
+  // Transform points to camera reference frame:
+  for (unsigned int i = 0; i < ground_points->points.size(); i++)
+  {
+    tf::Vector3 current_point(ground_points->points[i].x, ground_points->points[i].y, ground_points->points[i].z);
+    current_point = worldToCamTransform(current_point);
+    ground_points->points[i].x = current_point.x();
+    ground_points->points[i].y = current_point.y();
+    ground_points->points[i].z = current_point.z();
+  }
+
+  // Compute ground equation:
+  std::vector<int> ground_points_indices;
+  for (unsigned int i = 0; i < ground_points->points.size(); i++)
+    ground_points_indices.push_back(i);
+  pcl::SampleConsensusModelPlane<pcl::PointXYZ> model_plane(ground_points);
+  Eigen::VectorXf ground_coeffs;
+  model_plane.computeModelCoefficients(ground_points_indices,ground_coeffs);
+  std::cout << "Ground plane coefficients obtained from calibration: " << ground_coeffs(0) << ", " << ground_coeffs(1) << ", " << ground_coeffs(2) <<
+      ", " << ground_coeffs(3) << "." << std::endl;
+
+  return ground_coeffs;
+}
+
+template <typename PointT> Eigen::VectorXf
 open_ptrack::detection::GroundplaneEstimation<PointT>::compute ()
 {
   Eigen::VectorXf ground_coeffs;
