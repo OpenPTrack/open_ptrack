@@ -215,6 +215,12 @@ namespace open_ptrack
         getNoGroundCloud ();
 
         /**
+         * \brief Get mean luminance of the RGB data.
+         */
+        float
+        getMeanLuminance ();
+
+        /**
          * \brief Extract RGB information from a point cloud and output the corresponding RGB point cloud.
          *
          * \param[in] input_cloud A pointer to a point cloud containing also RGB information.
@@ -299,6 +305,9 @@ namespace open_ptrack
 
         /** \brief flag stating if RGB information should be used or not for people detection */
         bool use_rgb_;
+
+        /** \brief Mean luminance of the RGB data */
+        float mean_luminance_;
     };
   } /* namespace detection */
 } /* namespace open_ptrack */

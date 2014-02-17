@@ -60,6 +60,7 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::GroundBasedPeople
   dimension_limits_set_ = false;
   heads_minimum_distance_ = 0.3;
   use_rgb_ = true;
+  mean_luminance_ = 0.0;
 
   // set flag values for mandatory parameters:
   sqrt_ground_coeffs_ = std::numeric_limits<float>::quiet_NaN();
@@ -179,6 +180,12 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::getNoGroundCloud 
   return (no_ground_cloud_);
 }
 
+template <typename PointT> float
+open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::getMeanLuminance ()
+{
+  return (mean_luminance_);
+}
+
 template <typename PointT> void
 open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::extractRGBFromPointCloud (PointCloudPtr input_cloud, pcl::PointCloud<pcl::RGB>::Ptr& output_cloud)
 {
@@ -270,6 +277,24 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
       }
     }
     (*cloud_) = (*cloud_downsampled);
+  }
+
+  if (use_rgb_)
+  {
+    // Compute mean luminance:
+    int n_points = cloud_->points.size();
+    double sumR, sumG, sumB = 0.0;
+    for (int j = 0; j < cloud_->width; j++)
+    {
+      for (int i = 0; i < cloud_->height; i++)
+      {
+        sumR += (*cloud_)(j,i).r;
+        sumG += (*cloud_)(j,i).g;
+        sumB += (*cloud_)(j,i).b;
+      }
+    }
+    mean_luminance_ = 0.3 * sumR/n_points + 0.59 * sumG/n_points + 0.11 * sumB/n_points;
+//    mean_luminance_ = 0.2126 * sumR/n_points + 0.7152 * sumG/n_points + 0.0722 * sumB/n_points;
   }
 
   // Voxel grid filtering:

@@ -111,6 +111,8 @@ main (int argc, char** argv)
 	nh.param("classifier_file", svm_filename, std::string("./"));
 	bool use_rgb;
 	nh.param("use_rgb", use_rgb, false);
+	int minimum_luminance;
+	nh.param("minimum_luminance", minimum_luminance, 20);
 	double min_confidence;
 	nh.param("ground_based_people_detection_min_confidence", min_confidence, -1.5);
 	double min_height;
@@ -195,10 +197,11 @@ main (int argc, char** argv)
 	// People detection app initialization:
 	open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT> people_detector;    // people detection object
 	people_detector.setVoxelSize(voxel_size);                        // set the voxel size
-	people_detector.setIntrinsics(intrinsics_matrix);            // set RGB camera intrinsic parameters
+	people_detector.setIntrinsics(intrinsics_matrix);                // set RGB camera intrinsic parameters
 	people_detector.setClassifier(person_classifier);                // set person classifier
 	people_detector.setHeightLimits(min_height, max_height);         // set person classifier
 	people_detector.setSamplingFactor(sampling_factor);              // set sampling factor
+	people_detector.setUseRGB(use_rgb);                              // set if RGB should be used or not
 
 	// Main loop:
 	while(ros::ok())
@@ -215,7 +218,6 @@ main (int argc, char** argv)
 			people_detector.setInputCloud(cloud);
 			people_detector.setGround(ground_coeffs);                    // set floor coefficients
 			people_detector.compute(clusters);                           // perform people detection
-			people_detector.setUseRGB(false);                            // set if RGB should be used or not
 
 			ground_coeffs = people_detector.getGround();                 // get updated floor coefficients
 
@@ -226,10 +228,12 @@ main (int argc, char** argv)
 			for(int i = 0; i < 3; i++)
 				for(int j = 0; j < 3; j++)
 					detection_array_msg->intrinsic_matrix.push_back(intrinsics_matrix(i, j));
+
 			// Add all valid detections:
 			for(std::vector<pcl::people::PersonCluster<PointT> >::iterator it = clusters.begin(); it != clusters.end(); ++it)
 			{
-				if((!use_rgb) | (it->getPersonConfidence() > min_confidence))            // if RGB is used, keep only people with confidence above a threshold
+				if((!use_rgb) | (people_detector.getMeanLuminance() < minimum_luminance) |      // if RGB is not used or luminance is too low
+				    ((people_detector.getMeanLuminance() >= minimum_luminance) & (it->getPersonConfidence() > min_confidence)))            // if RGB is used, keep only people with confidence above a threshold
 				{
 				  // Create detection message:
 					Detection detection_msg;
