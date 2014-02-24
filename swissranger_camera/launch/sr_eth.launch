@@ -1,0 +1,13 @@
+<!-- -*- mode: XML -*- -->
+
+<launch>
+  <node pkg="swissranger_camera" type="swissranger_camera" name="swissranger"
+	output="screen" respawn="false">
+    <param name="auto_exposure" value="1" />
+    <param name="ether_addr" value="192.168.1.33" />
+  </node>
+  
+  <!-- ROS visualizer -->
+  <!--node name="rviz" pkg="rviz" type="rviz" args="-d $(find swissranger_camera)/cfg/swissranger.rviz" /-->  
+
+</launch>

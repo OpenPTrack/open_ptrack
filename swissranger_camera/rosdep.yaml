@@ -1,0 +1,35 @@
+# Note: Ubuntu package can be found at http://www.mesa-imaging.ch/customer/driver
+#       ROS keeps copies at http://pr.willowgarage.com/downloads
+libmesasr:
+  ubuntu: |
+    URL=http://www.mesa-imaging.ch/customer/driver
+    #URL=http://pr.willowgarage.com/downloads
+    PACKAGE=libmesasr-dev
+    VERSION=1.0.14-653
+    BITSIZE=`uname -m`
+    if [ ! -f /usr/lib/libmesasr.so ]; then
+        mkdir -p ~/ros/ros-deps
+        cd ~/ros/ros-deps
+        if [ $BITSIZE = "x86_64" ]; then
+            wget --tries=10 $URL/$PACKAGE-$VERSION.amd64.deb
+            # dpkg-deb -x $PACKAGE-$VERSION.amd64.deb tmp
+            # dpkg-deb -e $PACKAGE-$VERSION.amd64.deb tmp/DEBIAN
+            # sed -i 's/libusb-0.1-4 (= .*)/libusb-0.1-4/g' tmp/DEBIAN/control 
+            # dpkg -b tmp $PACKAGE-$VERSION-generic.amd64.deb
+            sudo dpkg -i $PACKAGE-$VERSION.amd64.deb
+            rm -rf tmp
+        fi
+        if [ $BITSIZE = "i686" ]; then
+            wget --tries=10 $URL/$PACKAGE-$VERSION.i386.deb
+            # dpkg-deb -x $PACKAGE-$VERSION.i386.deb tmp
+            # dpkg-deb -e $PACKAGE-$VERSION.i386.deb tmp/DEBIAN
+            # sed -i 's/libusb-0.1-4 (= .*)/libusb-0.1-4/g' tmp/DEBIAN/control 
+            # dpkg -b tmp $PACKAGE-$VERSION-generic.i386.deb
+            sudo dpkg -i $PACKAGE-$VERSION.i386.deb
+            rm -rf tmp
+        fi
+    fi
+    if [ ! -f /usr/share/libmesasr/camData00019e13.xml ]; then
+        cd /usr/share/libmesasr
+        sudo wget --tries=10 http://www.mesa-imaging.ch/customer/calibData/camData00019e13.xml 
+    fi

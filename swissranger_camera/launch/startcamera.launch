@@ -1,0 +1,17 @@
+<!-- -*- mode: XML -*- -->
+
+<!-- Start the driver for a specific SwissRanger Lidar camera.
+
+     environment: $SR = base file name of sr YAML parameters
+                  (default: test_sr)
+-->
+
+<launch>
+
+  <!-- name node (and topic) after parameter file -->
+  <node pkg="swissranger_camera" type="swissranger_camera"
+        name="$(optenv SR test_sr)">
+    <rosparam
+       file="$(find swissranger_camera)/launch/$(optenv SR test_sr).yaml" /> 
+  </node>
+</launch>

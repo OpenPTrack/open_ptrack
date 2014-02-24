@@ -1,0 +1,8 @@
+<!-- -*- mode: XML -*- -->
+
+<launch>
+  <node pkg="swissranger_camera" type="swissranger_camera" name="swissranger"
+	output="screen" respawn="false">
+    <param name="auto_exposure" value="1" />
+  </node>
+</launch>

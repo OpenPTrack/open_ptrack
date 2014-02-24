@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<package>
+  <name>swissranger_camera</name>
+  <version>0.0.0</version>
+  <description>
+    Mesa Imaging Swissranger 3000/4000/4500 driver.
+
+    This is a port of the older ROS driver for SR devices that used the
+    libusb API.  This driver uses the newer libmesasr API (>= 1.0)
+    that can be found at http://www.mesa-imaging.ch/drivers.php.  This
+    node is designed to work with the ROS image_pipeline with minimal
+    dependencies.  
+
+    Note: A compile time flag at the top of include/swissranger.h is
+    currently used to switch back and forth between supporting SR3000
+    and SR4000/SR4500 devices.
+
+    This is a modified version of the original work from Radu B. Rusu 
+    and Patrick Beeson documented at http://wiki.ros.org/swissranger_camera.
+  </description>
+
+  <maintainer email="munaro@dei.unipd.it">Matteo Munaro</maintainer>
+
+  <license>BSD</license>
+
+  <author>Patrick Beeson, Radu Rusu</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  
+  <build_depend>ros</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>image_transport</build_depend>
+  <build_depend>tf</build_depend>
+  <build_depend>camera_info_manager</build_depend>
+  <build_depend>dynamic_reconfigure</build_depend>
+  <build_depend>driver_base</build_depend>
+  <build_depend>image_common</build_depend>
+  <build_depend>libmesasr</build_depend>
+  
+  <run_depend>ros</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>image_transport</run_depend>
+  <run_depend>tf</run_depend>
+  <run_depend>camera_info_manager</run_depend>
+  <run_depend>dynamic_reconfigure</run_depend>
+  <run_depend>driver_base</run_depend>
+  <run_depend>image_common</run_depend>
+  <run_depend>libmesasr</run_depend>
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+  </export>
+</package>
