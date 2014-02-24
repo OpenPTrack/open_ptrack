@@ -2,7 +2,7 @@
 ground_estimation_mode: 0
 
 # Ground based people detection parameters:
-ground_based_people_detection_min_confidence: -1.95
+ground_based_people_detection_min_confidence: -1.75
 minimum_person_height: 1.3
 maximum_person_height: 2.3
 sampling_factor: 1

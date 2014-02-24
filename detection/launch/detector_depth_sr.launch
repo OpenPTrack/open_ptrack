@@ -1,6 +1,8 @@
 <launch>
   <!-- Start the SR4500 -->
-  <include file="$(find swissranger_camera)/launch/sr_eth.launch"/>
+  <include file="$(find swissranger_camera)/launch/sr_eth.launch">
+    <arg name="device_ip" value="192.168.1.33" />
+  </include>
 
    <!-- Launch ground based people detection node -->
    <node pkg="detection" type="ground_based_people_detector_sr" name="ground_based_people_detector_sr" output="screen" required="true">
