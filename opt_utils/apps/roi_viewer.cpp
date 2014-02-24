@@ -64,6 +64,7 @@ POSSIBILITY OF SUCH DAMAGE.
 // Used to display OPENCV images
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 // Open PTrack
 #include "open_ptrack/opt_utils/conversions.h"
@@ -100,6 +101,7 @@ class roiViewerNode
     // Launch file Parameters
     int label;
     bool show_confidence;
+    bool color_image;
 
     // Object of class Conversions:
     open_ptrack::opt_utils::Conversions converter;
@@ -126,6 +128,9 @@ class roiViewerNode
 
         //Read parameter for showing roi confidence
         node_.param(ros::this_node::getName()+"/show_confidence",show_confidence,false);
+
+        //Read parameter stating if the image is grayscale or with colors
+        node_.param(ros::this_node::getName()+"/color_image", color_image, true);
 
         // Subscribe to Messages
         sub_image_.subscribe(node_,"input_image",20);
@@ -159,9 +164,15 @@ class roiViewerNode
       ROS_INFO("roiViewer Callback called for image: %s", imgName.c_str());
 
       //Use CV Bridge to convert images
-
-      cv_bridge::CvImagePtr cv_color = cv_bridge::toCvCopy(image_msg,
-          sensor_msgs::image_encodings::BGR8);
+      cv_bridge::CvImagePtr cv_ptr;
+      if (color_image)
+      {
+        cv_ptr = cv_bridge::toCvCopy(image_msg, sensor_msgs::image_encodings::BGR8);
+      }
+      else
+      {
+        cv_ptr = cv_bridge::toCvCopy(image_msg, sensor_msgs::image_encodings::MONO8);
+      }
 
       // Read camera intrinsic parameters:
       Eigen::Matrix3f intrinsic_matrix;
@@ -186,14 +197,14 @@ class roiViewerNode
         int w = h * 2 / 3.0;
         int x = std::max(0, int(centroid2d(0) - w / 2.0));
         int y = std::max(0, int(top2d(1)));
-        h = std::min(int(image_msg->height - y), int(h));
-        w = std::min(int(image_msg->width - x), int(w));
+        h = std::min(int(cv_ptr->image.rows - y), int(h));
+        w = std::min(int(cv_ptr->image.cols - x), int(w));
 
         Point ptUpperLeft = Point(x,y);
         Point ptLowerRight = Point(x+w,y+h);
 
         // Draw a rectangle around the detected person:
-        rectangle(cv_color->image,ptUpperLeft,ptLowerRight,Scalar(255,255,255));
+        rectangle(cv_ptr->image,ptUpperLeft,ptLowerRight,Scalar(255,255,255));
 
         if (show_confidence)
         {
@@ -201,13 +212,14 @@ class roiViewerNode
           float confidenceToDisplay = float(int(detection_msg->detections[i].confidence*100))/100;
           std::stringstream conf_ss;
           conf_ss << confidenceToDisplay;
-          cv::rectangle(cv_color->image, cv::Point(x, y-15),	cv::Point(x +60, y), darkBlue, CV_FILLED, 8);
-          cv::putText(cv_color->image, conf_ss.str(), cv::Point(x, y), cv::FONT_HERSHEY_SIMPLEX, 0.5, white, 1.7, CV_AA);
+          double scale_factor = std::min(1.0, 2*double(image_msg->height) / 480);
+          cv::rectangle(cv_ptr->image, cv::Point(x, y - 15 * scale_factor),	cv::Point(x + 60 * scale_factor, y), darkBlue, CV_FILLED, 8);
+          cv::putText(cv_ptr->image, conf_ss.str(), cv::Point(x, y), cv::FONT_HERSHEY_SIMPLEX, 0.5 * scale_factor, white, 1.7, CV_AA);
         }
       }
 
       // Display the cv image
-      cv::imshow("Detections",cv_color->image);
+      cv::imshow("Detections",cv_ptr->image);
     }
 
     ~roiViewerNode()

@@ -300,6 +300,18 @@ open_ptrack::detection::GroundplaneEstimation<PointT>::compute ()
     std::cout << "Automatic mode for ground plane estimation." << std::endl;
 
     // Normals computation:
+
+//    pcl::NormalEstimation<PointT, pcl::Normal> ne;
+////    ne.setNormalEstimationMethod (ne.COVARIANCE_MATRIX);
+////    ne.setMaxDepthChangeFactor (0.03f);
+////    ne.setNormalSmoothingSize (20.0f);
+//    pcl::PointCloud<pcl::Normal>::Ptr normal_cloud (new pcl::PointCloud<pcl::Normal>);
+//    pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB> ());
+//    ne.setSearchMethod (tree);
+//    ne.setRadiusSearch (0.2);
+//    ne.setInputCloud (cloud_);
+//    ne.compute (*normal_cloud);
+
     pcl::IntegralImageNormalEstimation<PointT, pcl::Normal> ne;
     ne.setNormalEstimationMethod (ne.COVARIANCE_MATRIX);
     ne.setMaxDepthChangeFactor (0.03f);
@@ -307,6 +319,18 @@ open_ptrack::detection::GroundplaneEstimation<PointT>::compute ()
     pcl::PointCloud<pcl::Normal>::Ptr normal_cloud (new pcl::PointCloud<pcl::Normal>);
     ne.setInputCloud (cloud_);
     ne.compute (*normal_cloud);
+
+//    std::cout << "Normals estimated!" << std::endl;
+//
+//    // Multi plane segmentation initialization:
+//    std::vector<pcl::PlanarRegion<PointT>, Eigen::aligned_allocator<pcl::PlanarRegion<PointT> > > regions;
+//    pcl::OrganizedMultiPlaneSegmentation<PointT, pcl::Normal, pcl::Label> mps;
+//    mps.setMinInliers (500);
+//    mps.setAngularThreshold (2.0 * M_PI / 180);
+//    mps.setDistanceThreshold (0.2);
+//    mps.setInputNormals (normal_cloud);
+//    mps.setInputCloud (cloud_);
+//    mps.segmentAndRefine (regions);
 
     // Multi plane segmentation initialization:
     std::vector<pcl::PlanarRegion<PointT>, Eigen::aligned_allocator<pcl::PlanarRegion<PointT> > > regions;

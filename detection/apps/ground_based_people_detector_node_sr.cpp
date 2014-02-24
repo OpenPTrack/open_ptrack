@@ -64,38 +64,124 @@
 #include <opt_msgs/RoiRect.h>
 #include <opt_msgs/Rois.h>
 #include <std_msgs/String.h>
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/CameraInfo.h>
+#include <sensor_msgs/image_encodings.h>
+#include <cv_bridge/cv_bridge.h>
 #include <opt_msgs/Detection.h>
 #include <opt_msgs/DetectionArray.h>
 
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
+//Time Synchronizer
+#include <message_filters/subscriber.h>
+#include <message_filters/synchronizer.h>
+#include <message_filters/sync_policies/exact_time.h>
+#include <message_filters/sync_policies/approximate_time.h>
+
 using namespace opt_msgs;
 using namespace sensor_msgs;
+using namespace message_filters::sync_policies;
 
 typedef pcl::PointXYZRGB PointT;
 typedef pcl::PointCloud<PointT> PointCloudT;
 
 bool new_cloud_available_flag = false;
 PointCloudT::Ptr cloud(new PointCloudT);
+
 bool intrinsics_already_set = false;
 Eigen::Matrix3f intrinsics_matrix;
 
-void
-cloud_cb (const PointCloudT::ConstPtr& callback_cloud)
-{
-	*cloud = *callback_cloud;
-	new_cloud_available_flag = true;
-}
+cv::Mat confidence_image, intensity_image;
+
+enum { COLS = 176, ROWS = 144 };
 
 void
-cameraInfoCallback (const sensor_msgs::CameraInfo::ConstPtr & msg)
+cloud_cb (const PointCloudConstPtr& callback_cloud)
 {
-  if (!intrinsics_already_set)
+  // Create intensity and confidence images:
+  for (unsigned int i = 0; i < ROWS; i++)
   {
-    intrinsics_matrix << msg->K.elems[0], msg->K.elems[1], msg->K.elems[2],
-        msg->K.elems[3], msg->K.elems[4], msg->K.elems[5],
-        msg->K.elems[6], msg->K.elems[7], msg->K.elems[8];
-    intrinsics_already_set = true;
+    for (unsigned int j = 0; j < COLS; j++)
+    {
+      intensity_image.at<unsigned char>(i,j) = callback_cloud->channels[0].values[j + i*COLS]/255;
+      confidence_image.at<unsigned char>(i,j) = callback_cloud->channels[1].values[j + i*COLS]/255;
+    }
   }
+
+  // Find min and max of intensity image:
+  double minVal, maxVal;
+  cv::Point minLoc, maxLoc;
+  cv::minMaxLoc( intensity_image, &minVal, &maxVal, &minLoc, &maxLoc );
+
+  // Create point cloud XYZRGB:
+  cloud->header = pcl_conversions::toPCL(callback_cloud->header);
+  cloud->points.clear();
+  pcl::PointXYZRGB p;
+  cloud->points.resize(callback_cloud->points.size(), p);
+  cloud->width = COLS;
+  cloud->height = ROWS;
+  cloud->is_dense = true;
+  for (unsigned int i = 0; i < callback_cloud->points.size(); i++)
+  {
+    cloud->points[i].x = callback_cloud->points[i].x;
+    cloud->points[i].y = callback_cloud->points[i].y;
+    cloud->points[i].z = callback_cloud->points[i].z;
+    unsigned char intensity = ((callback_cloud->channels[0].values[i])/255 - minVal) * 255 / (maxVal - minVal);
+    cloud->points[i].r = intensity;
+    cloud->points[i].g = intensity;
+    cloud->points[i].b = intensity;
+    intensity_image.at<unsigned char>(i) = intensity;
+  }
+
+  new_cloud_available_flag = true;
+}
+
+//void
+//swissrangerCb (const ImageConstPtr& image_msg, const PointCloudT::ConstPtr& callback_cloud)
+//{
+//  cv_bridge::CvImagePtr cv_ptr  = cv_bridge::toCvCopy(image_msg, image_encodings::MONO8);
+//  confidence_image  = cv_ptr->image;
+//
+//  *cloud = *callback_cloud;
+//  new_cloud_available_flag = true;
+//}
+
+//void
+//swissrangerCb (const ImageConstPtr& intensity_msg, const ImageConstPtr& confidence_msg, const PointCloudT::ConstPtr& callback_cloud)
+//{
+//  cv_bridge::CvImagePtr intensity_cv_ptr  = cv_bridge::toCvCopy(intensity_msg, image_encodings::MONO8);
+//  intensity_image  = intensity_cv_ptr->image;
+//
+//  cv_bridge::CvImagePtr confidence_cv_ptr  = cv_bridge::toCvCopy(confidence_msg, image_encodings::MONO8);
+//  confidence_image  = confidence_cv_ptr->image;
+//
+//  *cloud = *callback_cloud;
+//  new_cloud_available_flag = true;
+//}
+
+void removeLowConfidencePoints(cv::Mat& confidence_image, int threshold, PointCloudT::Ptr& cloud)
+{
+  for (int i=0;i<cloud->height;i++)
+  {
+    for (int j=0;j<cloud->width;j++)
+    {
+      if (confidence_image.at<unsigned char>(i,j) < threshold)
+      {
+        cloud->at(j,i).x = std::numeric_limits<float>::quiet_NaN();
+        cloud->at(j,i).y = std::numeric_limits<float>::quiet_NaN();
+        cloud->at(j,i).z = std::numeric_limits<float>::quiet_NaN();
+
+        confidence_image.at<unsigned char>(i,j) = 0;    // just for visualization
+      }
+      else
+        confidence_image.at<unsigned char>(i,j) = 255;  // just for visualization
+    }
+  }
+  cloud->is_dense = false;
 }
 
 int
@@ -111,8 +197,6 @@ main (int argc, char** argv)
 	nh.param("classifier_file", svm_filename, std::string("./"));
 	bool use_rgb;
 	nh.param("use_rgb", use_rgb, false);
-	int minimum_luminance;
-	nh.param("minimum_luminance", minimum_luminance, 20);
 	double min_confidence;
 	nh.param("ground_based_people_detection_min_confidence", min_confidence, -1.5);
 	double min_height;
@@ -123,31 +207,43 @@ main (int argc, char** argv)
 	nh.param("sampling_factor", sampling_factor, 1);
 	std::string pointcloud_topic;
 	nh.param("pointcloud_topic", pointcloud_topic, std::string("/camera/depth_registered/points"));
+	std::string confidence_topic;
+	nh.param("confidence_topic", confidence_topic, std::string("/swissranger/confidence/image_raw"));
+	std::string intensity_topic;
+	nh.param("intensity_topic", intensity_topic, std::string("/swissranger/intensity/image_raw"));
 	std::string output_topic;
 	nh.param("output_topic", output_topic, std::string("/ground_based_people_detector/detections"));
 	std::string camera_info_topic;
 	nh.param("camera_info_topic", camera_info_topic, std::string("/camera/rgb/camera_info"));
 	double rate_value;
 	nh.param("rate", rate_value, 30.0);
-	// If true, exploit extrinsic calibration for estimatin the ground plane equation:
-	bool ground_from_extrinsic_calibration;
-  nh.param("ground_from_extrinsic_calibration", ground_from_extrinsic_calibration, false);
+	int sr_conf_threshold;
+	nh.param("sr_conf_threshold", sr_conf_threshold, 200);
 
 	// Fixed parameters:
 	float voxel_size = 0.06;
 //	Eigen::Matrix3f intrinsics_matrix;
-	intrinsics_matrix << 525, 0.0, 319.5, 0.0, 525, 239.5, 0.0, 0.0, 1.0; // Kinect RGB camera intrinsics
+	//horizontal field of view = 2 atan(0.5 width / focallength)
+	//vertical field of view = 2 atan(0.5 height / focallength)
+//	intrinsics_matrix << 128.0, 0.0, 88.0, 0.0, 128.0, 72.0, 0.0, 0.0, 1.0; // camera intrinsics
+	intrinsics_matrix << 148.906628757021, 0, 87.307592764537, 0, 148.634545599915, 70.8860920144388, 0, 0, 1;
 
 	// Subscribers:
 	ros::Subscriber sub = nh.subscribe(pointcloud_topic, 1, cloud_cb);
-	ros::Subscriber camera_info_sub = nh.subscribe(camera_info_topic, 1, cameraInfoCallback);
 
 	// Publishers:
 	ros::Publisher detection_pub;
 	detection_pub= nh.advertise<DetectionArray>(output_topic, 3);
+	ros::Publisher image_pub;
+	image_pub = nh.advertise<Image>("/swissranger/intensity/image",3);
 
 	Rois output_rois_;
 	open_ptrack::opt_utils::Conversions converter;
+
+	// Initialize confidence and intensity images
+	intensity_image = cv::Mat(144, 176, CV_8U, cv::Scalar(255));
+	confidence_image = cv::Mat(144, 176, CV_8U, cv::Scalar(255));
+	cv::namedWindow("Confidence map", CV_WINDOW_NORMAL);
 
 	ros::Rate rate(rate_value);
 	while(ros::ok() && !new_cloud_available_flag)
@@ -170,25 +266,12 @@ main (int argc, char** argv)
 	  rate.sleep();
 	}
 
+	// Remove low confidence points:
+	removeLowConfidencePoints(confidence_image, sr_conf_threshold, cloud);
+
 	// Ground estimation:
-	Eigen::VectorXf ground_coeffs;
-	// Ground plane equation is computed from the current point cloud data:
 	ground_estimator.setInputCloud(cloud);
-	ground_coeffs = ground_estimator.compute();
-
-	if (ground_from_extrinsic_calibration)
-	{ // Ground plane equation derived from extrinsic calibration:
-	  Eigen::VectorXf ground_coeffs_calib = ground_estimator.computeFromTF(cloud->header.frame_id, "/world");
-
-	  // If ground could not be well estimated from point cloud data, use calibration data:
-	  // (if error in ground plane estimation from point cloud OR if d coefficient estimated from point cloud
-	  // is too different from d coefficient obtained from calibration)
-	  if ((ground_coeffs.sum() == 0.0) | (std::fabs(float(ground_coeffs_calib(3) - ground_coeffs(3))) > 0.2))
-	  {
-	    ground_coeffs = ground_coeffs_calib;
-	    std::cout << "Chosen ground plane estimate obtained from calibration." << std::endl;
-	  }
-	}
+	Eigen::VectorXf ground_coeffs = ground_estimator.compute();
 
 	// Create classifier for people detection:
 	open_ptrack::detection::PersonClassifier<pcl::RGB> person_classifier;
@@ -201,7 +284,11 @@ main (int argc, char** argv)
 	people_detector.setClassifier(person_classifier);                // set person classifier
 	people_detector.setHeightLimits(min_height, max_height);         // set person classifier
 	people_detector.setSamplingFactor(sampling_factor);              // set sampling factor
-	people_detector.setUseRGB(use_rgb);                              // set if RGB should be used or not
+	people_detector.setUseRGB(use_rgb);                                // set if RGB should be used or not
+
+//	// Initialize new viewer:
+//	pcl::visualization::PCLVisualizer viewer("PCL Viewer");          // viewer initialization
+//	viewer.setCameraPosition(0,0,-2,0,-1,0,0);
 
 	// Main loop:
 	while(ros::ok())
@@ -213,6 +300,9 @@ main (int argc, char** argv)
 			// Convert PCL cloud header to ROS header:
 			std_msgs::Header cloud_header = pcl_conversions::fromPCL(cloud->header);
 
+			// Remove low confidence points:
+			removeLowConfidencePoints(confidence_image, sr_conf_threshold, cloud);
+
 			// Perform people detection on the new cloud:
 			std::vector<pcl::people::PersonCluster<PointT> > clusters;   // vector containing persons clusters
 			people_detector.setInputCloud(cloud);
@@ -221,6 +311,14 @@ main (int argc, char** argv)
 
 			ground_coeffs = people_detector.getGround();                 // get updated floor coefficients
 
+//			// Draw cloud and people bounding boxes in the viewer:
+//			PointCloudT::Ptr no_ground_cloud(new PointCloudT);
+//			no_ground_cloud = people_detector.getNoGroundCloud();
+//			viewer.removeAllPointClouds();
+//			viewer.removeAllShapes();
+//			viewer.addPointCloud<PointT> (no_ground_cloud, "input_cloud");
+//			viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "input_cloud");
+
 			/// Write detection message:
 			DetectionArray::Ptr detection_array_msg(new DetectionArray);
 			// Set camera-specific fields:
@@ -228,13 +326,13 @@ main (int argc, char** argv)
 			for(int i = 0; i < 3; i++)
 				for(int j = 0; j < 3; j++)
 					detection_array_msg->intrinsic_matrix.push_back(intrinsics_matrix(i, j));
-
+			detection_array_msg->header.frame_id = "/camera_rgb_optical_frame";
 			// Add all valid detections:
+			unsigned int k = 0;
 			for(std::vector<pcl::people::PersonCluster<PointT> >::iterator it = clusters.begin(); it != clusters.end(); ++it)
 			{
-				if((!use_rgb) | (people_detector.getMeanLuminance() < minimum_luminance) |      // if RGB is not used or luminance is too low
-				    ((people_detector.getMeanLuminance() >= minimum_luminance) & (it->getPersonConfidence() > min_confidence)))            // if RGB is used, keep only people with confidence above a threshold
-				{
+			  if((!use_rgb) | (it->getPersonConfidence() > min_confidence))            // if intensity is used, keep only people with confidence above a threshold
+			  {
 				  // Create detection message:
 					Detection detection_msg;
 					converter.Vector3fToVector3(it->getMin(), detection_msg.box_3D.p1);
@@ -269,9 +367,27 @@ main (int argc, char** argv)
 
 					// Add message:
 					detection_array_msg->detections.push_back(detection_msg);
+
+//					// draw theoretical person bounding box in the PCL viewer:
+//					it->drawTBoundingBox(viewer, k);
+//					k++;
 				}
 			}
 			detection_pub.publish(detection_array_msg);		 // publish message
+
+			// Send intensity image:
+			cv_bridge::CvImagePtr cv_ptr(new cv_bridge::CvImage);
+			cv_ptr->encoding = "mono8";
+			cv_ptr->image = intensity_image;
+      cv_ptr->header = detection_array_msg->header;
+			cv_ptr->header.frame_id = "/swissranger";
+			image_pub.publish(cv_ptr->toImageMsg());
+
+//			std::cout << k << " people found" << std::endl;
+//			viewer.spinOnce();
+
+			cv::imshow("Confidence map", confidence_image);
+			cv::waitKey(1);
 		}
 
 		// Execute callbacks:

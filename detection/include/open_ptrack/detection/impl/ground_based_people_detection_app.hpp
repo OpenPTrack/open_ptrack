@@ -1,7 +1,6 @@
 /*
  * Software License Agreement (BSD License)
  *
- * Point Cloud Library (PCL) - www.pointclouds.org
  * Copyright (c) 2013-, Open Perception, Inc.
  *
  * All rights reserved.
@@ -99,7 +98,7 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::setIntrinsics (Ei
 }
 
 template <typename PointT> void
-open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::setClassifier (pcl::people::PersonClassifier<pcl::RGB> person_classifier)
+open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::setClassifier (open_ptrack::detection::PersonClassifier<pcl::RGB> person_classifier)
 {
   person_classifier_ = person_classifier;
   person_classifier_set_flag_ = true;
@@ -341,6 +340,14 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
   subclustering.setSensorPortraitOrientation(vertical_);
   subclustering.subcluster(clusters);
 
+  for (unsigned int i = 0; i < rgb_image_->points.size(); i++)
+  {
+    if ((rgb_image_->points[i].r < 0) | (rgb_image_->points[i].r > 255) | isnan(rgb_image_->points[i].r))
+    {
+      std::cout << "ERROR!" << std::endl;
+    }
+  }
+
   if (use_rgb_) // if RGB information can be used
   {
     // Person confidence evaluation with HOG+SVM:
@@ -357,6 +364,7 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
       top /= top(2);
       Eigen::Vector3f bottom = intrinsics_matrix_ * (it->getTBottom());
       bottom /= bottom(2);
+
       it->setPersonConfidence(person_classifier_.evaluate(rgb_image_, bottom, top, centroid, vertical_));
     }
   }

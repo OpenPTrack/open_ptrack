@@ -1,0 +1,13 @@
+<launch>
+  
+  <arg name="input_topic" value="/detector/detections" />
+    
+  <!-- Launch the tracking node -->
+  <node pkg="tracking" type="tracker" name="tracker_node" output="screen">
+    <remap from="~input" to="$(arg input_topic)" />
+    <param name="swissranger" type="bool" value="true" />
+    <rosparam command="load" file="$(find tracking)/conf/tracker_sr.yaml" /> 
+    <rosparam command="load" file="$(find detection)/conf/ground_based_people_detector_sr.yaml" /> 
+  </node>
+
+</launch>

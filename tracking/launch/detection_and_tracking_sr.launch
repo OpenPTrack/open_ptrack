@@ -1,0 +1,15 @@
+<launch>
+
+  <!-- People detection -->
+  <include file="$(find detection)/launch/detector_depth_sr.launch"/>
+
+  <!-- People tracking -->
+  <include file="$(find tracking)/launch/tracker_sr.launch"/>
+
+  <!-- UDP messaging -->
+  <include file="$(find opt_utils)/launch/ros2udp_converter.launch"/>
+
+  <!-- Visualization -->
+  <include file="$(find opt_utils)/launch/visualization_sr.launch"/>
+
+</launch>

@@ -104,8 +104,8 @@ detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
     if (!extrinsic_calibration)
     {
       static tf::TransformBroadcaster world_to_camera_tf_publisher;
-//      world_to_camera_tf_publisher.sendTransform(tf::StampedTransform(camera_frame_to_world_transform, ros::Time::now(), "/world", "/camera_rgb_optical_frame"));
-      world_to_camera_tf_publisher.sendTransform(tf::StampedTransform(world_to_camera_frame_transform, ros::Time::now(), "/camera_rgb_optical_frame", "/world"));
+//      world_to_camera_tf_publisher.sendTransform(tf::StampedTransform(camera_frame_to_world_transform, ros::Time::now(), world_frame_id, frame_id));
+      world_to_camera_tf_publisher.sendTransform(tf::StampedTransform(world_to_camera_frame_transform, ros::Time::now(), frame_id, world_frame_id));
     }
 
     //Calculate direct and inverse transforms between camera and world frame:
@@ -291,9 +291,6 @@ main(int argc, char** argv)
   double min_confidence;
   nh.param("min_confidence_initialization", min_confidence, -2.5); //0.0);
 
-  double min_confidence_detections;
-  nh.param("haar_disp_ada_min_confidence", min_confidence_detections, -2.5); //0.0);
-
   double chi_value;
   nh.param("kalman/gate_distance_probability", chi_value, 0.9);
 
@@ -324,6 +321,13 @@ main(int argc, char** argv)
   int detections_to_validate;
   nh.param("target/detections_to_validate", detections_to_validate, 5);
 
+  double min_confidence_detections, haar_disp_ada_min_confidence, ground_based_people_detection_min_confidence;
+  nh.param("haar_disp_ada_min_confidence", haar_disp_ada_min_confidence, -2.5); //0.0);
+  nh.param("ground_based_people_detection_min_confidence", ground_based_people_detection_min_confidence, -2.5); //0.0);
+
+  bool swissranger;
+  nh.param("swissranger", swissranger, false);
+
   nh.param("output/history_pointcloud", output_history_pointcloud, false);
   nh.param("output/history_size", output_history_size, 0);
   nh.param("output/markers", output_markers, true);
@@ -332,6 +336,12 @@ main(int argc, char** argv)
 
   bool debug_mode;
   nh.param("debug/active", debug_mode, false);
+
+  // Set min_confidence_detections variable based on sensor type:
+  if (swissranger)
+    min_confidence_detections = ground_based_people_detection_min_confidence;
+  else
+    min_confidence_detections = haar_disp_ada_min_confidence;
 
   // Take chi square values with regards to the state dimension:
   fillChiMap(chi_map, velocity_in_motion_term);

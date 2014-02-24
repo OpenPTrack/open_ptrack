@@ -49,7 +49,8 @@
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/people/person_cluster.h>
 #include <pcl/people/head_based_subcluster.h>
-#include <pcl/people/person_classifier.h>
+
+#include <open_ptrack/detection/person_classifier.h>
 
 namespace open_ptrack
 {
@@ -126,7 +127,7 @@ namespace open_ptrack
          * \param[in] person_classifier Needed for people detection on RGB data.
          */
         void
-        setClassifier (pcl::people::PersonClassifier<pcl::RGB> person_classifier);
+        setClassifier (open_ptrack::detection::PersonClassifier<pcl::RGB> person_classifier);
 
         /**
          * \brief Set sensor orientation (vertical = true means portrait mode, vertical = false means landscape mode).
@@ -298,7 +299,7 @@ namespace open_ptrack
         Eigen::Matrix3f intrinsics_matrix_;
 
         /** \brief SVM-based person classifier */
-        pcl::people::PersonClassifier<pcl::RGB> person_classifier_;
+        open_ptrack::detection::PersonClassifier<pcl::RGB> person_classifier_;
 
         /** \brief flag stating if the classifier has been set or not */
         bool person_classifier_set_flag_;
