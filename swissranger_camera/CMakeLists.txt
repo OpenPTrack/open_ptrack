@@ -3,9 +3,9 @@ project(swissranger_camera)
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
 find_package(catkin REQUIRED COMPONENTS roscpp tf camera_info_manager image_transport dynamic_reconfigure driver_base)
 
-include_directories(include ${catkin_INCLUDE_DIRS} cfg/cpp)
-
 generate_dynamic_reconfigure_options(cfg/SwissRanger.cfg)
+
+include_directories(include ${catkin_INCLUDE_DIRS} cfg/cpp)
 
 catkin_package(
    INCLUDE_DIRS 
