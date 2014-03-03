@@ -82,6 +82,29 @@ open_ptrack::detection::GroundplaneEstimation<PointT>::tooManyNaN(PointCloudCons
     return false;
 }
 
+template <typename PointT> bool
+open_ptrack::detection::GroundplaneEstimation<PointT>::tooManyLowConfidencePoints (cv::Mat& confidence_image, int confidence_threshold, float max_ratio)
+{
+  int invalid_counter = 0;
+  for(unsigned int i = 0; i < confidence_image.rows; i++)
+  {
+    for(unsigned int j = 0; j < confidence_image.cols; j++)
+    {
+      // If the point has a non-valid confidence:
+      if(confidence_image.at<unsigned char>(i,j) < confidence_threshold)
+      { // update the counter:
+        invalid_counter++;
+      }
+    }
+  }
+
+  // If the invalid ratio is over max_ratio:
+  if( (float) invalid_counter/(confidence_image.rows * confidence_image.cols) > max_ratio )
+    return true;    // too many invalid points, frame invalid
+  else
+    return false;
+}
+
 template <typename PointT> Eigen::VectorXf
 open_ptrack::detection::GroundplaneEstimation<PointT>::computeFromTF (std::string camera_frame, std::string ground_frame)
 {

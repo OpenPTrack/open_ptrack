@@ -48,6 +48,8 @@
 #include <pcl/sample_consensus/ransac.h>
 #include <pcl/filters/extract_indices.h>
 #include <tf/transform_listener.h>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 namespace open_ptrack
 {
@@ -91,6 +93,18 @@ namespace open_ptrack
          */
         bool
         tooManyNaN (PointCloudConstPtr cloud, float max_ratio);
+
+        /**
+         * \brief Return true if the percentage of points with confidence below the confidence_threshold is greater than max_ratio.
+         *
+         * \param[in] confidence_image Image with confidence values for every pixel.
+         * \param[in] confidence_threshold Threshold on the confidence to consider a point as valid.
+         * \param[in] max_ratio The ratio of invalid points over which a cloud is considered as not valid.
+         *
+         * \return true if the cloud has ratio of NaN over total number of points greater than "max_ratio".
+         */
+        bool
+        tooManyLowConfidencePoints (cv::Mat& confidence_image, int confidence_threshold, float max_ratio);
 
         /**
          * \brief Compute the ground plane coefficients from the transform between two reference frames.

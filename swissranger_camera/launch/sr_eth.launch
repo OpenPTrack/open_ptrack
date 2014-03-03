@@ -6,6 +6,7 @@
   <node pkg="swissranger_camera" type="swissranger_camera" name="swissranger"
 	output="screen" respawn="false">
     <param name="auto_exposure" value="1" />
+    <!--param name="integration_time" value="40" /-->
     <param name="ether_addr" value="$(arg device_ip)" />
   </node>
   
