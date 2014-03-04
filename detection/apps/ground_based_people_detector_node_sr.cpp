@@ -107,15 +107,15 @@ cloud_cb (const PointCloudConstPtr& callback_cloud)
   {
     for (unsigned int j = 0; j < COLS; j++)
     {
-      intensity_image.at<unsigned char>(i,j) = callback_cloud->channels[0].values[j + i*COLS]/255;
-      confidence_image.at<unsigned char>(i,j) = callback_cloud->channels[1].values[j + i*COLS]/255;
+      intensity_image.at<unsigned char>(i,j) = (callback_cloud->channels[0].values[j + i*COLS])/255;
+      confidence_image.at<unsigned char>(i,j) = int((callback_cloud->channels[1].values[j + i*COLS])) >> 8;
     }
   }
 
   // Find min and max of intensity image:
   double minVal, maxVal;
   cv::Point minLoc, maxLoc;
-  cv::minMaxLoc( intensity_image, &minVal, &maxVal, &minLoc, &maxLoc );
+  cv::minMaxLoc( intensity_image, &minVal, &maxVal, &minLoc, &maxLoc, confidence_image);
 
   // Create point cloud XYZRGB:
   cloud->header = pcl_conversions::toPCL(callback_cloud->header);
@@ -242,8 +242,8 @@ main (int argc, char** argv)
 
 	// Initialize confidence and intensity images
 	intensity_image = cv::Mat(144, 176, CV_8U, cv::Scalar(255));
-	confidence_image = cv::Mat(144, 176, CV_8U, cv::Scalar(255));
-	cv::namedWindow("Confidence map", CV_WINDOW_NORMAL);
+	confidence_image = cv::Mat(144, 176, CV_8U, cv::Scalar(0));
+	cv::namedWindow("Valid points", CV_WINDOW_NORMAL);
 
 	ros::Rate rate(rate_value);
 	while(ros::ok() && !new_cloud_available_flag)
@@ -257,7 +257,14 @@ main (int argc, char** argv)
 	bool first_valid_frame = false;
 	while (!first_valid_frame)
 	{
-	  if (!ground_estimator.tooManyLowConfidencePoints(confidence_image, sr_conf_threshold, 0.7))
+	  // Execute callbacks:
+	  ros::spinOnce();
+	  rate.sleep();
+
+	  cv::imshow("Valid points", confidence_image);
+	  cv::waitKey(1);
+
+	  if (!ground_estimator.tooManyLowConfidencePoints(confidence_image, sr_conf_threshold, 0.5))
 	  { // A point cloud is valid if the ratio #NaN / #valid points is lower than a threshold
 	    first_valid_frame = true;
 	    std::cout << "Valid frame found! Ground plane initialization starting..." << std::endl;
@@ -266,9 +273,6 @@ main (int argc, char** argv)
 	  {
 	    std::cout << "No valid frame. Move the camera to a better position..." << std::endl;
 	  }
-	  // Execute callbacks:
-	  ros::spinOnce();
-	  rate.sleep();
 	}
 
 	// Remove low confidence points:
@@ -391,7 +395,7 @@ main (int argc, char** argv)
 //			std::cout << k << " people found" << std::endl;
 //			viewer.spinOnce();
 
-			cv::imshow("Confidence map", confidence_image);
+			cv::imshow("Valid points", confidence_image);
 			cv::waitKey(1);
 		}
 

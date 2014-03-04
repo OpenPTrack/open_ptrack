@@ -99,7 +99,7 @@ open_ptrack::detection::GroundplaneEstimation<PointT>::tooManyLowConfidencePoint
   }
 
   // If the invalid ratio is over max_ratio:
-  if( (float) invalid_counter/(confidence_image.rows * confidence_image.cols) > max_ratio )
+  if( (float (invalid_counter))/(confidence_image.rows * confidence_image.cols) > max_ratio )
     return true;    // too many invalid points, frame invalid
   else
     return false;

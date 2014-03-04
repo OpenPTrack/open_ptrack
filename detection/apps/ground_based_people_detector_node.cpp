@@ -164,7 +164,13 @@ main (int argc, char** argv)
 	  if (!ground_estimator.tooManyNaN(cloud, 0.7))
 	  { // A point cloud is valid if the ratio #NaN / #valid points is lower than a threshold
 	    first_valid_frame = true;
+	    std::cout << "Valid frame found! Ground plane initialization starting..." << std::endl;
 	  }
+	  else
+	  {
+	    std::cout << "No valid frame. Move the camera to a better position..." << std::endl;
+	  }
+
 	  // Execute callbacks:
 	  ros::spinOnce();
 	  rate.sleep();
