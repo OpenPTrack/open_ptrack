@@ -5,4 +5,8 @@
 	output="screen" respawn="false">
     <param name="auto_exposure" value="1" />
   </node>
+  
+  <!-- ROS visualizer -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find swissranger_camera)/cfg/swissranger.rviz" />  
+
 </launch>

@@ -212,7 +212,8 @@ namespace open_ptrack
         last_time_detected_with_high_confidence_ = last_time_detected_;
       }
 
-      if (((confidence - 0.5) < min_confidence_detections) && ((last_detector_confidence_ - 0.5) < min_confidence_detections))
+//      if (((confidence - 0.5) < min_confidence_detections) && ((last_detector_confidence_ - 0.5) < min_confidence_detections))
+      if ((confidence < (min_confidence + min_confidence_detections)/2) && (last_detector_confidence_ < (min_confidence + min_confidence_detections)/2))
       {
         low_confidence_consecutive_frames_++;
       }

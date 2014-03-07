@@ -2,12 +2,14 @@
 
 <launch>
   <arg name="device_ip" default="192.168.1.33" />
+  <arg name="camera_id" default="swissranger" />
 
-  <node pkg="swissranger_camera" type="swissranger_camera" name="swissranger"
+  <node pkg="swissranger_camera" type="swissranger_camera" name="$(arg camera_id)"
 	output="screen" respawn="false">
     <param name="auto_exposure" value="1" />
     <!--param name="integration_time" value="40" /-->
     <param name="ether_addr" value="$(arg device_ip)" />
+    <param name="camera_name" value="$(arg camera_id)" />    
   </node>
   
   <!-- ROS visualizer -->

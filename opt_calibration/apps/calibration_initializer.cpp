@@ -39,6 +39,7 @@
 #include <ros/ros.h>
 #include <ros/package.h>
 #include <fstream>
+#include <string.h>
 
 int
 main(int argc, char ** argv)
@@ -90,7 +91,17 @@ main(int argc, char ** argv)
 
     for (unsigned int i = 0; i < num_cameras; i++)
     {
-      launch_file << "  <arg name=\"camera" << i << "_id\" value=\"" << camera_id_vector[i] << "\" />" << std::endl;
+      if (!std::strcmp(camera_id_vector[i].substr(0,1).c_str(), "1"))    // if SwissRanger
+      {
+        std::string camera_name = camera_id_vector[i];
+        replace(camera_name.begin(), camera_name.end(), '.', '_');
+        camera_name = "SR_" + camera_name;
+        launch_file << "  <arg name=\"camera" << i << "_id\" value=\"" << camera_name << "\" />" << std::endl;
+      }
+      else
+      {
+        launch_file << "  <arg name=\"camera" << i << "_id\" value=\"" << camera_id_vector[i] << "\" />" << std::endl;
+      }
       launch_file << "  <arg name=\"camera" << i << "_name\" default=\"$(arg camera" << i << "_id)\" />" << std::endl;
     }
     launch_file << "  <arg name=\"base_camera\" value=\"$(arg camera" << base_camera << "_name)\" />" << std::endl << std::endl;
@@ -121,8 +132,17 @@ main(int argc, char ** argv)
     for (unsigned int i = 0; i < num_cameras; i++)
     {
       launch_file << "    <param name=\"camera_" << i << "/name\" value=\"/$(arg camera" << i << "_name)\" />" << std::endl;
-      launch_file << "    <remap from=\"~camera_" << i << "/image\" to=\"/$(arg camera" << i << "_name)/rgb/image_rect_color\" />" << std::endl;
-      launch_file << "    <remap from=\"~camera_" << i << "/camera_info\" to=\"/$(arg camera" << i << "_name)/rgb/camera_info\" />" << std::endl << std::endl;
+
+      if (!std::strcmp(camera_id_vector[i].substr(0,1).c_str(), "1"))    // if SwissRanger (camera_id is an IP address)
+      {
+        launch_file << "    <remap from=\"~camera_" << i << "/image\" to=\"/$(arg camera" << i << "_name)/intensity/image_resized\" />" << std::endl;
+        launch_file << "    <remap from=\"~camera_" << i << "/camera_info\" to=\"/$(arg camera" << i << "_name)/intensity/camera_info\" />" << std::endl << std::endl;
+      }
+      else                                                              // if Kinect
+      {
+        launch_file << "    <remap from=\"~camera_" << i << "/image\" to=\"/$(arg camera" << i << "_name)/rgb/image_rect_color\" />" << std::endl;
+        launch_file << "    <remap from=\"~camera_" << i << "/camera_info\" to=\"/$(arg camera" << i << "_name)/rgb/camera_info\" />" << std::endl << std::endl;
+      }
     }
 
     launch_file << "  </node>" << std::endl << std::endl;
@@ -135,7 +155,14 @@ main(int argc, char ** argv)
   // Write a launch file for every camera:
   for (unsigned int i = 0; i < num_cameras; i++)
   {
-    file_name = ros::package::getPath("opt_calibration") + "/launch/sensor_" + camera_id_vector[i] + ".launch";
+    std::string camera_name = camera_id_vector[i];
+    if (!std::strcmp(camera_id_vector[i].substr(0,1).c_str(), "1"))    // if SwissRanger (camera_id is an IP address)
+    {
+      replace(camera_name.begin(), camera_name.end(), '.', '_');
+      camera_name = "SR_" + camera_name;
+    }
+
+    file_name = ros::package::getPath("opt_calibration") + "/launch/sensor_" + camera_name + ".launch";
     std::ofstream launch_file;
     launch_file.open(file_name.c_str());
 
@@ -144,22 +171,35 @@ main(int argc, char ** argv)
       launch_file << "<launch>" << std::endl << std::endl;
 
       launch_file << "  <!-- Camera parameters -->" << std::endl
-          << "  <arg name=\"camera_id\" value=\"" << camera_id_vector[i] << "\" />" << std::endl
+          << "  <arg name=\"camera_id\" value=\"" << camera_name << "\" />" << std::endl
           << "  <arg name=\"camera_name\" default=\"$(arg camera_id)\" />" << std::endl << std::endl;
 
-      launch_file << "  <!-- Launch sensor -->" << std::endl
-          << "  <include file=\"$(find detection)/launch/" << driver_name << ".launch\">" << std::endl;
+      if (!std::strcmp(camera_id_vector[i].substr(0,1).c_str(), "1"))    // if SwissRanger (camera_id is an IP address)
+      {
+        launch_file << "  <!-- Launch sensor -->" << std::endl
+            << "  <include file=\"$(find swissranger_camera)/launch/sr_eth.launch\">" << std::endl
+            << "    <arg name=\"camera_id\" value=\"$(arg camera_id)\" />" << std::endl
+            << "    <arg name=\"device_ip\" value=\"" << camera_id_vector[i] << "\" />" << std::endl
+            << "  </include>" << std::endl << std::endl
+            << "  <include file=\"$(find swissranger_camera)/launch/publisher_for_calibration.launch\">" << std::endl
+            << "    <arg name=\"camera_id\" value=\"$(arg camera_id)\" />" << std::endl
+            << "  </include>" << std::endl << std::endl;
+      }
+      else                                                               // if Kinect
+      {
+        launch_file << "  <!-- Launch sensor -->" << std::endl
+            << "  <include file=\"$(find detection)/launch/" << driver_name << ".launch\">" << std::endl;
 
-      // If serial numbers can be used to identify cameras, they are added to the launch file:
-      if (calibration_with_serials)
-        launch_file << "    <arg name=\"device_id\" value=\"$(arg camera_id)\" />" << std::endl;
+        // If serial numbers can be used to identify cameras, they are added to the launch file:
+        if (calibration_with_serials)
+          launch_file << "    <arg name=\"device_id\" value=\"$(arg camera_id)\" />" << std::endl;
 
-      launch_file << "    <arg name=\"camera\" value=\"$(arg camera_name)\" />" << std::endl
-          << "  </include>" << std::endl << std::endl;
+        launch_file << "    <arg name=\"camera\" value=\"$(arg camera_name)\" />" << std::endl
+            << "  </include>" << std::endl << std::endl;
 
-      launch_file << "  <!-- Publish a further transform -->" << std::endl
-          << "  <node pkg=\"tf\" type=\"static_transform_publisher\" name=\"$(arg camera_name)_broadcaster\" args=\"-0.045 0 0 1.57079 -1.57079 0 /$(arg camera_name) /$(arg camera_name)_link  100\" />" << std::endl << std::endl;
-
+        launch_file << "  <!-- Publish a further transform -->" << std::endl
+            << "  <node pkg=\"tf\" type=\"static_transform_publisher\" name=\"$(arg camera_name)_broadcaster\" args=\"-0.045 0 0 1.57079 -1.57079 0 /$(arg camera_name) /$(arg camera_name)_link  100\" />" << std::endl << std::endl;
+      }
       launch_file << "</launch>" << std::endl;
     }
     launch_file.close();

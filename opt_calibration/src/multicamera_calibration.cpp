@@ -442,13 +442,16 @@ namespace open_ptrack
                 << " 100\" />\n\n";
           }
 
-          // Write transform between camera_link and camera_rgb_optical_frame to file:
-          launch_file << "  <node pkg=\"tf\" type=\"static_transform_publisher\" name=\""
-              << camera_vector_[id].sensor_->frameId().substr(1) << "_broadcaster2\" args=\" -0.045 0 0 "
-              //<< link_transform.getRotation().x() << " " << link_transform.getRotation().y() << " " << link_transform.getRotation().z() << " "
-              << "1.57 -1.57 0 "
-              << camera_vector_[id].sensor_->frameId() << " "
-              << camera_vector_[id].sensor_->frameId()+link_string.str() << " 100\" />\n\n";
+          if (std::strcmp(camera_vector_[id].name_.substr(1,2).c_str(), "SR"))    // if Kinect
+          {
+            // Write transform between camera_link and camera_rgb_optical_frame to file:
+            launch_file << "  <node pkg=\"tf\" type=\"static_transform_publisher\" name=\""
+                << camera_vector_[id].sensor_->frameId().substr(1) << "_broadcaster2\" args=\" -0.045 0 0 "
+                //<< link_transform.getRotation().x() << " " << link_transform.getRotation().y() << " " << link_transform.getRotation().z() << " "
+                << "1.57 -1.57 0 "
+                << camera_vector_[id].sensor_->frameId() << " "
+                << camera_vector_[id].sensor_->frameId()+link_string.str() << " 100\" />\n\n";
+          }
 
           // If the camera is the base camera used to calibrate the network with the ground, write transform to world:
           if (strcmp(camera_vector_[id].sensor_->frameId().c_str(), ("/" + base_camera_frame_id_).c_str()) == 0)
@@ -500,14 +503,26 @@ namespace open_ptrack
               << "  <arg name=\"camera_id\" value=\"" << serial_number << "\" />" << std::endl << std::endl
               << "  <!-- Detection node -->" << std::endl;
 
-          if (calibration_with_serials_)
-            launch_file << "  <include file=\"$(find detection)/launch/detector_serial.launch\">" << std::endl;
-          else
-            launch_file << "  <include file=\"$(find detection)/launch/detector_with_name.launch\">" << std::endl;
+          if (std::strcmp(camera_vector_[i].name_.substr(1,2).c_str(), "SR"))    // if Kinect
+          {
+            if (calibration_with_serials_)
+              launch_file << "  <include file=\"$(find detection)/launch/detector_serial.launch\">" << std::endl;
+            else
+              launch_file << "  <include file=\"$(find detection)/launch/detector_with_name.launch\">" << std::endl;
+          }
+          else                                                                   // if SwissRanger
+          {
+            std::string device_ip = camera_vector_[i].name_;
+            replace(device_ip.begin(), device_ip.end(), '_', '.');
+            device_ip = device_ip.substr(4, device_ip.length()-4);
+            launch_file << "  <include file=\"$(find detection)/launch/detector_with_name_sr.launch\">" << std::endl
+                << "    <arg name=\"device_ip\" value=\"" << device_ip << "\" />" << std::endl;
+          }
 
           launch_file << "    <arg name=\"camera_id\" value=\"$(arg camera_id)\" />" << std::endl
               << "    <arg name=\"ground_from_calibration\" value=\"true\" />" << std::endl
               << "  </include>" << std::endl;
+
           launch_file << "</launch>" << std::endl;
         }
         launch_file.close();

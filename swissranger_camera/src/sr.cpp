@@ -53,7 +53,7 @@
 #include <swissranger_camera/SwissRangerConfig.h>
 /** @file
 
-@brief swissranger_camera is a ROS driver for Mesa Imaging SwissRanger
+@brief swissranger_camera is a ROS driver for Mesa Imaging SwissRangercamera_name_
 3k and 4k devices
 
 This is an extension of the older ROS swissranger node. It provides a
@@ -220,6 +220,8 @@ public:
     nh_.param("ether_addr",  ether_addr_, default_addr);
     cinfo_ = new camera_info_manager::CameraInfoManager(nh_);
 
+    nh_.param("camera_name",  camera_name_, std::string("swissranger"));
+
     nh_.param("use_filter", use_filter_, static_cast<bool>(USE_FILTER));
     dynamic_reconfigure::Server<swissranger_camera::SwissRangerConfig >::CallbackType f
       = boost::bind(&SRNode::reconfig, this, _1, _2);
@@ -279,7 +281,7 @@ public:
 
     // resolve frame ID using tf_prefix parameter
     if (newconfig.frame_id == "")
-      newconfig.frame_id = "swissranger";
+      newconfig.frame_id = camera_name_;
     if( config_.frame_id != newconfig.frame_id )
       {
 	std::string tf_prefix = tf::getPrefixParam(nh_);
@@ -351,7 +353,7 @@ public:
         cloud2_.header.frame_id = cloud_.header.frame_id = 
 	  image_d_.header.frame_id = image_i_.header.frame_id = 
 	  image_c_.header.frame_id = image_d16_.header.frame_id = 
-	  cam_info_.header.frame_id = config_.frame_id;
+	  cam_info_.header.frame_id = camera_name_;//config_.frame_id;
 
         if(!device_open_)
           {
@@ -387,7 +389,7 @@ public:
                 cam_info_.header.stamp = image_d_.header.stamp;
                 cam_info_.height = image_d_.height;
                 cam_info_.width = image_d_.width;
-              
+
                 // Publish it via image_transport
                 if (info_pub_.getNumSubscribers() > 0)
                   info_pub_.publish(cam_info_);

@@ -130,6 +130,12 @@ namespace open_ptrack
       return source_->getImage();
     }
 
+    void
+    Detection::setConfidence(double confidence)
+    {
+      detection_msg_.confidence = confidence;
+    }
+
     /************************ protected methods ************************/
 
     cv::Rect

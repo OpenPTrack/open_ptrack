@@ -176,6 +176,14 @@ namespace open_ptrack
          */
         cv::Mat&
         getImage();
+
+        /**
+         * \brief Set the confidence of the people detector associated to the detection.
+         *
+         * \param[in] confidence Confidence of the people detector associated to the detection.
+         */
+        void
+        setConfidence(double confidence);
     };
   } /* namespace detection */
 } /* namespace open_ptrack */

@@ -50,6 +50,7 @@
 #include <list>
 #include <sstream>
 #include <fstream>
+#include <string.h>
 
 #include <open_ptrack/opt_utils/conversions.h>
 #include <open_ptrack/detection/detection.h>
@@ -81,6 +82,11 @@ bool extrinsic_calibration;
 double period;
 open_ptrack::tracking::Tracker* tracker;
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr history_pointcloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+bool swissranger;
+double min_confidence;
+double min_confidence_sr;
+double min_confidence_detections;
+double min_confidence_detections_sr;
 
 /**
  * \brief Read the DetectionArray message and use the detections for creating/updating/deleting tracks
@@ -141,6 +147,18 @@ detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
         it != msg->detections.end(); it++)
     {
       detections_vector.push_back(open_ptrack::detection::Detection(*it, source));
+    }
+
+    // If tracking in a network containing SwissRangers, convert SwissRanger people detection confidence from HOG-like to HaarDispAda-like:
+    if (!std::strcmp(msg->header.frame_id.substr(0, 2).c_str(), "SR"))
+    {
+      for(unsigned int i = 0; i < detections_vector.size(); i++)
+      {
+        double new_confidence = detections_vector[i].getConfidence();
+        new_confidence = (new_confidence - min_confidence_detections_sr) / (min_confidence_sr - min_confidence_detections_sr) *
+                         (min_confidence - min_confidence_detections) + min_confidence_detections;
+        detections_vector[i].setConfidence(new_confidence);
+      }
     }
 
     // If at least one detection has been received:
@@ -288,7 +306,7 @@ main(int argc, char** argv)
   int num_cameras;
   nh.param("num_cameras", num_cameras, 1);
 
-  double min_confidence;
+//  double min_confidence;
   nh.param("min_confidence_initialization", min_confidence, -2.5); //0.0);
 
   double chi_value;
@@ -321,12 +339,14 @@ main(int argc, char** argv)
   int detections_to_validate;
   nh.param("target/detections_to_validate", detections_to_validate, 5);
 
-  double min_confidence_detections, haar_disp_ada_min_confidence, ground_based_people_detection_min_confidence;
+  double haar_disp_ada_min_confidence, ground_based_people_detection_min_confidence;
   nh.param("haar_disp_ada_min_confidence", haar_disp_ada_min_confidence, -2.5); //0.0);
   nh.param("ground_based_people_detection_min_confidence", ground_based_people_detection_min_confidence, -2.5); //0.0);
 
-  bool swissranger;
   nh.param("swissranger", swissranger, false);
+
+  nh.param("ground_based_people_detection_min_confidence_sr", min_confidence_detections_sr, -1.5);
+  nh.param("min_confidence_initialization_sr", min_confidence_sr, -1.1);
 
   nh.param("output/history_pointcloud", output_history_pointcloud, false);
   nh.param("output/history_size", output_history_size, 0);
