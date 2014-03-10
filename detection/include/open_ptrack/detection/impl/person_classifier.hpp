@@ -232,9 +232,9 @@ open_ptrack::detection::PersonClassifier<PointT>::evaluate (float height_person,
   int ymin = floor(yc - height / 2 + 0.5);
   double confidence;
 
-//std::cout << "copyMakeBorder: " << xmin << " " << ymin << " " << width << " " << height << std::endl;
+//std::cout << "Before copyMakeBorder: " << xmin << " " << ymin << " " << width << " " << height << std::endl;
 
-  if (height > 0)
+  if ((height > 0) & ((xmin+width-1) > 0))
   {
     // If near the border, fill with black:
     PointCloudPtr box(new PointCloud);

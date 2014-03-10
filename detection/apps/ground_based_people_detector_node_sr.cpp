@@ -316,7 +316,7 @@ main (int argc, char** argv)
 			std::vector<pcl::people::PersonCluster<PointT> > clusters;   // vector containing persons clusters
 			people_detector.setInputCloud(cloud);
 			people_detector.setGround(ground_coeffs);                    // set floor coefficients
-			people_detector.compute(clusters);                           // perform people detection
+      people_detector.compute(clusters);                           // perform people detection
 
 			ground_coeffs = people_detector.getGround();                 // get updated floor coefficients
 
