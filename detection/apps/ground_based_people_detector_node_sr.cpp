@@ -219,6 +219,8 @@ main (int argc, char** argv)
 	nh.param("rate", rate_value, 30.0);
 	int sr_conf_threshold;
 	nh.param("sr_conf_threshold", sr_conf_threshold, 200);
+	bool sensor_tilt_compensation;
+	nh.param("sensor_tilt_compensation", sensor_tilt_compensation, false);
 
 	// Fixed parameters:
 	float voxel_size = 0.06;
@@ -227,6 +229,11 @@ main (int argc, char** argv)
 	//vertical field of view = 2 atan(0.5 height / focallength)
 //	intrinsics_matrix << 128.0, 0.0, 88.0, 0.0, 128.0, 72.0, 0.0, 0.0, 1.0; // camera intrinsics
 	intrinsics_matrix << 148.906628757021, 0, 87.307592764537, 0, 148.634545599915, 70.8860920144388, 0, 0, 1;
+
+	// Initialize transforms to be used to correct sensor tilt to identity matrix:
+	Eigen::Affine3f transform, anti_transform;
+	transform = transform.Identity();
+	anti_transform = transform.inverse();
 
 	// Subscribers:
 	ros::Subscriber sub = nh.subscribe(pointcloud_topic, 1, cloud_cb);
@@ -294,6 +301,7 @@ main (int argc, char** argv)
 	people_detector.setHeightLimits(min_height, max_height);         // set person classifier
 	people_detector.setSamplingFactor(sampling_factor);              // set sampling factor
 	people_detector.setUseRGB(use_rgb);                                // set if RGB should be used or not
+	people_detector.setSensorTiltCompensation(sensor_tilt_compensation);             // enable point cloud rotation correction
 
 //	// Initialize new viewer:
 //	pcl::visualization::PCLVisualizer viewer("PCL Viewer");          // viewer initialization
@@ -320,6 +328,9 @@ main (int argc, char** argv)
 
 			ground_coeffs = people_detector.getGround();                 // get updated floor coefficients
 
+			if (sensor_tilt_compensation)
+			  people_detector.getTiltCompensationTransforms(transform, anti_transform);
+
 //			// Draw cloud and people bounding boxes in the viewer:
 //			PointCloudT::Ptr no_ground_cloud(new PointCloudT);
 //			no_ground_cloud = people_detector.getNoGroundCloud();
@@ -344,19 +355,19 @@ main (int argc, char** argv)
 			  {
 				  // Create detection message:
 					Detection detection_msg;
-					converter.Vector3fToVector3(it->getMin(), detection_msg.box_3D.p1);
-					converter.Vector3fToVector3(it->getMax(), detection_msg.box_3D.p2);
+					converter.Vector3fToVector3(anti_transform * it->getMin(), detection_msg.box_3D.p1);
+					converter.Vector3fToVector3(anti_transform * it->getMax(), detection_msg.box_3D.p2);
 
 					float head_centroid_compensation = 0.05;
 
 					// theoretical person centroid:
-					Eigen::Vector3f centroid3d = it->getTCenter();
+					Eigen::Vector3f centroid3d = anti_transform * it->getTCenter();
 					Eigen::Vector3f centroid2d = converter.world2cam(centroid3d, intrinsics_matrix);
 					// theoretical person top point:
-					Eigen::Vector3f top3d = it->getTTop();
+					Eigen::Vector3f top3d = anti_transform * it->getTTop();
 					Eigen::Vector3f top2d = converter.world2cam(top3d, intrinsics_matrix);
 					// theoretical person bottom point:
-					Eigen::Vector3f bottom3d = it->getTBottom();
+					Eigen::Vector3f bottom3d = anti_transform * it->getTBottom();
 					Eigen::Vector3f bottom2d = converter.world2cam(bottom3d, intrinsics_matrix);
           float enlarge_factor = 1.1;
           float pixel_xc = centroid2d(0);

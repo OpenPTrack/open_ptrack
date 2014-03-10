@@ -8,6 +8,9 @@ maximum_person_height: 2.3
 sampling_factor: 1
 use_rgb: true 
 
+# If true, sensor tilt angle wrt ground plane is compensated to improve people detection:
+sensor_tilt_compensation: true 
+
 # For auto-exposure (13 fps)
 sr_conf_threshold: 200
 

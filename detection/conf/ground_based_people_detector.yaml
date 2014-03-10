@@ -7,5 +7,8 @@ minimum_person_height: 1.3
 maximum_person_height: 2.3
 sampling_factor: 4
 minimum_luminance: 20
-use_rgb: true  
+use_rgb: true
+
+# If true, sensor tilt angle wrt ground plane is compensated to improve people detection:
+sensor_tilt_compensation: true  
 

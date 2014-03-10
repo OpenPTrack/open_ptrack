@@ -49,6 +49,7 @@
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/people/person_cluster.h>
 #include <pcl/people/head_based_subcluster.h>
+#include <pcl/common/transforms.h>
 
 #include <open_ptrack/detection/person_classifier.h>
 
@@ -180,6 +181,14 @@ namespace open_ptrack
         setUseRGB (bool use_rgb);
 
         /**
+         * \brief Set if sensor tilt angle wrt ground plane should be compensated to improve people detection
+         *
+         * \param[in] sensor_tilt_compensation True: sensor tilt is compensated, false: sensor tilt is not compensated.
+         */
+        void
+        setSensorTiltCompensation ( bool sensor_tilt_compensation);
+
+        /**
          * \brief Get minimum and maximum allowed height for a person cluster.
          *
          * \param[out] min_height Minimum allowed height for a person cluster.
@@ -222,6 +231,15 @@ namespace open_ptrack
         getMeanLuminance ();
 
         /**
+         * \brief Get the transforms to be used to compensate sensor tilt.
+         *
+         * \param[in/out] transform Direct transform to compensate sensor tilt.
+         * \param[in/out] anti_transform Inverse transform wrt transform.
+         */
+        void
+        getTiltCompensationTransforms (Eigen::Affine3f& transform, Eigen::Affine3f& anti_transform);
+
+        /**
          * \brief Extract RGB information from a point cloud and output the corresponding RGB point cloud.
          *
          * \param[in] input_cloud A pointer to a point cloud containing also RGB information.
@@ -237,6 +255,28 @@ namespace open_ptrack
          */
         void
         swapDimensions (pcl::PointCloud<pcl::RGB>::Ptr& cloud);
+
+        /**
+         * \brief Rotate the input cloud according to transform
+         *
+         * \param[in] cloud Pointer to the input point cloud.
+         * \param[in] transform Transform to be applied to the input cloud.
+         *
+         * \return A pointer to the rotated cloud.
+         */
+        PointCloudPtr
+        rotateCloud (PointCloudPtr cloud, Eigen::Affine3f transform);
+
+        /**
+         * \brief Rotate input plane coefficients according to transform
+         *
+         * \param[in] ground_coeffs Plane coefficients.
+         * \param[in] transform Transform to be applied to ground_coeffs.
+         *
+         * \return Rotated plane coefficients.
+         */
+        Eigen::VectorXf
+        rotateGround (Eigen::VectorXf ground_coeffs, Eigen::Affine3f transform);
 
         /**
          * \brief Perform people detection on the input data and return people clusters information.
@@ -281,8 +321,8 @@ namespace open_ptrack
 
         /** \brief if true, the person centroid is computed as the centroid of the cluster points belonging to the head;
          * if false, the person centroid is computed as the centroid of the whole cluster points (default = true) */
-        bool head_centroid_;    // if true, the person centroid is computed as the centroid of the cluster points belonging to the head (default = true)
-        // if false, the person centroid is computed as the centroid of the whole cluster points
+        bool head_centroid_;
+
         /** \brief maximum number of points for a person cluster */
         int max_points_;
 
@@ -309,6 +349,13 @@ namespace open_ptrack
 
         /** \brief Mean luminance of the RGB data */
         float mean_luminance_;
+
+        /** \brief flag stating if the sensor tilt with respect to the ground plane should be compensated */
+        bool sensor_tilt_compensation_;
+
+        /** \brief transforms used for compensating sensor tilt with respect to the ground plane */
+        Eigen::Affine3f transform_, anti_transform_;
+
     };
   } /* namespace detection */
 } /* namespace open_ptrack */

@@ -60,6 +60,7 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::GroundBasedPeople
   heads_minimum_distance_ = 0.3;
   use_rgb_ = true;
   mean_luminance_ = 0.0;
+  sensor_tilt_compensation_ = false;
 
   // set flag values for mandatory parameters:
   sqrt_ground_coeffs_ = std::numeric_limits<float>::quiet_NaN();
@@ -138,6 +139,12 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::setHeadCentroid (
 }
 
 template <typename PointT> void
+open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::setSensorTiltCompensation (bool sensor_tilt_compensation)
+{
+  sensor_tilt_compensation_ = sensor_tilt_compensation;
+}
+
+template <typename PointT> void
 open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::setUseRGB (bool use_rgb)
 {
   use_rgb_ = use_rgb;
@@ -186,6 +193,13 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::getMeanLuminance 
 }
 
 template <typename PointT> void
+open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::getTiltCompensationTransforms (Eigen::Affine3f& transform, Eigen::Affine3f& anti_transform)
+{
+  transform = transform_;
+  anti_transform = anti_transform_;
+}
+
+template <typename PointT> void
 open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::extractRGBFromPointCloud (PointCloudPtr input_cloud, pcl::PointCloud<pcl::RGB>::Ptr& output_cloud)
 {
   // Extract RGB information from a point cloud and output the corresponding RGB point cloud  
@@ -221,6 +235,57 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::swapDimensions (p
     }
   }
   cloud = output_cloud;
+}
+
+template <typename PointT> typename open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::PointCloudPtr
+open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::rotateCloud(PointCloudPtr cloud, Eigen::Affine3f transform )
+{
+  PointCloudPtr rotated_cloud (new PointCloud);
+  pcl::transformPointCloud(*cloud, *rotated_cloud, transform);
+  rotated_cloud->header.frame_id = cloud->header.frame_id;
+
+  return rotated_cloud;
+
+}
+
+template <typename PointT> Eigen::VectorXf
+open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::rotateGround(Eigen::VectorXf ground_coeffs, Eigen::Affine3f transform){
+
+  Eigen::VectorXf ground_coeffs_new;
+
+  // Create a cloud with three points on the input ground plane:
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr dummy (new pcl::PointCloud<pcl::PointXYZRGB>);
+
+  pcl::PointXYZRGB first = pcl::PointXYZRGB(0.0,0.0,0.0);
+  first.x = 1.0;
+  pcl::PointXYZRGB second = pcl::PointXYZRGB(0.0,0.0,0.0);
+  second.y = 1.0;
+  pcl::PointXYZRGB third = pcl::PointXYZRGB(0.0,0.0,0.0);
+  third.x = 1.0;
+  third.y = 1.0;
+
+  dummy->points.push_back( first );
+  dummy->points.push_back( second );
+  dummy->points.push_back( third );
+
+  for(uint8_t i = 0; i < dummy->points.size(); i++ )
+  { // Find z given x and y:
+    dummy->points[i].z = (double) ( -ground_coeffs_(3) -(ground_coeffs_(0) * dummy->points[i].x) - (ground_coeffs_(1) * dummy->points[i].y) ) / ground_coeffs_(2);
+  }
+
+  // Rotate them:
+  dummy = rotateCloud(dummy, transform);
+
+  // Compute new ground coeffs:
+  std::vector<int> indices;
+  for(unsigned int i = 0; i < dummy->points.size(); i++)
+  {
+    indices.push_back(i);
+  }
+  pcl::SampleConsensusModelPlane<pcl::PointXYZRGB> model_plane(dummy);
+  model_plane.computeModelCoefficients(indices, ground_coeffs_new);
+
+  return ground_coeffs_new;
 }
 
 template <typename PointT> bool
@@ -268,6 +333,7 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
     cloud_downsampled->height = (cloud_->height)/sampling_factor_;
     cloud_downsampled->points.resize(cloud_downsampled->height*cloud_downsampled->width);
     cloud_downsampled->is_dense = cloud_->is_dense;
+    cloud_downsampled->header = cloud_->header;
     for (int j = 0; j < cloud_downsampled->width; j++)
     {
       for (int i = 0; i < cloud_downsampled->height; i++)
@@ -293,7 +359,7 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
       }
     }
     mean_luminance_ = 0.3 * sumR/n_points + 0.59 * sumG/n_points + 0.11 * sumB/n_points;
-//    mean_luminance_ = 0.2126 * sumR/n_points + 0.7152 * sumG/n_points + 0.0722 * sumB/n_points;
+    //    mean_luminance_ = 0.2126 * sumR/n_points + 0.7152 * sumG/n_points + 0.0722 * sumB/n_points;
   }
 
   // Voxel grid filtering:
@@ -330,10 +396,38 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
   ec.setInputCloud(no_ground_cloud_);
   ec.extract(cluster_indices);
 
+  // Sensor tilt compensation to improve people detection:
+  PointCloudPtr no_ground_cloud_rotated(new PointCloud);
+  Eigen::VectorXf ground_coeffs_new;
+  if(sensor_tilt_compensation_)
+  {
+    // We want to rotate the point cloud so that the ground plane is parallel to the xOz plane of the sensor:
+    Eigen::Vector3f input_plane, output_plane;
+    input_plane << ground_coeffs_(0), ground_coeffs_(1), ground_coeffs_(2);
+    output_plane << 0.0, -1.0, 0.0;
+
+    Eigen::Vector3f axis = input_plane.cross(output_plane);
+    float angle = acos( input_plane.dot(output_plane)/ ( input_plane.norm()/output_plane.norm() ) );
+    transform_ = Eigen::AngleAxisf(angle, axis);
+
+    // Setting also anti_transform for later
+    anti_transform_ = transform_.inverse();
+    no_ground_cloud_rotated = rotateCloud(no_ground_cloud_, transform_);
+    ground_coeffs_new.resize(4);
+    ground_coeffs_new = rotateGround(ground_coeffs_, transform_);
+  }
+  else
+  {
+    transform_ = transform_.Identity();
+    anti_transform_ = transform_.inverse();
+    no_ground_cloud_rotated = no_ground_cloud_;
+    ground_coeffs_new = ground_coeffs_;
+  }
+
   // Head based sub-clustering //
   pcl::people::HeadBasedSubclustering<PointT> subclustering;
-  subclustering.setInputCloud(no_ground_cloud_);
-  subclustering.setGround(ground_coeffs_);
+  subclustering.setInputCloud(no_ground_cloud_rotated);
+  subclustering.setGround(ground_coeffs_new);
   subclustering.setInitialClusters(cluster_indices);
   subclustering.setHeightLimits(min_height_, max_height_);
   subclustering.setMinimumDistanceBetweenHeads(heads_minimum_distance_);
@@ -358,11 +452,11 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
     for(typename std::vector<pcl::people::PersonCluster<PointT> >::iterator it = clusters.begin(); it != clusters.end(); ++it)
     {
       //Evaluate confidence for the current PersonCluster:
-      Eigen::Vector3f centroid = intrinsics_matrix_ * (it->getTCenter());
+      Eigen::Vector3f centroid = intrinsics_matrix_ * (anti_transform_ * it->getTCenter());
       centroid /= centroid(2);
-      Eigen::Vector3f top = intrinsics_matrix_ * (it->getTTop());
+      Eigen::Vector3f top = intrinsics_matrix_ * (anti_transform_ * it->getTTop());
       top /= top(2);
-      Eigen::Vector3f bottom = intrinsics_matrix_ * (it->getTBottom());
+      Eigen::Vector3f bottom = intrinsics_matrix_ * (anti_transform_ * it->getTBottom());
       bottom /= bottom(2);
 
       it->setPersonConfidence(person_classifier_.evaluate(rgb_image_, bottom, top, centroid, vertical_));
