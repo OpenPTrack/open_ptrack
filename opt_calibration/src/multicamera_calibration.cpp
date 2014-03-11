@@ -499,6 +499,9 @@ namespace open_ptrack
         {
           launch_file << "<launch>" << std::endl << std::endl;
 
+          launch_file << "  <!-- Load calibration results -->" << std::endl
+              << "  <include file=\"$(find opt_calibration)/launch/multicamera_calibration_results.launch\"/>" << std::endl << std::endl;
+
           launch_file << "  <!-- Camera ID -->" << std::endl
               << "  <arg name=\"camera_id\" value=\"" << serial_number << "\" />" << std::endl << std::endl
               << "  <!-- Detection node -->" << std::endl;

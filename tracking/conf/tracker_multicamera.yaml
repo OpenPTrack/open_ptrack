@@ -1,4 +1,4 @@
-min_confidence_initialization: 5.0
+min_confidence_initialization: 4.0
 rate: 30
 world_frame_id: "/world"
 voxel_size: 0.06
@@ -8,8 +8,8 @@ orientation:
   vertical: false
 
 kalman:
-  gate_distance_probability: 0.9
-  acceleration_variance: 500
+  gate_distance_probability: 0.99
+  acceleration_variance: 100
   
 jointLikelihood:
   detector_likelihood: true
