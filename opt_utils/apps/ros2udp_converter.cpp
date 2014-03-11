@@ -44,6 +44,7 @@
 // Global variables:
 int udp_buffer_length;  // UDP message buffer length
 int udp_port;           // UDP port
+std::string hostip;     // UDP host
 int json_indent_size;   // indent size for JSON message
 bool json_newline;      // use newlines (true) or not (false) in JSON messages
 bool json_spacing;      // use spacing (true) or not (false) in JSON messages
@@ -100,6 +101,28 @@ trackingCallback(const opt_msgs::TrackArray::ConstPtr& tracking_msg)
   udp_messaging.sendFromSocketUDP(&udp_data);
 }
 
+typedef unsigned long uint32;
+// convert a string represenation of an IP address into its numeric equivalent
+static uint32 Inet_AtoN(const char * buf)
+{
+   // net_server inexplicably doesn't have this function; so I'll just fake it
+   uint32 ret = 0;
+   int shift = 24;  // fill out the MSB first
+   bool startQuad = true;
+   while((shift >= 0)&&(*buf))
+   {
+      if (startQuad)
+      {
+         unsigned char quad = (unsigned char) atoi(buf);
+         ret |= (((uint32)quad) << shift);
+         shift -= 8;
+      }
+      startQuad = (*buf == '.');
+      buf++;
+   }
+   return ret;
+}
+
 int
 main(int argc, char **argv)
 {
@@ -109,6 +132,7 @@ main(int argc, char **argv)
 
   // Read input parameters:
   nh.param("udp/port", udp_port, 21234);
+  nh.param("udp/hostip", hostip, std::string("127.0.0.1"));
   nh.param("udp/buffer_length", udp_buffer_length, 2048);
   nh.param("json/indent_size", json_indent_size, 0);
   nh.param("json/newline", json_newline, false);
@@ -125,7 +149,7 @@ main(int argc, char **argv)
   udp_data.si_num_byte_ = udp_buffer_length; // number of bytes to write (2048 -> about 30 tracks)
   udp_data.pc_pck_ = buf;         // buffer where the message is written
   udp_data.si_timeout_ = 4;
-  udp_data.sj_addr_ = INADDR_ANY;
+  udp_data.sj_addr_ = Inet_AtoN(hostip.c_str());
 
   /// Create object for UDP messaging:
   udp_messaging = open_ptrack::opt_utils::UDPMessaging(udp_data);

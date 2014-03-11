@@ -1,6 +1,8 @@
 udp:
   port: 21234
   buffer_length: 2048
+  hostip: "224.0.0.1"
+  #change to 224.0.0.1 for LAN broadcast
 
 json:
   indent_size: 0

@@ -52,12 +52,16 @@ namespace open_ptrack
     {
       int sock = 0;
 
-      sock = socket(AF_INET, SOCK_DGRAM, 0);
+      sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
       if (sock < 0) {
         printf("sock %d %d\n", sock, errno);
         return (-1);
       }
+
+	int broadcast=1;
+
+	setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof broadcast);
 
       memset((char *) (&(connect_UDP_)), 0, sizeof (struct sockaddr_in));
       connect_UDP_.sin_family = AF_INET;
@@ -108,7 +112,7 @@ namespace open_ptrack
         connect_UDP_.sin_addr.s_addr = htonl(udp_data->sj_addr_);
         connect_UDP_.sin_port = htons(udp_data->si_port_);
 
-        if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+        if ((sock = socket(AF_INET, SOCK_DGRAM,  IPPROTO_UDP)) < 0)
           si_sts = -1;
         else
           break;
@@ -117,9 +121,11 @@ namespace open_ptrack
       if (i < 0)
         return (-1);
       else
-        if (si_sts == RET_OK)
+        if (si_sts == RET_OK){
+	int broadcast=1;
+	setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof broadcast);
           udp_data->si_socket_ = sock;
-
+	}
       return (si_sts);
     }
 
