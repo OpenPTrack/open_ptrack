@@ -1,5 +1,5 @@
 # Ground estimation mode - 0:manual, 1:semi-auto, 2:auto with user validation, 3:fully automatic (default 0) 
-ground_estimation_mode: 3
+ground_estimation_mode: 0
 
 # Ground based people detection parameters:
 ground_based_people_detection_min_confidence: -1.5
