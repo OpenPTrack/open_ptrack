@@ -219,6 +219,8 @@ main (int argc, char** argv)
 	nh.param("rate", rate_value, 30.0);
 	int sr_conf_threshold;
 	nh.param("sr_conf_threshold", sr_conf_threshold, 200);
+	bool ground_from_extrinsic_calibration;
+	nh.param("ground_from_extrinsic_calibration", ground_from_extrinsic_calibration, false);
 	bool sensor_tilt_compensation;
 	nh.param("sensor_tilt_compensation", sensor_tilt_compensation, false);
 
@@ -288,6 +290,20 @@ main (int argc, char** argv)
 	// Ground estimation:
 	ground_estimator.setInputCloud(cloud);
 	Eigen::VectorXf ground_coeffs = ground_estimator.compute();
+
+	if (ground_from_extrinsic_calibration)
+	{ // Ground plane equation derived from extrinsic calibration:
+	  Eigen::VectorXf ground_coeffs_calib = ground_estimator.computeFromTF(cloud->header.frame_id, "/world");
+
+	  // If ground could not be well estimated from point cloud data, use calibration data:
+	  // (if error in ground plane estimation from point cloud OR if d coefficient estimated from point cloud
+	  // is too different from d coefficient obtained from calibration)
+	  if ((ground_coeffs.sum() == 0.0) | (std::fabs(float(ground_coeffs_calib(3) - ground_coeffs(3))) > 0.2))
+	  {
+	    ground_coeffs = ground_coeffs_calib;
+	    std::cout << "Chosen ground plane estimate obtained from calibration." << std::endl;
+	  }
+	}
 
 	// Create classifier for people detection:
 	open_ptrack::detection::PersonClassifier<pcl::RGB> person_classifier;
