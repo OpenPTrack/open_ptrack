@@ -94,6 +94,7 @@ PointCloudT::Ptr cloud(new PointCloudT);
 
 bool intrinsics_already_set = false;
 Eigen::Matrix3f intrinsics_matrix;
+bool debug;
 
 cv::Mat confidence_image, intensity_image;
 
@@ -252,7 +253,10 @@ main (int argc, char** argv)
 	// Initialize confidence and intensity images
 	intensity_image = cv::Mat(144, 176, CV_8U, cv::Scalar(255));
 	confidence_image = cv::Mat(144, 176, CV_8U, cv::Scalar(0));
-	cv::namedWindow("Valid points", CV_WINDOW_NORMAL);
+
+	debug = false;
+	if (debug)
+	  cv::namedWindow("Valid points", CV_WINDOW_NORMAL);
 
 	ros::Rate rate(rate_value);
 	while(ros::ok() && !new_cloud_available_flag)
@@ -270,10 +274,13 @@ main (int argc, char** argv)
 	  ros::spinOnce();
 	  rate.sleep();
 
-	  cv::imshow("Valid points", confidence_image);
-	  cv::waitKey(1);
+	  if (debug)
+	  {
+	    cv::imshow("Valid points", confidence_image);
+	    cv::waitKey(1);
+	  }
 
-	  if (!ground_estimator.tooManyLowConfidencePoints(confidence_image, sr_conf_threshold, 0.5))
+	  if (!ground_estimator.tooManyLowConfidencePoints(confidence_image, sr_conf_threshold, 0.7))
 	  { // A point cloud is valid if the ratio #NaN / #valid points is lower than a threshold
 	    first_valid_frame = true;
 	    std::cout << "Valid frame found! Ground plane initialization starting..." << std::endl;
@@ -422,8 +429,11 @@ main (int argc, char** argv)
 //			std::cout << k << " people found" << std::endl;
 //			viewer.spinOnce();
 
-			cv::imshow("Valid points", confidence_image);
-			cv::waitKey(1);
+			if (debug)
+			{
+			  cv::imshow("Valid points", confidence_image);
+			  cv::waitKey(1);
+			}
 		}
 
 		// Execute callbacks:

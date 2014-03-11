@@ -1,5 +1,5 @@
 # Camera network parameters
-num_cameras: 2
+num_cameras: 3
 camera0_id: "Kinect0"
 camera1_id: "Kinect1"
 camera2_id: "192.168.1.33" 
