@@ -55,6 +55,7 @@
 #include <cv_bridge/cv_bridge.h>
 
 #include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
 using namespace sensor_msgs;
@@ -97,6 +98,8 @@ cloud_cb (const PointCloudConstPtr& callback_cloud)
 	    intensity_image.at<unsigned char>(i,j) = (callback_cloud->channels[0].values[j + i*COLS]/255 - minVal) * 255 / (maxVal - minVal);
 	  }
   }
+
+  cv::equalizeHist(intensity_image, intensity_image);
 
   // Rescale image:
   cv::Mat output_intensity_image;

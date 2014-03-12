@@ -14,7 +14,7 @@
 
   <!-- Launch ground based people detection node -->
   <node pkg="detection" type="ground_based_people_detector_sr" name="ground_based_people_detector_$(arg camera_id)" output="screen" required="true">
-    <rosparam command="load" file="$(find detection)/conf/ground_based_people_detector_sr.yaml" /> 
+    <rosparam command="load" file="$(find detection)/conf/ground_based_people_detector_sr_multicamera.yaml" /> 
     <param name="classifier_file" value="$(find detection)/data/HogSvmPCL.yaml"/>
     <param name="pointcloud_topic" value="/$(arg camera_id)/pointcloud_raw"/>
     <param name="confidence_topic" value="/$(arg camera_id)/confidence/image_raw"/>

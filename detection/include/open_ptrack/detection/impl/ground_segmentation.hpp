@@ -83,7 +83,7 @@ open_ptrack::detection::GroundplaneEstimation<PointT>::tooManyNaN(PointCloudCons
 }
 
 template <typename PointT> bool
-open_ptrack::detection::GroundplaneEstimation<PointT>::tooManyLowConfidencePoints (cv::Mat& confidence_image, int confidence_threshold, float max_ratio)
+open_ptrack::detection::GroundplaneEstimation<PointT>::tooManyLowConfidencePoints (cv::Mat& confidence_image, int confidence_threshold, double max_ratio)
 {
   int invalid_counter = 0;
   for(unsigned int i = 0; i < confidence_image.rows; i++)

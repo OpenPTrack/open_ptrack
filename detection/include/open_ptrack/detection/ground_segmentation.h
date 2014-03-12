@@ -104,7 +104,7 @@ namespace open_ptrack
          * \return true if the cloud has ratio of NaN over total number of points greater than "max_ratio".
          */
         bool
-        tooManyLowConfidencePoints (cv::Mat& confidence_image, int confidence_threshold, float max_ratio);
+        tooManyLowConfidencePoints (cv::Mat& confidence_image, int confidence_threshold, double max_ratio);
 
         /**
          * \brief Compute the ground plane coefficients from the transform between two reference frames.

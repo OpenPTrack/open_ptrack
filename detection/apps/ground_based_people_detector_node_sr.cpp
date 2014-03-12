@@ -224,6 +224,8 @@ main (int argc, char** argv)
 	nh.param("ground_from_extrinsic_calibration", ground_from_extrinsic_calibration, false);
 	bool sensor_tilt_compensation;
 	nh.param("sensor_tilt_compensation", sensor_tilt_compensation, false);
+	double valid_points_threshold;
+	nh.param("valid_points_threshold", valid_points_threshold, 0.3);
 
 	// Fixed parameters:
 	float voxel_size = 0.06;
@@ -280,7 +282,7 @@ main (int argc, char** argv)
 	    cv::waitKey(1);
 	  }
 
-	  if (!ground_estimator.tooManyLowConfidencePoints(confidence_image, sr_conf_threshold, 0.7))
+	  if (!ground_estimator.tooManyLowConfidencePoints(confidence_image, sr_conf_threshold, 1.0 - valid_points_threshold))
 	  { // A point cloud is valid if the ratio #NaN / #valid points is lower than a threshold
 	    first_valid_frame = true;
 	    std::cout << "Valid frame found! Ground plane initialization starting..." << std::endl;
