@@ -199,7 +199,10 @@ namespace open_ptrack
         {
           opt_msgs::Track track;
           t->toMsg(track, vertical_);
-          msg->tracks.push_back(track);
+
+          // For publishing only not occluded tracks:
+          if (track.visibility < 2)
+            msg->tracks.push_back(track);
         }
       }
     }
