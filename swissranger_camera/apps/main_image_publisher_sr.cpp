@@ -216,6 +216,8 @@ main (int argc, char** argv)
     camera_info_msg.K[2] = camera_info_msg.K[2] * scale_factor;
     camera_info_msg.K[4] = camera_info_msg.K[4] * scale_factor;
     camera_info_msg.K[5] = camera_info_msg.K[5] * scale_factor;
+    camera_info_msg.height = camera_info_msg.height * scale_factor;
+    camera_info_msg.width = camera_info_msg.width * scale_factor;
 	}
 
 //	cv::namedWindow("Confidence map", CV_WINDOW_NORMAL);

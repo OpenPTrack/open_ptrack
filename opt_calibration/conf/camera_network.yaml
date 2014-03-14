@@ -1,8 +1,8 @@
 # Camera network parameters
-num_cameras: 3
+num_cameras: 2
 camera0_id: "Kinect0"
-camera1_id: "Kinect1"
-camera2_id: "192.168.1.33" 
+#camera1_id: "Kinect1"
+camera1_id: "192.168.1.31" 
 base_camera: 0
 calibration_with_serials: false
 
