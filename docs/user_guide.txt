@@ -71,5 +71,12 @@ For using the Freenect driver, you only need to change the KINECT_DRIVER environ
 Possible values are: "openni" or "freenect".
 
 
+GENERAL TROUBLESHOOTING
+
+see this document for a collection of tips we've noted while calibrating. 
+
+it's in-progress; so see gdoc until it's complete. 
+
+http://goo.gl/hEVQ1I
 
 
