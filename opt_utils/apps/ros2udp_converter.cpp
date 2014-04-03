@@ -105,7 +105,7 @@ typedef unsigned long uint32;
 // convert a string represenation of an IP address into its numeric equivalent
 static uint32 Inet_AtoN(const char * buf)
 {
-   // net_server inexplicably doesn't have this function; so I'll just fake it
+
    uint32 ret = 0;
    int shift = 24;  // fill out the MSB first
    bool startQuad = true;
