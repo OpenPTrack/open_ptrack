@@ -2,11 +2,11 @@
 ground_estimation_mode: 3
 
 # Ground based people detection parameters:
-ground_based_people_detection_min_confidence: -2.0
+ground_based_people_detection_min_confidence: -1.75
 minimum_person_height: 1.0
 maximum_person_height: 2.3
 sampling_factor: 4
-minimum_luminance: 140
+minimum_luminance: 120
 use_rgb: true
 
 # If true, sensor tilt angle wrt ground plane is compensated to improve people detection:

@@ -28,7 +28,7 @@ debug:
 
 output:
   history_pointcloud: true
-  history_size: 1000
+  history_size: 500
   markers: true
   image_rgb: false
   tracking_results: true

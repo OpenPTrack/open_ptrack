@@ -64,14 +64,16 @@ namespace open_ptrack
   {
     const int MAX_LEVEL = 10000;
     const double MAX_DISTANCE = 10000.0;
+    const double MAX_ERROR = 10000.0;
 
     /** \brief struct containing camera information */
     struct Camera
     {
         Camera (int id, const image_transport::Subscriber & image_sub,
             const ros::Subscriber & camera_info_sub) :
-            id_ (id), image_sub_ (image_sub), camera_info_sub_ (
-                camera_info_sub), level_ (MAX_LEVEL), distance_ (MAX_DISTANCE)
+              id_ (id), image_sub_ (image_sub), camera_info_sub_ (
+                  camera_info_sub), level_ (MAX_LEVEL), distance_ (MAX_DISTANCE),
+                  min_error_(MAX_ERROR)
         {
           std::stringstream ss;
           ss << "/camera_" << id;
@@ -79,7 +81,7 @@ namespace open_ptrack
         }
 
         Camera (int id) :
-            id_ (id), level_ (MAX_LEVEL), distance_ (MAX_DISTANCE)
+          id_ (id), level_ (MAX_LEVEL), distance_ (MAX_DISTANCE), min_error_(MAX_ERROR)
         {
           std::stringstream ss;
           ss << "/camera_" << id;
@@ -110,6 +112,8 @@ namespace open_ptrack
         /** \brief Message containing the image */
         sensor_msgs::Image::ConstPtr image_msg_;
 
+        /** \brief Minimum calibration error obtained */
+        double min_error_;
     };
 
     /** MultiCameraCalibration performs extrinsic calibration of a network of cameras */
@@ -167,6 +171,8 @@ namespace open_ptrack
         findCheckerboard (cv::Mat & image, int id,
             typename PinholeView<Checkerboard>::Ptr & color_view);
 
+        void optimize();
+
         /** \brief Save cameras extrinsic calibration as ROS transforms in a launch file */
         void
         saveTF ();
@@ -223,6 +229,15 @@ namespace open_ptrack
 
         /** \brief Frame ID of the base camera (used for global frame calibration). */
         std::string base_camera_frame_id_;
+
+        typedef std::map<int, PinholeView<Checkerboard>::Ptr> DataMap;
+        std::vector<DataMap> data_vec_;
+
+        /** \brief Flag stating if the initialization phase is still active */
+        bool initialization_;
+
+        /** \brief Flag stating if the calibration process has been stopped */
+        bool stop_;
 
     };
   } /* namespace opt_calibration */
