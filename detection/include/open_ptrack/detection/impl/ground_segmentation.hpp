@@ -151,6 +151,67 @@ open_ptrack::detection::GroundplaneEstimation<PointT>::computeFromTF (std::strin
 }
 
 template <typename PointT> Eigen::VectorXf
+open_ptrack::detection::GroundplaneEstimation<PointT>::computeFromTF (tf::Transform worldToCamTransform)
+{
+  // Select 3 points in world reference frame:
+  pcl::PointCloud<pcl::PointXYZ>::Ptr ground_points (new pcl::PointCloud<pcl::PointXYZ>);
+  ground_points->points.push_back(pcl::PointXYZ(0.0, 0.0, 0.0));
+  ground_points->points.push_back(pcl::PointXYZ(1.0, 0.0, 0.0));
+  ground_points->points.push_back(pcl::PointXYZ(0.0, 1.0, 0.0));
+
+  // Transform points to camera reference frame:
+  for (unsigned int i = 0; i < ground_points->points.size(); i++)
+  {
+    tf::Vector3 current_point(ground_points->points[i].x, ground_points->points[i].y, ground_points->points[i].z);
+    current_point = worldToCamTransform(current_point);
+    ground_points->points[i].x = current_point.x();
+    ground_points->points[i].y = current_point.y();
+    ground_points->points[i].z = current_point.z();
+  }
+
+  // Compute ground equation:
+  std::vector<int> ground_points_indices;
+  for (unsigned int i = 0; i < ground_points->points.size(); i++)
+    ground_points_indices.push_back(i);
+  pcl::SampleConsensusModelPlane<pcl::PointXYZ> model_plane(ground_points);
+  Eigen::VectorXf ground_coeffs;
+  model_plane.computeModelCoefficients(ground_points_indices,ground_coeffs);
+  std::cout << "Ground plane coefficients obtained from calibration: " << ground_coeffs(0) << ", " << ground_coeffs(1) << ", " << ground_coeffs(2) <<
+      ", " << ground_coeffs(3) << "." << std::endl;
+
+  return ground_coeffs;
+}
+
+template <typename PointT> tf::Transform
+open_ptrack::detection::GroundplaneEstimation<PointT>::readTFFromFile (std::string filename, std::string camera_name)
+{
+  tf::Transform worldToCamTransform;
+
+  ifstream poses_file;
+  poses_file.open(filename.c_str());
+  std::string line;
+  std::string pose_string;
+  while(getline(poses_file, line))
+  {
+    int pos = line.find(camera_name, 0);
+    if (pos != std::string::npos)
+    {
+      pose_string = line.substr(camera_name.size() + 2, line.size() - camera_name.size() - 2);
+    }
+  }
+  poses_file.close();
+
+  // Create transform:
+  std::vector<double> pose;
+  pose.resize(7, 0.0);
+  sscanf(pose_string.c_str(), "%lf %lf %lf %lf %lf %lf %lf", &pose[0], &pose[1], &pose[2], &pose[3], &pose[4], &pose[5], &pose[6]);
+  worldToCamTransform.setOrigin(tf::Vector3(pose[0], pose[1], pose[2]));
+  worldToCamTransform.setRotation(tf::Quaternion(pose[3], pose[4], pose[5], pose[6]));
+
+  return worldToCamTransform;
+}
+
+template <typename PointT> Eigen::VectorXf
 open_ptrack::detection::GroundplaneEstimation<PointT>::compute ()
 {
   Eigen::VectorXf ground_coeffs;

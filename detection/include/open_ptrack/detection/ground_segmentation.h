@@ -51,6 +51,9 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+#include<iostream>
+#include<fstream>
+
 namespace open_ptrack
 {
   namespace detection
@@ -116,6 +119,27 @@ namespace open_ptrack
          */
         Eigen::VectorXf
         computeFromTF (std::string camera_frame, std::string ground_frame);
+
+        /**
+         * \brief Compute the ground plane coefficients from the transform between two reference frames.
+         *
+         * \param[in] worldToCamTransform ROS transform between world frame and camera frame.
+         *
+         * \return Vector of ground plane coefficients.
+         */
+        Eigen::VectorXf
+        computeFromTF (tf::Transform worldToCamTransform);
+
+        /**
+         * \brief Read the world to camera transform from file.
+         *
+         * \param[in] filename Filename listing camera poses for each camera.
+         * \param[in] camera_name Name of the camera for which the pose should be read.
+         *
+         * \return The world to camera transform.
+         */
+        tf::Transform
+        readTFFromFile (std::string filename, std::string camera_name);
 
         /**
          * \brief Compute the ground plane coefficients.

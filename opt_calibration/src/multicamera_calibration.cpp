@@ -44,6 +44,7 @@
 //#include <tf/transform_broadcaster.h>
 #include <tf/transform_datatypes.h>
 #include <tf/tf.h>
+#include <stdlib.h>     /* system, NULL, EXIT_FAILURE */
 
 #include <ceres/ceres.h>
 
@@ -829,8 +830,8 @@ namespace open_ptrack
         {
           launch_file << "<launch>" << std::endl << std::endl;
 
-          launch_file << "  <!-- Load calibration results -->" << std::endl
-              << "  <include file=\"$(find opt_calibration)/launch/multicamera_calibration_results.launch\"/>" << std::endl << std::endl;
+//          launch_file << "  <!-- Load calibration results -->" << std::endl
+//              << "  <include file=\"$(find opt_calibration)/launch/multicamera_calibration_results.launch\"/>" << std::endl << std::endl;
 
           launch_file << "  <!-- Camera ID -->" << std::endl
               << "  <arg name=\"camera_id\" value=\"" << serial_number << "\" />" << std::endl << std::endl
@@ -862,37 +863,8 @@ namespace open_ptrack
         ROS_INFO_STREAM(file_name << " created!");
       }
 
-      //      // Save file with all cameras position with respect to the world frame:
-      //      file_name = ros::package::getPath("detection") + "/launch/camera_poses.txt";
-      //      std::ofstream poses_file;
-      //      poses_file.open(file_name.c_str());
-      //      for (unsigned int i = 0; i < num_cameras_; i++)
-      //      {
-      //        // Read transform between world and camera reference frame:
-      //        tf::StampedTransform worldToCamStampedTransform;
-      //        tf::Transform worldToCamTransform;
-      //        tf::Vector3 origin;
-      //        tf::Quaternion rotation;
-      //        try
-      //        {
-      //          tfListener.waitForTransform(camera_vector_[i].sensor_->frameId(), "/world", ros::Time(0), ros::Duration(3.0), ros::Duration(0.01));
-      //          tfListener.lookupTransform(camera_vector_[i].sensor_->frameId(), "/world", ros::Time(0), worldToCamStampedTransform);
-      //          worldToCamTransform =  tf::Transform(worldToCamStampedTransform) * world_to_base;
-      ////          worldToCamTransform =  tf::Transform(worldToCamStampedTransform) * world_to_base.inverse();
-      ////          worldToCamTransform =  tf::Transform(worldToCamStampedTransform.inverse()) * world_to_base ;
-      //          origin = worldToCamTransform.getOrigin();
-      //          rotation = worldToCamTransform.getRotation();
-      //        }
-      //        catch (tf::TransformException ex)
-      //        {
-      //          ROS_ERROR("%s",ex.what());
-      //        }
-      //        poses_file << camera_vector_[i].sensor_->frameId() << "->" << "/world" << ":"
-      //                   << origin.x() << "," << origin.y() << "," << origin.z() << ","
-      //                   << rotation.getX() << "," << rotation.getY() << "," << rotation.getZ() << "," << rotation.getW() << std::endl;
-      //      }
-      //      poses_file.close();
-      //      ROS_INFO_STREAM(file_name << " created!");
+      // Run node which saves camera poses to text file:
+      system ("roslaunch opt_calibration calibration_saver.launch");
     }
 
     void

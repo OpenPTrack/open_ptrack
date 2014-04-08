@@ -42,6 +42,9 @@ include_directories(include
 add_executable(calibration_initializer apps/calibration_initializer.cpp)
 target_link_libraries(calibration_initializer ${catkin_LIBRARIES})
 
+add_executable(calibration_saver apps/calibration_saver.cpp)
+target_link_libraries(calibration_saver ${catkin_LIBRARIES})
+
 add_executable(opt_calibration src/multicamera_calibration.cpp
   include/open_ptrack/opt_calibration/multicamera_calibration.h
 )

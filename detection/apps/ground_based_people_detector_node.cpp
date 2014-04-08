@@ -46,6 +46,7 @@
 
 // ROS includes:
 #include <ros/ros.h>
+#include <ros/package.h>
 
 // PCL includes:
 #include <pcl/ros/conversions.h>
@@ -192,7 +193,15 @@ main (int argc, char** argv)
 
   if (ground_from_extrinsic_calibration)
   { // Ground plane equation derived from extrinsic calibration:
-    Eigen::VectorXf ground_coeffs_calib = ground_estimator.computeFromTF(cloud->header.frame_id, "/world");
+    int pos = pointcloud_topic.find("/", 1);
+    std::string camera_name = pointcloud_topic.substr(1, pos-1);
+
+    // Read worldToCam transform from file:
+    std::string filename = ros::package::getPath("detection") + "/launch/camera_poses.txt";
+    tf::Transform worldToCamTransform = ground_estimator.readTFFromFile (filename, camera_name);
+
+    // Compute ground coeffs from world to camera transform:
+    Eigen::VectorXf ground_coeffs_calib = ground_estimator.computeFromTF(worldToCamTransform);
 
     // If ground could not be well estimated from point cloud data, use calibration data:
     // (if error in ground plane estimation from point cloud OR if d coefficient estimated from point cloud

@@ -1,0 +1,12 @@
+<launch>
+
+  <!-- Load calibration results -->
+  <include file="$(find opt_calibration)/launch/multicamera_calibration_results.launch"/>
+
+  <!-- Launching calibration saver -->
+  <node pkg="opt_calibration" type="calibration_saver" name="calibration_saver" output="screen" required="true">
+    <rosparam command="load" file="$(find opt_calibration)/conf/camera_network.yaml" /> 	  
+  </node>
+
+</launch>
+
