@@ -77,6 +77,5 @@ see this document for a collection of tips we've noted while calibrating.
 
 it's in-progress; so see gdoc until it's complete. 
 
-http://goo.gl/hEVQ1I
-
+http://goo.gl/PbFiZB
 
