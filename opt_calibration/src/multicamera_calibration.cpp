@@ -745,7 +745,7 @@ namespace open_ptrack
         for (int id = 0; id < num_cameras_; ++id)
         {
           // If this camera is not the base camera:
-          if (strcmp(camera_vector_[id].sensor_->frameId().c_str(), ("/" + base_camera_frame_id_).c_str()) > 0)
+          if (strcmp(camera_vector_[id].sensor_->frameId().c_str(), ("/" + base_camera_frame_id_).c_str()) != 0)
           {
             const Types::Pose & pose = camera_vector_[id].sensor_->pose();
             Types::Quaternion q(pose.linear());

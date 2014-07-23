@@ -2,11 +2,11 @@
 num_cameras: 2
 camera0_id: "Kinect"
 #camera1_id: "Kinect1"
-camera1_id: "192.168.1.31" 
+camera1_id: "192.168.1.31"
 base_camera: 0
 calibration_with_serials: false
 
-# Checkerboard parameters 
+# Checkerboard parameters
 rows: 6
 cols: 5
 cell_width: 0.12
