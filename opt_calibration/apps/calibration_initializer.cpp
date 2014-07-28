@@ -120,8 +120,7 @@ main(int argc, char ** argv)
         << "    <param name=\"rows\" value=\"$(arg rows)\" />" << std::endl
         << "    <param name=\"cols\" value=\"$(arg cols)\" />" << std::endl
         << "    <param name=\"cell_width\" value=\"$(arg cell_width)\" />" << std::endl
-        << "    <param name=\"cell_height\" value=\"$(arg cell_height)\" />" << std::endl << std::endl
-        << "    <param name=\"base_sensor\" value=\"$(arg base_sensor)\" />" << std::endl << std::endl;
+        << "    <param name=\"cell_height\" value=\"$(arg cell_height)\" />" << std::endl << std::endl;
 
     if (calibration_with_serials)
       launch_file << "    <param name=\"calibration_with_serials\" value=\"true\" />" << std::endl << std::endl;
