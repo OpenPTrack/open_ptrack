@@ -184,7 +184,7 @@ namespace open_ptrack
         int id,
         typename PinholeView<Checkerboard>::Ptr & color_view)
     {
-      Types::Point2Matrix corners(checkerboard_->rows(), checkerboard_->cols());
+      Cloud2 corners(checkerboard_->rows(), checkerboard_->cols());
       finder_.setImage(image);
       if (finder_.find(*checkerboard_, corners))
       {
@@ -306,7 +306,7 @@ namespace open_ptrack
                 {
 
                   Checkerboard checkerboard(*view_map[id]);
-                  double camera_error = std::abs(checkerboard.plane().normal().dot(Types::Vector3::UnitZ()))
+                  double camera_error = std::abs(checkerboard.plane().normal().dot(Vector3::UnitZ()))
                   * checkerboard.center().squaredNorm();
 
                   if (camera.level_ > min_level and camera_error < camera.min_error_)
@@ -436,7 +436,7 @@ namespace open_ptrack
 
         CheckerboardError(const PinholeCameraModel::ConstPtr & camera_model,
             const Checkerboard::ConstPtr & checkerboard,
-            const Types::Point2Matrix & image_corners)
+            const Cloud2 & image_corners)
       : camera_model_(camera_model),
         checkerboard_(checkerboard),
         image_corners_(image_corners)
@@ -448,16 +448,16 @@ namespace open_ptrack
             T * residuals) const
         {
 
-          typename Types_<T>::Vector3 checkerboard_r_vec(checkerboard_pose[0], checkerboard_pose[1], checkerboard_pose[2]);
-          typename Types_<T>::AngleAxis checkerboard_r(checkerboard_r_vec.norm(), checkerboard_r_vec.normalized());
-          typename Types_<T>::Translation3 checkerboard_t(checkerboard_pose[3], checkerboard_pose[4], checkerboard_pose[5]);
+          typename Types<T>::Vector3 checkerboard_r_vec(checkerboard_pose[0], checkerboard_pose[1], checkerboard_pose[2]);
+          typename Types<T>::AngleAxis checkerboard_r(checkerboard_r_vec.norm(), checkerboard_r_vec.normalized());
+          typename Types<T>::Translation3 checkerboard_t(checkerboard_pose[3], checkerboard_pose[4], checkerboard_pose[5]);
 
-          typename Types_<T>::Transform checkerboard_pose_eigen = checkerboard_t * checkerboard_r;
+          typename Types<T>::Transform checkerboard_pose_eigen = checkerboard_t * checkerboard_r;
 
-          typename Types_<T>::Point3Matrix cb_corners(checkerboard_->cols(), checkerboard_->rows());
-          cb_corners.matrix() = checkerboard_pose_eigen * checkerboard_->corners().matrix().cast<T>();
+          typename Types<T>::Cloud3 cb_corners(checkerboard_->cols(), checkerboard_->rows());
+          cb_corners.container() = checkerboard_pose_eigen * checkerboard_->corners().container().cast<T>();
 
-          typename Types_<T>::Point2Matrix reprojected_corners = camera_model_->project3dToPixel<T>(cb_corners);
+          typename Types<T>::Cloud2 reprojected_corners = camera_model_->project3dToPixel<T>(cb_corners);
 
           for (size_t i = 0; i < cb_corners.size(); ++i)
             residuals[i] = T((reprojected_corners[i] - image_corners_[i].cast<T>()).norm());
@@ -469,7 +469,7 @@ namespace open_ptrack
 
         const PinholeCameraModel::ConstPtr & camera_model_;
         const Checkerboard::ConstPtr & checkerboard_;
-        const Types::Point2Matrix & image_corners_;
+        const Cloud2 & image_corners_;
 
     };
 
@@ -479,7 +479,7 @@ namespace open_ptrack
 
         GlobalError(const PinholeCameraModel::ConstPtr & camera_model,
             const Checkerboard::ConstPtr & checkerboard,
-            const Types::Point2Matrix & image_corners)
+            const Cloud2 & image_corners)
       : camera_model_(camera_model),
         checkerboard_(checkerboard),
         image_corners_(image_corners)
@@ -491,26 +491,26 @@ namespace open_ptrack
             const T * const checkerboard_pose,
             T * residuals) const
         {
-          typename Types_<T>::Vector3 sensor_r_vec(sensor_pose[0], sensor_pose[1], sensor_pose[2]);
-          typename Types_<T>::AngleAxis sensor_r(sensor_r_vec.norm(), sensor_r_vec.normalized());
-          typename Types_<T>::Translation3 sensor_t(sensor_pose[3], sensor_pose[4], sensor_pose[5]);
+          typename Types<T>::Vector3 sensor_r_vec(sensor_pose[0], sensor_pose[1], sensor_pose[2]);
+          typename Types<T>::AngleAxis sensor_r(sensor_r_vec.norm(), sensor_r_vec.normalized());
+          typename Types<T>::Translation3 sensor_t(sensor_pose[3], sensor_pose[4], sensor_pose[5]);
 
-          typename Types_<T>::Transform sensor_pose_eigen = Types_<T>::Transform::Identity() * sensor_t;
+          typename Types<T>::Transform sensor_pose_eigen = Types<T>::Transform::Identity() * sensor_t;
 
           if (sensor_r_vec.norm() != T(0))
             sensor_pose_eigen = sensor_t * sensor_r;
 
-          typename Types_<T>::Vector3 checkerboard_r_vec(checkerboard_pose[0], checkerboard_pose[1], checkerboard_pose[2]);
-          typename Types_<T>::AngleAxis checkerboard_r(checkerboard_r_vec.norm(), checkerboard_r_vec.normalized());
-          typename Types_<T>::Translation3 checkerboard_t(checkerboard_pose[3], checkerboard_pose[4], checkerboard_pose[5]);
+          typename Types<T>::Vector3 checkerboard_r_vec(checkerboard_pose[0], checkerboard_pose[1], checkerboard_pose[2]);
+          typename Types<T>::AngleAxis checkerboard_r(checkerboard_r_vec.norm(), checkerboard_r_vec.normalized());
+          typename Types<T>::Translation3 checkerboard_t(checkerboard_pose[3], checkerboard_pose[4], checkerboard_pose[5]);
 
-          typename Types_<T>::Transform checkerboard_pose_eigen = checkerboard_t * checkerboard_r;
+          typename Types<T>::Transform checkerboard_pose_eigen = checkerboard_t * checkerboard_r;
 
-          typename Types_<T>::Point3Matrix cb_corners(checkerboard_->cols(), checkerboard_->rows());
-          cb_corners.matrix() = sensor_pose_eigen.inverse() * checkerboard_pose_eigen
-              * checkerboard_->corners().matrix().cast<T>();
+          typename Types<T>::Cloud3 cb_corners(checkerboard_->cols(), checkerboard_->rows());
+          cb_corners.container() = sensor_pose_eigen.inverse() * checkerboard_pose_eigen
+              * checkerboard_->corners().container().cast<T>();
 
-          typename Types_<T>::Point2Matrix reprojected_corners = camera_model_->project3dToPixel<T>(cb_corners);
+          typename Types<T>::Cloud2 reprojected_corners = camera_model_->project3dToPixel<T>(cb_corners);
 
           for (size_t i = 0; i < cb_corners.size(); ++i)
             residuals[i] = T((reprojected_corners[i] - image_corners_[i].cast<T>()).norm());
@@ -522,7 +522,7 @@ namespace open_ptrack
 
         const PinholeCameraModel::ConstPtr & camera_model_;
         const Checkerboard::ConstPtr & checkerboard_;
-        const Types::Point2Matrix & image_corners_;
+        const Cloud2 & image_corners_;
 
     };
 
@@ -530,13 +530,13 @@ namespace open_ptrack
     {
 
       ceres::Problem problem;
-      Eigen::Matrix<Types::Scalar, Eigen::Dynamic, 6, Eigen::DontAlign | Eigen::RowMajor> cb_data(data_vec_.size(), 6);
-      Eigen::Matrix<Types::Scalar, Eigen::Dynamic, 6, Eigen::DontAlign | Eigen::RowMajor> camera_data(camera_vector_.size(),
+      Eigen::Matrix<Scalar, Eigen::Dynamic, 6, Eigen::DontAlign | Eigen::RowMajor> cb_data(data_vec_.size(), 6);
+      Eigen::Matrix<Scalar, Eigen::Dynamic, 6, Eigen::DontAlign | Eigen::RowMajor> camera_data(camera_vector_.size(),
           6);
       for (size_t i = 0; i < camera_vector_.size(); ++i)
       {
         const Camera & camera = camera_vector_[i];
-        Types::Pose pose = camera.sensor_->pose();
+        Pose pose = camera.sensor_->pose();
         BaseObject::ConstPtr parent = camera.sensor_->parent();
         while (parent)
         {
@@ -545,7 +545,7 @@ namespace open_ptrack
           parent = parent->parent();
         }
 
-        Types::AngleAxis rotation = Types::AngleAxis(pose.linear());
+        AngleAxis rotation = AngleAxis(pose.linear());
         camera_data.row(i).head<3>() = rotation.angle() * rotation.axis();
         camera_data.row(i).tail<3>() = pose.translation();
       }
@@ -557,7 +557,7 @@ namespace open_ptrack
         const int id = it->first;
         const PinholeView<Checkerboard>::Ptr & view = it->second;
         const Camera & camera = camera_vector_[id];
-        Types::Pose pose = camera.sensor_->cameraModel()->estimatePose(view->points(), view->object()->points());
+        Pose pose = camera.sensor_->cameraModel()->estimatePose(view->points(), view->object()->points());
         BaseObject::ConstPtr parent = camera.sensor_;
         while (parent)
         {
@@ -565,7 +565,7 @@ namespace open_ptrack
           parent = parent->parent();
         }
 
-        Types::AngleAxis rotation = Types::AngleAxis(pose.linear());
+        AngleAxis rotation = AngleAxis(pose.linear());
         cb_data.row(i).head<3>() = rotation.angle() * rotation.axis();
         cb_data.row(i).tail<3>() = pose.translation();
 
@@ -613,14 +613,14 @@ namespace open_ptrack
         Camera & camera = camera_vector_[i];
         if (camera_data.row(i).head<3>().norm() != 0)
         {
-          Types::AngleAxis rotation(camera_data.row(i).head<3>().norm(), camera_data.row(i).head<3>().normalized());
-          Types::Translation3 translation(camera_data.row(i).tail<3>());
+          AngleAxis rotation(camera_data.row(i).head<3>().norm(), camera_data.row(i).head<3>().normalized());
+          Translation3 translation(camera_data.row(i).tail<3>());
           camera.sensor_->setPose(translation * rotation);
         }
         else
         {
-          Types::Translation3 translation(camera_data.row(i).tail<3>());
-          camera.sensor_->setPose(Types::Pose::Identity() * translation);
+          Translation3 translation(camera_data.row(i).tail<3>());
+          camera.sensor_->setPose(Pose::Identity() * translation);
         }
       }
     }
@@ -747,8 +747,8 @@ namespace open_ptrack
           // If this camera is not the base camera:
           if (strcmp(camera_vector_[id].sensor_->frameId().c_str(), ("/" + base_camera_frame_id_).c_str()) != 0)
           {
-            const Types::Pose & pose = camera_vector_[id].sensor_->pose();
-            Types::Quaternion q(pose.linear());
+            const Pose & pose = camera_vector_[id].sensor_->pose();
+            Quaternion q(pose.linear());
             launch_file << "  <node pkg=\"tf\" type=\"static_transform_publisher\" name=\""
                 << camera_vector_[id].sensor_->frameId().substr(1) << "_broadcaster\" args=\""
                 << pose.translation().transpose() << " " << q.coeffs().transpose() << " ";
@@ -880,8 +880,8 @@ namespace open_ptrack
 
         for (int id = 0; id < num_cameras_; ++id)
         {
-          const Types::Pose & pose = camera_vector_[id].sensor_->pose();
-          Types::Quaternion q(pose.linear());
+          const Pose & pose = camera_vector_[id].sensor_->pose();
+          Quaternion q(pose.linear());
           launch_file << "<node pkg=\"tf\" type=\"static_transform_publisher\" name=\""
               << camera_vector_[id].sensor_->frameId().substr(1) << "_broadcaster\" args=\""
               << pose.translation().transpose() << " " << q.coeffs().transpose() << " "

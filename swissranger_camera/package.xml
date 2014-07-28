@@ -26,6 +26,8 @@
   <author>Patrick Beeson, Radu Rusu</author>
 
   <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>cmake_modules</build_depend>
   
   <build_depend>ros</build_depend>
   <build_depend>roscpp</build_depend>

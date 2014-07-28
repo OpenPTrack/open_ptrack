@@ -48,10 +48,10 @@ main(int argc, char ** argv)
   ros::NodeHandle nh("~");
 
   // Read some parameters from launch file:
-  int num_cameras;
-  nh.param("num_cameras", num_cameras, 1);
-  int base_camera;
-  nh.param("base_camera", base_camera, 0);
+  int num_sensors;
+  nh.param("num_sensors", num_sensors, 1);
+  int base_sensor;
+  nh.param("base_sensor", base_sensor, 0);
   bool calibration_with_serials;
   nh.param("calibration_with_serials", calibration_with_serials, false);
   int rows;
@@ -65,18 +65,18 @@ main(int argc, char ** argv)
   std::string driver_name;
   nh.param("driver", driver_name, std::string("openni"));
 
-  // Read ID of cameras:
-  std::vector<std::string> camera_id_vector;
-  for (unsigned int i = 0; i < num_cameras; i++)
+  // Read ID of sensors:
+  std::vector<std::string> sensor_id_vector;
+  for (unsigned int i = 0; i < num_sensors; i++)
   {
     std::stringstream ss;
-    ss << "camera" << i << "_id";
-    std::string camera_id;
-    nh.param(ss.str(), camera_id, std::string("./"));
-    camera_id_vector.push_back(camera_id);
+    ss << "sensor" << i << "_id";
+    std::string sensor_id;
+    nh.param(ss.str(), sensor_id, std::string("./"));
+    sensor_id_vector.push_back(sensor_id);
   }
 
-  // Write launch file to be used for extrinsic calibration of the camera network:
+  // Write launch file to be used for extrinsic calibration of the sensor network:
   std::string file_name = ros::package::getPath("opt_calibration") + "/launch/opt_calibration_master.launch";
   std::ofstream launch_file;
   launch_file.open(file_name.c_str());
@@ -87,24 +87,24 @@ main(int argc, char ** argv)
 
     // Network parameters:
     launch_file << "  <!-- Network parameters -->" << std::endl
-                << "  <arg name=\"num_cameras\" value=\"" << num_cameras << "\" />" << std::endl;
+                << "  <arg name=\"num_sensors\" value=\"" << num_sensors << "\" />" << std::endl;
 
-    for (unsigned int i = 0; i < num_cameras; i++)
+    for (unsigned int i = 0; i < num_sensors; i++)
     {
-      if (!std::strcmp(camera_id_vector[i].substr(0,1).c_str(), "1"))    // if SwissRanger
+      if (!std::strcmp(sensor_id_vector[i].substr(0,1).c_str(), "1"))    // if SwissRanger
       {
-        std::string camera_name = camera_id_vector[i];
-        replace(camera_name.begin(), camera_name.end(), '.', '_');
-        camera_name = "SR_" + camera_name;
-        launch_file << "  <arg name=\"camera" << i << "_id\" value=\"" << camera_name << "\" />" << std::endl;
+        std::string sensor_name = sensor_id_vector[i];
+        replace(sensor_name.begin(), sensor_name.end(), '.', '_');
+        sensor_name = "SR_" + sensor_name;
+        launch_file << "  <arg name=\"sensor" << i << "_id\" value=\"" << sensor_name << "\" />" << std::endl;
       }
       else
       {
-        launch_file << "  <arg name=\"camera" << i << "_id\" value=\"" << camera_id_vector[i] << "\" />" << std::endl;
+        launch_file << "  <arg name=\"sensor" << i << "_id\" value=\"" << sensor_id_vector[i] << "\" />" << std::endl;
       }
-      launch_file << "  <arg name=\"camera" << i << "_name\" default=\"$(arg camera" << i << "_id)\" />" << std::endl;
+      launch_file << "  <arg name=\"sensor" << i << "_name\" default=\"$(arg sensor" << i << "_id)\" />" << std::endl;
     }
-    launch_file << "  <arg name=\"base_camera\" value=\"$(arg camera" << base_camera << "_name)\" />" << std::endl << std::endl;
+    launch_file << "  <arg name=\"base_sensor\" value=\"$(arg sensor" << base_sensor << "_name)\" />" << std::endl << std::endl;
 
     // Checkerboard parameters:
     launch_file << "  <!-- Checkerboard parameters -->" << std::endl
@@ -118,30 +118,32 @@ main(int argc, char ** argv)
         << "  <node name=\"rviz\" pkg=\"rviz\" type=\"rviz\" args=\"-d $(find opt_calibration)/conf/opt_calibration.rviz\"/>" << std::endl << std::endl
         << "  <!-- Launching calibration -->" << std::endl
         << "  <node pkg=\"opt_calibration\" type=\"opt_calibration\" name=\"opt_calibration\" output=\"screen\">" << std::endl
-        << "    <param name=\"num_cameras\" value=\"$(arg num_cameras)\" /> " << std::endl
+        << "    <param name=\"num_sensors\" value=\"$(arg num_sensors)\" /> " << std::endl
         << "    <param name=\"rows\" value=\"$(arg rows)\" />" << std::endl
         << "    <param name=\"cols\" value=\"$(arg cols)\" />" << std::endl
         << "    <param name=\"cell_width\" value=\"$(arg cell_width)\" />" << std::endl
         << "    <param name=\"cell_height\" value=\"$(arg cell_height)\" />" << std::endl << std::endl
-        << "    <param name=\"base_camera\" value=\"$(arg base_camera)\" />" << std::endl << std::endl;
+        << "    <param name=\"base_sensor\" value=\"$(arg base_sensor)\" />" << std::endl << std::endl;
 
     if (calibration_with_serials)
       launch_file << "    <param name=\"calibration_with_serials\" value=\"true\" />" << std::endl << std::endl;
 
-    // Parameters and remapping for every camera:
-    for (unsigned int i = 0; i < num_cameras; i++)
+    // Parameters and remapping for every sensor:
+    for (unsigned int i = 0; i < num_sensors; i++)
     {
-      launch_file << "    <param name=\"camera_" << i << "/name\" value=\"/$(arg camera" << i << "_name)\" />" << std::endl;
+      launch_file << "    <param name=\"sensor_" << i << "/name\" value=\"/$(arg sensor" << i << "_name)\" />" << std::endl;
 
-      if (!std::strcmp(camera_id_vector[i].substr(0,1).c_str(), "1"))    // if SwissRanger (camera_id is an IP address)
+      if (!std::strcmp(sensor_id_vector[i].substr(0,1).c_str(), "1"))    // if SwissRanger (sensor_id is an IP address)
       {
-        launch_file << "    <remap from=\"~camera_" << i << "/image\" to=\"/$(arg camera" << i << "_name)/intensity/image_resized\" />" << std::endl;
-        launch_file << "    <remap from=\"~camera_" << i << "/camera_info\" to=\"/$(arg camera" << i << "_name)/intensity/camera_info\" />" << std::endl << std::endl;
+        launch_file << "    <param name=\"sensor_" << i << "/type\" value=\"pinhole_rgb\" />" << std::endl;
+        launch_file << "    <remap from=\"~sensor_" << i << "/image\" to=\"/$(arg sensor" << i << "_name)/intensity/image_resized\" />" << std::endl;
+        launch_file << "    <remap from=\"~sensor_" << i << "/camera_info\" to=\"/$(arg sensor" << i << "_name)/intensity/camera_info\" />" << std::endl << std::endl;
       }
       else                                                              // if Kinect
       {
-        launch_file << "    <remap from=\"~camera_" << i << "/image\" to=\"/$(arg camera" << i << "_name)/rgb/image_rect_color\" />" << std::endl;
-        launch_file << "    <remap from=\"~camera_" << i << "/camera_info\" to=\"/$(arg camera" << i << "_name)/rgb/camera_info\" />" << std::endl << std::endl;
+        launch_file << "    <param name=\"sensor_" << i << "/type\" value=\"pinhole_rgb\" />" << std::endl;
+        launch_file << "    <remap from=\"~sensor_" << i << "/image\" to=\"/$(arg sensor" << i << "_name)/rgb/image_rect_color\" />" << std::endl;
+        launch_file << "    <remap from=\"~sensor_" << i << "/camera_info\" to=\"/$(arg sensor" << i << "_name)/rgb/camera_info\" />" << std::endl << std::endl;
       }
     }
 
@@ -152,17 +154,17 @@ main(int argc, char ** argv)
   launch_file.close();
   ROS_INFO_STREAM(file_name << " created!");
 
-  // Write a launch file for every camera:
-  for (unsigned int i = 0; i < num_cameras; i++)
+  // Write a launch file for every sensor:
+  for (unsigned int i = 0; i < num_sensors; i++)
   {
-    std::string camera_name = camera_id_vector[i];
-    if (!std::strcmp(camera_id_vector[i].substr(0,1).c_str(), "1"))    // if SwissRanger (camera_id is an IP address)
+    std::string sensor_name = sensor_id_vector[i];
+    if (!std::strcmp(sensor_id_vector[i].substr(0,1).c_str(), "1"))    // if SwissRanger (sensor_id is an IP address)
     {
-      replace(camera_name.begin(), camera_name.end(), '.', '_');
-      camera_name = "SR_" + camera_name;
+      replace(sensor_name.begin(), sensor_name.end(), '.', '_');
+      sensor_name = "SR_" + sensor_name;
     }
 
-    file_name = ros::package::getPath("opt_calibration") + "/launch/sensor_" + camera_name + ".launch";
+    file_name = ros::package::getPath("opt_calibration") + "/launch/sensor_" + sensor_name + ".launch";
     std::ofstream launch_file;
     launch_file.open(file_name.c_str());
 
@@ -170,19 +172,19 @@ main(int argc, char ** argv)
     {
       launch_file << "<launch>" << std::endl << std::endl;
 
-      launch_file << "  <!-- Camera parameters -->" << std::endl
-          << "  <arg name=\"camera_id\" value=\"" << camera_name << "\" />" << std::endl
-          << "  <arg name=\"camera_name\" default=\"$(arg camera_id)\" />" << std::endl << std::endl;
+      launch_file << "  <!-- sensor parameters -->" << std::endl
+          << "  <arg name=\"sensor_id\" value=\"" << sensor_name << "\" />" << std::endl
+          << "  <arg name=\"sensor_name\" default=\"$(arg sensor_id)\" />" << std::endl << std::endl;
 
-      if (!std::strcmp(camera_id_vector[i].substr(0,1).c_str(), "1"))    // if SwissRanger (camera_id is an IP address)
+      if (!std::strcmp(sensor_id_vector[i].substr(0,1).c_str(), "1"))    // if SwissRanger (sensor_id is an IP address)
       {
         launch_file << "  <!-- Launch sensor -->" << std::endl
             << "  <include file=\"$(find swissranger_camera)/launch/sr_eth.launch\">" << std::endl
-            << "    <arg name=\"camera_id\" value=\"$(arg camera_id)\" />" << std::endl
-            << "    <arg name=\"device_ip\" value=\"" << camera_id_vector[i] << "\" />" << std::endl
+            << "    <arg name=\"camera_id\" value=\"$(arg sensor_id)\" />" << std::endl
+            << "    <arg name=\"device_ip\" value=\"" << sensor_id_vector[i] << "\" />" << std::endl
             << "  </include>" << std::endl << std::endl
             << "  <include file=\"$(find swissranger_camera)/launch/publisher_for_calibration.launch\">" << std::endl
-            << "    <arg name=\"camera_id\" value=\"$(arg camera_id)\" />" << std::endl
+            << "    <arg name=\"camera_id\" value=\"$(arg sensor_id)\" />" << std::endl
             << "  </include>" << std::endl << std::endl;
       }
       else                                                               // if Kinect
@@ -190,15 +192,15 @@ main(int argc, char ** argv)
         launch_file << "  <!-- Launch sensor -->" << std::endl
             << "  <include file=\"$(find detection)/launch/" << driver_name << ".launch\">" << std::endl;
 
-        // If serial numbers can be used to identify cameras, they are added to the launch file:
+        // If serial numbers can be used to identify sensors, they are added to the launch file:
         if (calibration_with_serials)
-          launch_file << "    <arg name=\"device_id\" value=\"$(arg camera_id)\" />" << std::endl;
+          launch_file << "    <arg name=\"device_id\" value=\"$(arg sensor_id)\" />" << std::endl;
 
-        launch_file << "    <arg name=\"camera\" value=\"$(arg camera_name)\" />" << std::endl
+        launch_file << "    <arg name=\"camera\" value=\"$(arg sensor_name)\" />" << std::endl
             << "  </include>" << std::endl << std::endl;
 
         launch_file << "  <!-- Publish a further transform -->" << std::endl
-            << "  <node pkg=\"tf\" type=\"static_transform_publisher\" name=\"$(arg camera_name)_broadcaster\" args=\"-0.045 0 0 1.57079 -1.57079 0 /$(arg camera_name) /$(arg camera_name)_link  100\" />" << std::endl << std::endl;
+            << "  <node pkg=\"tf\" type=\"static_transform_publisher\" name=\"$(arg sensor_name)_broadcaster\" args=\"-0.045 0 0 1.57079 -1.57079 0 /$(arg sensor_name) /$(arg sensor_name)_link  100\" />" << std::endl << std::endl;
       }
       launch_file << "</launch>" << std::endl;
     }
