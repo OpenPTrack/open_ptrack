@@ -33,6 +33,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * Author: Matteo Munaro [matteo.munaro@dei.unipd.it]
+ *         Filippo Basso [filippo.basso@dei.unipd.it]
  *
  */
 
@@ -50,8 +51,6 @@ main(int argc, char ** argv)
   // Read some parameters from launch file:
   int num_sensors;
   nh.param("num_sensors", num_sensors, 1);
-  int base_sensor;
-  nh.param("base_sensor", base_sensor, 0);
   bool calibration_with_serials;
   nh.param("calibration_with_serials", calibration_with_serials, false);
   int rows;
@@ -104,7 +103,6 @@ main(int argc, char ** argv)
       }
       launch_file << "  <arg name=\"sensor" << i << "_name\" default=\"$(arg sensor" << i << "_id)\" />" << std::endl;
     }
-    launch_file << "  <arg name=\"base_sensor\" value=\"$(arg sensor" << base_sensor << "_name)\" />" << std::endl << std::endl;
 
     // Checkerboard parameters:
     launch_file << "  <!-- Checkerboard parameters -->" << std::endl

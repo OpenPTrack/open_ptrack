@@ -1,5 +1,6 @@
 /*
- *  Copyright (c) 2013-2014, Filippo Basso <bassofil@dei.unipd.it>
+ *  Copyright (c) 2013- Filippo Basso, Riccardo Levorato, Matteo Munaro
+ *  Copyright (c) 2014-, Open Perception, Inc.
  *
  *  All rights reserved.
  *
@@ -24,6 +25,10 @@
  *  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *  Author: Filippo Basso [bassofil@dei.unipd.it]
+ *          Riccardo Levorato [levorato@dei.unipd.it]
+ *          Matteo Munaro [matteo.munaro@dei.unipd.it]
  */
 
 #ifndef OPEN_PTRACK_OPT_CALIBRATION_OPT_CALIBRATION_H_

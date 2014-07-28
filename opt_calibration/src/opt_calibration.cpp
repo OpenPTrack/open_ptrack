@@ -1,5 +1,6 @@
 /*
- *  Copyright (c) 2013-2014, Filippo Basso <bassofil@dei.unipd.it>
+ *  Copyright (c) 2013- Filippo Basso, Riccardo Levorato, Matteo Munaro
+ *  Copyright (c) 2014-, Open Perception, Inc.
  *
  *  All rights reserved.
  *
@@ -24,6 +25,10 @@
  *  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *  Author: Filippo Basso [bassofil@dei.unipd.it]
+ *          Riccardo Levorato [levorato@dei.unipd.it]
+ *          Matteo Munaro [matteo.munaro@dei.unipd.it]
  */
 
 #include <fstream>
@@ -129,7 +134,7 @@ void OPTCalibration::perform()
       world_set_ = true;
     }
 
-    if (view_map.size() < 2)
+    if (view_map.size() < 1)
     {
       view_vec_.resize(view_vec_.size() - 1); // Remove data
     }
@@ -214,7 +219,7 @@ void OPTCalibration::perform()
   else
   {
 
-    if (view_map.size() < 2)
+    if (view_map.size() < 1)
     {
       view_vec_.resize(view_vec_.size() - 1); // Remove data
     }
@@ -391,10 +396,10 @@ void OPTCalibration::optimize()
 
   for (size_t i = checkerboard_vec_.size(); i < view_vec_.size(); ++i)
   {
-    ViewMap & data_map = view_vec_[i];
-    ViewMap::iterator it = data_map.begin();
+    ViewMap & view_map = view_vec_[i];
+    ViewMap::iterator it = view_map.begin();
     bool ok = false;
-    while (not ok and it != data_map.end())
+    while (not ok and it != view_map.end())
     {
       if (it->first->type_ != SensorNode::PINHOLE_RGB)
         it++;

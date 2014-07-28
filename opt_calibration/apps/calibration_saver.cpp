@@ -33,6 +33,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * Author: Matteo Munaro [matteo.munaro@dei.unipd.it]
+ *         Filippo Basso [filippo.basso@dei.unipd.it]
  *
  */
 
@@ -50,61 +51,60 @@ main(int argc, char ** argv)
   ros::NodeHandle nh("~");
 
   // Read some parameters from launch file:
-  int num_cameras;
-  nh.param("num_cameras", num_cameras, 1);
-  int base_camera;
-  nh.param("base_camera", base_camera, 0);
+  int num_sensors;
+  nh.param("num_sensors", num_sensors, 1);
+
   bool calibration_with_serials;
   nh.param("calibration_with_serials", calibration_with_serials, false);
 
-  // Read ID of cameras:
-  std::vector<std::string> camera_id_vector;
-  for (unsigned int i = 0; i < num_cameras; i++)
+  // Read ID of sensors:
+  std::vector<std::string> sensor_id_vector;
+  for (unsigned int i = 0; i < num_sensors; i++)
   {
     std::stringstream ss;
-    ss << "camera" << i << "_id";
-    std::string camera_id;
-    nh.param(ss.str(), camera_id, std::string("./"));
-    camera_id_vector.push_back(camera_id);
+    ss << "sensor" << i << "_id";
+    std::string sensor_id;
+    nh.param(ss.str(), sensor_id, std::string("./"));
+    sensor_id_vector.push_back(sensor_id);
   }
 
-  // Kill calibration node before saving camera poses file:
+  // Kill calibration node before saving sensor poses file:
   int ret_value = system ("killall -9 opt_calibration");
 
   // Wait a bit:
   ros::Duration(1).sleep();
 
-  // Save file with all cameras position with respect to the world frame:
+  // Save file with all sensors position with respect to the world frame:
   std::string file_name = ros::package::getPath("detection") + "/launch/camera_poses.txt";
   std::ofstream poses_file;
   poses_file.open(file_name.c_str());
-  for (unsigned int i = 0; i < num_cameras; i++)
+  for (unsigned int i = 0; i < num_sensors; i++)
   {
-    std::string camera_name;
-    if (!std::strcmp(camera_id_vector[i].substr(0,1).c_str(), "1"))    // if SwissRanger
+    std::string sensor_name;
+    if (!std::strcmp(sensor_id_vector[i].substr(0,1).c_str(), "1"))    // if SwissRanger
     {
-      camera_name = camera_id_vector[i];
-      replace(camera_name.begin(), camera_name.end(), '.', '_');
-      camera_name = "SR_" + camera_name;
+      sensor_name = sensor_id_vector[i];
+      replace(sensor_name.begin(), sensor_name.end(), '.', '_');
+      sensor_name = "SR_" + sensor_name;
     }
     else
     {
-      camera_name = camera_id_vector[i];
+      sensor_name = sensor_id_vector[i];
     }
 
-    // Read transform between world and camera reference frame:
+    // Read transform between world and sensor reference frame:
     tf::TransformListener tfListener;
     tf::StampedTransform worldToCamTransform;
     try
     {
-      tfListener.waitForTransform(camera_name, "/world", ros::Time(0), ros::Duration(3.0), ros::Duration(0.01));
-      tfListener.lookupTransform(camera_name, "/world", ros::Time(0), worldToCamTransform);
+      tfListener.waitForTransform(sensor_name, "/world", ros::Time(0), ros::Duration(3.0), ros::Duration(0.01));
+      tfListener.lookupTransform(sensor_name, "/world", ros::Time(0), worldToCamTransform);
 
-      // Extract rotation angles from camera pose:
+      // Extract rotation angles from sensor pose:
       tf::Quaternion q = worldToCamTransform.getRotation();
 
-      // Write transform between camera and world frame to file:
-      poses_file << camera_name << ": " << worldToCamTransform.getOrigin().x() << " " << worldToCamTransform.getOrigin().y() << " " << worldToCamTransform.getOrigin().z()
+      // Write transform between sensor and world frame to file:
+      poses_file << sensor_name << ": " << worldToCamTransform.getOrigin().x() << " " << worldToCamTransform.getOrigin().y() << " " << worldToCamTransform.getOrigin().z()
           << " " << q.getX() << " " << q.getY() << " " << q.getZ() << " " << q.getW() << std::endl;
     }
     catch (tf::TransformException ex)

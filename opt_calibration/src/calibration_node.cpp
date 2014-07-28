@@ -1,5 +1,6 @@
 /*
- *  Copyright (c) 2013-2014, Filippo Basso <bassofil@dei.unipd.it>
+ *  Copyright (c) 2013- Filippo Basso, Riccardo Levorato, Matteo Munaro
+ *  Copyright (c) 2014-, Open Perception, Inc.
  *
  *  All rights reserved.
  *
@@ -24,6 +25,10 @@
  *  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *  Author: Filippo Basso [bassofil@dei.unipd.it]
+ *          Riccardo Levorato [levorato@dei.unipd.it]
+ *          Matteo Munaro [matteo.munaro@dei.unipd.it]
  */
 
 #include <open_ptrack/opt_calibration/calibration_node.h>
@@ -96,7 +101,8 @@ OPTCalibrationNode::OPTCalibrationNode(const ros::NodeHandle & node_handle)
     ss << "/sensor_" << id;
     std::string frame_id = ss.str();
 
-    ss << "/name";
+    ss.str("");
+    ss << "sensor_" << id << "/name";
     node_handle_.param(ss.str(), frame_id, frame_id);
     SensorROS::Ptr sensor = boost::make_shared<SensorROS>(frame_id, type);
 
@@ -110,8 +116,6 @@ OPTCalibrationNode::OPTCalibrationNode(const ros::NodeHandle & node_handle)
                                                                                     1,
                                                                                     &SensorROS::cameraInfoCallback,
                                                                                     sensor));
-
-
 
     sensor_vec_.push_back(sensor);
   }
@@ -132,13 +136,15 @@ bool OPTCalibrationNode::initialize()
       SensorROS::Ptr & sensor_ros = sensor_vec_[i];
       if (not sensor_ros->sensor())
       {
-        ROS_WARN("Not all messages received. Waiting...");
+        ROS_WARN_THROTTLE(5, "Not all messages received. Waiting...");
         all_messages_received = false;
         break;
       }
     }
     rate.sleep();
   }
+
+  ROS_INFO("All sensors connected.");
 
   calibration_ = boost::make_shared<OPTCalibration>(node_handle_, calibration_with_serials_);
   calibration_->setCheckerboard(checkerboard_);
@@ -206,9 +212,9 @@ void OPTCalibrationNode::spin()
 
           calibration_->addData(boost::static_pointer_cast<PinholeSensor>(sensor_ros->sensor()), image_ptr->image);
 
-          std::stringstream image_file_name;
-          image_file_name << "/tmp/cam" << i << "_image" << std::setw(4) << std::setfill('0') << n << ".png";
-          cv::imwrite(image_file_name.str(), image_ptr->image);
+//          std::stringstream image_file_name;
+//          image_file_name << "/tmp/cam" << i << "_image" << std::setw(4) << std::setfill('0') << n << ".png";
+//          cv::imwrite(image_file_name.str(), image_ptr->image);
 
         }
 
