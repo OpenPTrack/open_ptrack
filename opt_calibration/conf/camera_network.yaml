@@ -1,10 +1,8 @@
 # Camera network parameters
 num_sensors: 2
-sensor0_id: "kinect0"
-sensor1_id: "kinect1"
-#camera1_id: "kinect1"
-#camera1_id: "192.168.1.31"
-base_sensor: 0
+sensor0_id: "Kinect0"
+sensor1_id: "Kinect1"
+#sensor2_id: "192.168.1.31"
 calibration_with_serials: false
 
 # Checkerboard parameters

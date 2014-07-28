@@ -176,13 +176,14 @@ void OPTCalibration::perform()
               PlanarObject::Ptr min_planar_object = min_checkerboard_view.object_;
               Point3 min_center = min_checkerboard_view.center_;
 
+              if (sensor_node->level_ == SensorNode::MAX_LEVEL)
+                ROS_INFO_STREAM(sensor_node->sensor_->frameId() << " added to the tree.");
+
               double distance = (min_center - center).norm();
 
               sensor_node->min_error_ = camera_error;
               sensor_node->distance_ = distance;
               sensor_node->level_ = min_level + 1;
-
-              ROS_INFO_STREAM(sensor_node->sensor_->frameId() << " added to the tree.");
 
               sensor_node->sensor_->setParent(min_sensor_node->sensor_);
               if (sensor_node->type_ == SensorNode::PINHOLE_RGB and min_sensor_node->type_ == SensorNode::PINHOLE_RGB)
@@ -199,8 +200,7 @@ void OPTCalibration::perform()
 
             }
           }
-        }
-
+        }       
       }
 
       initialization_ = (view_vec_.size() < OPTIMIZATION_COUNT);
@@ -213,7 +213,11 @@ void OPTCalibration::perform()
           break;
         }
       }
-
+      
+      if (not initialization_)
+      {
+		std::cout << "All cameras added to the tree. Now calibrate the global reference frame and save!" << std::endl;
+	  }
     }
   }
   else
@@ -253,15 +257,15 @@ void OPTCalibration::publish()
       tf_pub_.sendTransform(transform_msg);
   }
 
-  for (size_t i = 0; i < checkerboard_vec_.size(); ++i)
-  {
-    Checkerboard::Ptr cb = checkerboard_vec_[i];
-    visualization_msgs::Marker marker;
-    cb->toMarker(marker);
-    marker.ns = "cb";
-    marker.id = i;
-    marker_pub_.publish(marker);
-  }
+  //for (size_t i = 0; i < checkerboard_vec_.size(); ++i)
+  //{
+  //  Checkerboard::Ptr cb = checkerboard_vec_[i];
+  //  visualization_msgs::Marker marker;
+  //  cb->toMarker(marker);
+  //  marker.ns = "cb";
+  //  marker.id = i;
+  //  marker_pub_.publish(marker);
+  //}
 
 }
 
@@ -388,10 +392,10 @@ void OPTCalibration::optimize()
     sensor_data.row(i).tail<3>() = pose.translation();
   }
 
-  ROS_INFO("Before optimization:");
-  for (size_t i = 0; i < sensor_vec_.size(); ++i)
-    ROS_INFO_STREAM(i << " (" << sensor_vec_[i]->sensor_->parent()->frameId() << ") "
-                      << sensor_vec_[i]->sensor_->frameId() << ": " << sensor_data.row(i));
+  //ROS_INFO("Before optimization:");
+  //for (size_t i = 0; i < sensor_vec_.size(); ++i)
+  //  ROS_INFO_STREAM(i << " (" << sensor_vec_[i]->sensor_->parent()->frameId() << ") "
+  //                    << sensor_vec_[i]->sensor_->frameId() << ": " << sensor_data.row(i));
 
 
   for (size_t i = checkerboard_vec_.size(); i < view_vec_.size(); ++i)
@@ -480,11 +484,11 @@ void OPTCalibration::optimize()
   ceres::Solver::Summary summary;
   ceres::Solve(options, &problem, &summary);
 
-  ROS_INFO("After optimization:");
+  //ROS_INFO("After optimization:");
   for (size_t i = 0; i < sensor_vec_.size(); ++i)
   {
-    ROS_INFO_STREAM("(" << sensor_vec_[i]->sensor_->parent()->frameId() << ") "
-                        << sensor_vec_[i]->sensor_->frameId() << ": " << sensor_data.row(i));
+  //  ROS_INFO_STREAM("(" << sensor_vec_[i]->sensor_->parent()->frameId() << ") "
+  //                      << sensor_vec_[i]->sensor_->frameId() << ": " << sensor_data.row(i));
     SensorNode::Ptr & sensor_node = sensor_vec_[i];
     if (sensor_data.row(i).head<3>().norm() != 0)
     {
