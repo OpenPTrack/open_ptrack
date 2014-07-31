@@ -121,37 +121,19 @@ public:
   OPTCalibration(const ros::NodeHandle & node_handle,
                  bool calibration_with_serials);
 
-  void setCheckerboard(const Checkerboard::Ptr & checkerboard)
+  inline void setCheckerboard(const Checkerboard::Ptr & checkerboard)
   {
     checkerboard_ = checkerboard;
   }
 
-  void addSensor(const PinholeSensor::Ptr & sensor)
+  inline void addSensor(const PinholeSensor::Ptr & sensor)
   {
     SensorNode::Ptr sensor_node = boost::make_shared<SensorNode>(sensor, SensorNode::PINHOLE_RGB, sensor_map_.size());
     sensor_map_[sensor] = sensor_node;
     sensor_vec_.push_back(sensor_node);
   }
 
-  void addSensor(const KinectDepthSensor<UndistortionModel>::Ptr & sensor,
-                 const PinholeSensor::Ptr & connected_sensor,
-                 const Pose & connected_pose = Pose::Identity())
-  {
-    SensorNode::Ptr sensor_node = boost::make_shared<SensorNode>(sensor, SensorNode::KINECT_DEPTH, sensor_map_.size());
-    sensor->setParent(connected_sensor);
-    sensor->setPose(connected_pose);
-    sensor_node->connected_sensor_ = sensor_map_.at(connected_sensor);
-    sensor_node->connected_pose_ = connected_pose;
-    sensor_node->min_error_ = 0.0;
-    sensor_node->distance_ = 0.0;
-    sensor_map_[sensor] = sensor_node;
-    sensor_vec_.push_back(sensor_node);
-
-    sensor_node->connected_sensor_->connected_sensor_ = sensor_node;
-    sensor_node->connected_sensor_->connected_pose_ = connected_pose.inverse();
-  }
-
-  size_t nextAcquisition()
+  inline size_t nextAcquisition()
   {
     view_vec_.push_back(ViewMap());
     return view_vec_.size() - 1;
@@ -172,14 +154,14 @@ public:
     return false;
   }
 
-  void addData(const Sensor::Ptr & sensor,
-               const View::Ptr & view,
-               const PlanarObject::Ptr & object,
-               const Point3 & center)
+  inline void addData(const Sensor::Ptr & sensor,
+                      const View::Ptr & view,
+                      const PlanarObject::Ptr & object,
+                      const Point3 & center)
   {
     SensorNode::Ptr & sensor_node = sensor_map_.at(sensor);
     ViewMap & view_map = view_vec_.back();
-    view_map[sensor_node] = CheckerboardView(view, object, center);
+    view_map[sensor_node] = boost::make_shared<CheckerboardView>(view, object, center);
   }
 
   void perform();
@@ -204,8 +186,6 @@ private:
 
   BaseObject::Ptr world_;
 
-  tf::TransformListener tf_listener_;
-
   tf::TransformBroadcaster tf_pub_;
   ros::Publisher marker_pub_;
 
@@ -215,6 +195,9 @@ private:
 
   struct CheckerboardView
   {
+    typedef boost::shared_ptr<CheckerboardView> Ptr;
+    typedef boost::shared_ptr<const CheckerboardView> ConstPtr;
+
     CheckerboardView() {}
 
     CheckerboardView(const View::Ptr & view,
@@ -233,10 +216,12 @@ private:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   };
 
-  typedef std::map<SensorNode::Ptr, CheckerboardView> ViewMap;
+  typedef std::map<SensorNode::Ptr, CheckerboardView::Ptr> ViewMap;
   std::vector<ViewMap> view_vec_;
+  std::vector<ViewMap> single_view_vec_;
 
   std::vector<Checkerboard::Ptr> checkerboard_vec_;
+  std::vector<Checkerboard::Ptr> floor_checkerboard_vec_;
 
   bool initialization_;
   int last_optimization_;

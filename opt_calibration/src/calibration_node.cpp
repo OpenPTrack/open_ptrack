@@ -189,7 +189,7 @@ void OPTCalibrationNode::actionCallback(const std_msgs::String::ConstPtr & msg)
 
 void OPTCalibrationNode::spin()
 {
-  ros::Rate rate(2.0);
+  ros::Rate rate(5.0);
 
   while (ros::ok())
   {

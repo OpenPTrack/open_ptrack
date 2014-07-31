@@ -56,13 +56,12 @@ const double SensorNode::MAX_ERROR = 10000.0;
 OPTCalibration::OPTCalibration(const ros::NodeHandle & node_handle,
                                bool calibration_with_serials)
   : node_handle_(node_handle),
-    world_(boost::make_shared<BaseObject>()),
+    world_(boost::make_shared<BaseObject>("/world")),
     world_set_(false),
     initialization_(true),
     last_optimization_(0),
     calibration_with_serials_(calibration_with_serials)
 {
-  world_->setFrameId("/world");
   marker_pub_ = node_handle_.advertise<visualization_msgs::Marker>("markers", 0);
 }
 
@@ -109,37 +108,34 @@ void OPTCalibration::perform()
 {
   const ViewMap & view_map = view_vec_.back();
 
-  //ROS_INFO_STREAM("> Perform");
-
   if (initialization_)
   {
     if (not world_set_ and not view_map.empty()) // Set /world
     {
       ViewMap::const_iterator it = view_map.begin();
-//      while (it != view_map.end() and it->first->type_ == SensorNode::KINECT_DEPTH)
-//        ++it;
-
-      if (it == view_map.end())
-      {
-        view_vec_.resize(view_vec_.size() - 1);
-        return;
-      }
 
       SensorNode::Ptr sensor_node = it->first;
       sensor_node->sensor_->setParent(world_);
       sensor_node->level_ = 0;
-//      if (sensor_node->connected_sensor_)
-//        sensor_node->connected_sensor_->level_ = 1;
+
       ROS_INFO_STREAM(sensor_node->sensor_->frameId() << " added to the tree.");
       world_set_ = true;
     }
 
-    if (view_map.size() < 1)
+    if (view_map.empty())
     {
       view_vec_.resize(view_vec_.size() - 1); // Remove data
+      ROS_INFO_STREAM("0  " << view_vec_.size() << " " << single_view_vec_.size());
     }
-    else // At least 2 cameras
+    else if(view_map.size() == 1)
     {
+      single_view_vec_.push_back(view_map);
+      view_vec_.resize(view_vec_.size() - 1);
+      ROS_INFO_STREAM("1  " << view_vec_.size() << " " << single_view_vec_.size());
+    }
+    else if (view_map.size() >= 2) // At least 2 cameras
+    {
+      ROS_INFO_STREAM("2+ " << view_vec_.size() << " " << single_view_vec_.size());
       int min_level = SensorNode::MAX_LEVEL;
       SensorNode::Ptr min_sensor_node;
       for (ViewMap::const_iterator it = view_map.begin(); it != view_map.end(); ++it)
@@ -152,29 +148,25 @@ void OPTCalibration::perform()
         }
       }
 
-      //ROS_INFO_STREAM("Min node: " << min_sensor_node->sensor_->frameId());
-
       if (min_level < SensorNode::MAX_LEVEL) // At least one already in tree
       {
         for (ViewMap::const_iterator it = view_map.begin(); it != view_map.end(); ++it)
         {
           SensorNode::Ptr sensor_node = it->first;
 
-          //ROS_INFO_STREAM(" -- Node: " << sensor_node->sensor_->frameId());
-
           if (sensor_node != min_sensor_node)
           {
-            PlanarObject::Ptr planar_object = it->second.object_;
-            Point3 center = it->second.center_;
+            const CheckerboardView::Ptr & view = it->second;
+            PlanarObject::Ptr planar_object = view->object_;
+            Point3 center = view->center_;
 
             double camera_error = std::abs(planar_object->plane().normal().dot(Vector3::UnitZ())) * center.squaredNorm();
 
             if (sensor_node->level_ > min_level and camera_error < sensor_node->min_error_)
             {
-
-              CheckerboardView min_checkerboard_view = view_map.at(min_sensor_node);
-              PlanarObject::Ptr min_planar_object = min_checkerboard_view.object_;
-              Point3 min_center = min_checkerboard_view.center_;
+              CheckerboardView::Ptr min_checkerboard_view = view_map.at(min_sensor_node);
+              PlanarObject::Ptr min_planar_object = min_checkerboard_view->object_;
+              Point3 min_center = min_checkerboard_view->center_;
 
               if (sensor_node->level_ == SensorNode::MAX_LEVEL)
                 ROS_INFO_STREAM(sensor_node->sensor_->frameId() << " added to the tree.");
@@ -186,17 +178,7 @@ void OPTCalibration::perform()
               sensor_node->level_ = min_level + 1;
 
               sensor_node->sensor_->setParent(min_sensor_node->sensor_);
-              if (sensor_node->type_ == SensorNode::PINHOLE_RGB and min_sensor_node->type_ == SensorNode::PINHOLE_RGB)
-              {
-                sensor_node->sensor_->setPose(min_planar_object->pose() * planar_object->pose().inverse());
-//                if (sensor_node->connected_sensor_)
-//                  sensor_node->connected_sensor_->level_ = sensor_node->level_ + 1;
-              }
-              else
-              {
-                // Do nothing
-                ROS_WARN("If this message appears there's something wrong!!");
-              }
+              sensor_node->sensor_->setPose(min_planar_object->pose() * planar_object->pose().inverse());
 
             }
           }
@@ -204,31 +186,35 @@ void OPTCalibration::perform()
       }
 
       initialization_ = (view_vec_.size() < OPTIMIZATION_COUNT);
-      for (int i = 0; i < sensor_vec_.size(); ++i)
+      for (int i = 0; not initialization_ and i < sensor_vec_.size(); ++i)
       {
         SensorNode::Ptr & sensor_node = sensor_vec_[i];
         if (sensor_node->level_ == SensorNode::MAX_LEVEL)
-        {
           initialization_ = true;
-          break;
-        }
       }
       
       if (not initialization_)
-      {
-		std::cout << "All cameras added to the tree. Now calibrate the global reference frame and save!" << std::endl;
-	  }
+        ROS_INFO("All cameras added to the tree. Now calibrate the global reference frame and save!");
+
     }
   }
   else
   {
 
-    if (view_map.size() < 1)
+    if (view_map.empty())
     {
       view_vec_.resize(view_vec_.size() - 1); // Remove data
+      ROS_INFO_STREAM("0  " << view_vec_.size() << " " << single_view_vec_.size());
     }
-    else // At least 2 cameras
+    else if(view_map.size() == 1)
     {
+      single_view_vec_.push_back(view_map);
+      view_vec_.resize(view_vec_.size() - 1);
+      ROS_INFO_STREAM("1  " << view_vec_.size() << " " << single_view_vec_.size());
+    }
+    else if (view_map.size() >= 2) // At least 2 cameras
+    {
+      ROS_INFO_STREAM("2+ " << view_vec_.size() << " " << single_view_vec_.size());
       if (last_optimization_ == 0)
       {
         optimize();
@@ -239,8 +225,6 @@ void OPTCalibration::perform()
     }
 
   }
-
-  //ROS_INFO_STREAM("< Perform");
 
   publish();
 
@@ -257,15 +241,15 @@ void OPTCalibration::publish()
       tf_pub_.sendTransform(transform_msg);
   }
 
-  //for (size_t i = 0; i < checkerboard_vec_.size(); ++i)
-  //{
-  //  Checkerboard::Ptr cb = checkerboard_vec_[i];
-  //  visualization_msgs::Marker marker;
-  //  cb->toMarker(marker);
-  //  marker.ns = "cb";
-  //  marker.id = i;
-  //  marker_pub_.publish(marker);
-  //}
+//  for (size_t i = 0; i < checkerboard_vec_.size(); ++i)
+//  {
+//    Checkerboard::Ptr cb = checkerboard_vec_[i];
+//    visualization_msgs::Marker marker;
+//    cb->toMarker(marker);
+//    marker.ns = "optimized checkerboard";
+//    marker.id = i;
+//    marker_pub_.publish(marker);
+//  }
 
 }
 
@@ -377,14 +361,13 @@ void OPTCalibration::optimize()
     const SensorNode & sensor_node = *sensor_vec_[i];
     Pose pose = sensor_node.sensor_->pose();
     BaseObject::ConstPtr parent = sensor_node.sensor_->parent();
-    //std::cout << i << ": " << parent->frameId() << " " << pose.translation().transpose() << std::endl;
+
     while (parent->parent())
     {
-      pose = parent->pose() * pose; //TODO controllare
+      pose = parent->pose() * pose;
       parent = parent->parent();
       sensor_node.sensor_->setParent(parent);
       sensor_node.sensor_->setPose(pose);
-      //std::cout << parent->frameId() << " " << pose.translation().transpose() << std::endl;
     }
 
     AngleAxis rotation = AngleAxis(pose.linear());
@@ -394,9 +377,8 @@ void OPTCalibration::optimize()
 
   //ROS_INFO("Before optimization:");
   //for (size_t i = 0; i < sensor_vec_.size(); ++i)
-  //  ROS_INFO_STREAM(i << " (" << sensor_vec_[i]->sensor_->parent()->frameId() << ") "
-  //                    << sensor_vec_[i]->sensor_->frameId() << ": " << sensor_data.row(i));
-
+  //  ROS_INFO_STREAM("(" << sensor_vec_[i]->sensor_->parent()->frameId() << ") "
+  //                      << sensor_vec_[i]->sensor_->frameId() << ": " << sensor_data.row(i));
 
   for (size_t i = checkerboard_vec_.size(); i < view_vec_.size(); ++i)
   {
@@ -411,10 +393,10 @@ void OPTCalibration::optimize()
         ok = true;
     }
 
-    const CheckerboardView & cb_view = it->second;
+    const CheckerboardView::Ptr & cb_view = it->second;
     const SensorNode::Ptr & sensor_node = it->first;
 
-    Checkerboard::Ptr cb = boost::make_shared<Checkerboard>(*boost::static_pointer_cast<Checkerboard>(cb_view.object_));
+    Checkerboard::Ptr cb = boost::make_shared<Checkerboard>(*boost::static_pointer_cast<Checkerboard>(cb_view->object_));
 
     BaseObject::ConstPtr parent = sensor_node->sensor_;
     while (parent->parent())
@@ -440,13 +422,13 @@ void OPTCalibration::optimize()
 
     for (ViewMap::iterator it = data_map.begin(); it != data_map.end(); ++it)
     {
-      CheckerboardView cb_view = it->second;
+      CheckerboardView::Ptr cb_view = it->second;
       const SensorNode::Ptr & sensor_node = it->first;
 
       if (sensor_node->type_ == SensorNode::PINHOLE_RGB)
       {
         PinholeSensor::Ptr sensor = boost::static_pointer_cast<PinholeSensor>(sensor_node->sensor_);
-        PinholeView<Checkerboard>::Ptr view = boost::static_pointer_cast<PinholeView<Checkerboard> >(cb_view.view_);
+        PinholeView<Checkerboard>::Ptr view = boost::static_pointer_cast<PinholeView<Checkerboard> >(cb_view->view_);
         if (sensor_node->level_ > 0)
         {
           //ROS_INFO_STREAM(checkerboard_->cols());
@@ -549,8 +531,36 @@ void OPTCalibration::save()
     }
     launch_file << std::endl;
 
+
+
+
+
+
+
+    ViewMap & view_map = single_view_vec_.back();
+    const CheckerboardView::Ptr & cb_view = view_map.begin()->second;
+    const SensorNode::Ptr & sensor_node = view_map.begin()->first;
+
+    Checkerboard::Ptr cb = boost::make_shared<Checkerboard>(*boost::static_pointer_cast<Checkerboard>(cb_view->object_));
+
+    BaseObject::ConstPtr parent = sensor_node->sensor_;
+    while (parent->parent())
+    {
+      cb->transform(parent->pose());
+      parent = parent->parent();
+    }
+    cb->setParent(parent);
+
+
     AngleAxis rotation(M_PI, Vector3(1.0, 1.0, 0.0).normalized());
-    Pose new_world_pose = checkerboard_vec_.back()->pose().inverse();
+    Pose new_world_pose = cb->pose().inverse();
+
+
+
+
+
+//    AngleAxis rotation(M_PI, Vector3(1.0, 1.0, 0.0).normalized());
+//    Pose new_world_pose = checkerboard_vec_.back()->pose().inverse();
 
     // Write TF transforms between cameras and world frame:
     launch_file << "  <!-- Transforms tree -->" << std::endl;
