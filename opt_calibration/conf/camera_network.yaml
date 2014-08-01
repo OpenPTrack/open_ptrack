@@ -1,12 +1,44 @@
 # Camera network parameters
-num_sensors: 2
-sensor0_id: "Kinect0"
-sensor1_id: "Kinect1"
-#sensor2_id: "192.168.1.31"
-calibration_with_serials: false
+# Supported sensor types: 
+#  * Kinect 1st version (type: kinect1)
+#  * SwissRanger 4500 (type: sr4500)
+#  * [Work-in-progress] Stereo cameras (type: stereo)
+network:
+  - pc: "Cassiopea"
+    sensors:
+      - id: "Kinect0"
+        type: kinect1
+      - id: "Kinect1"
+        type: kinect1
+    use_serials: false
+  - pc: "pc_2"
+    sensors:
+      - id: "A00364820345039A"
+        type: kinect1
+      - id: "192.168.1.31"
+        type: sr4500
+    use_serials: true
+    
+#network:
+#  - pc: "Cassiopea"
+#    sensors:
+#      - type: kinect1
+#        id: "Kinect0"
+#      - type: kinect1
+#        id: "Kinect1"
+#  - pc: "pc_2"
+#    sensors:
+#      - type: kinect1
+#        serial: "A00364820345039A"
+#        id: "Kinect2"
+#      - type: sr4500
+#        ip: "192.168.1.31"
+#        id: "SwissRanger0"
+      
 
 # Checkerboard parameters
-rows: 6
-cols: 5
-cell_width: 0.12
-cell_height: 0.12
+checkerboard:
+  rows: 6
+  cols: 5
+  cell_width: 0.12
+  cell_height: 0.12
