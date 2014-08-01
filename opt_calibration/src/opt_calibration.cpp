@@ -253,13 +253,13 @@ void OPTCalibration::publish()
 
 }
 
-class CheckerboardError
+class RootPinholeError
 {
 public:
 
-  CheckerboardError(const PinholeCameraModel::ConstPtr & camera_model,
-                    const Checkerboard::ConstPtr & checkerboard,
-                    const Cloud2 & image_corners)
+  RootPinholeError(const PinholeCameraModel::ConstPtr & camera_model,
+                   const Checkerboard::ConstPtr & checkerboard,
+                   const Cloud2 & image_corners)
     : camera_model_(camera_model),
       checkerboard_(checkerboard),
       image_corners_(image_corners)
@@ -295,13 +295,13 @@ private:
 
 };
 
-class GlobalError
+class PinholeError
 {
 public:
 
-  GlobalError(const PinholeCameraModel::ConstPtr & camera_model,
-              const Checkerboard::ConstPtr & checkerboard,
-              const Cloud2 & image_corners)
+  PinholeError(const PinholeCameraModel::ConstPtr & camera_model,
+               const Checkerboard::ConstPtr & checkerboard,
+               const Cloud2 & image_corners)
     : camera_model_(camera_model),
       checkerboard_(checkerboard),
       image_corners_(image_corners)
@@ -375,10 +375,10 @@ void OPTCalibration::optimize()
     sensor_data.row(i).tail<3>() = pose.translation();
   }
 
-  //ROS_INFO("Before optimization:");
-  //for (size_t i = 0; i < sensor_vec_.size(); ++i)
-  //  ROS_INFO_STREAM("(" << sensor_vec_[i]->sensor_->parent()->frameId() << ") "
-  //                      << sensor_vec_[i]->sensor_->frameId() << ": " << sensor_data.row(i));
+//  ROS_INFO("Before optimization:");
+//  for (size_t i = 0; i < sensor_vec_.size(); ++i)
+//    ROS_INFO_STREAM("(" << sensor_vec_[i]->sensor_->parent()->frameId() << ") "
+//                        << sensor_vec_[i]->sensor_->frameId() << ": " << sensor_data.row(i));
 
   for (size_t i = checkerboard_vec_.size(); i < view_vec_.size(); ++i)
   {
@@ -431,22 +431,19 @@ void OPTCalibration::optimize()
         PinholeView<Checkerboard>::Ptr view = boost::static_pointer_cast<PinholeView<Checkerboard> >(cb_view->view_);
         if (sensor_node->level_ > 0)
         {
-          //ROS_INFO_STREAM(checkerboard_->cols());
-          GlobalError * error = new GlobalError(sensor->cameraModel(), checkerboard_, view->points());
+          PinholeError * error = new PinholeError(sensor->cameraModel(), checkerboard_, view->points());
+          typedef ceres::AutoDiffCostFunction<PinholeError, ceres::DYNAMIC, 6, 6> PinholeErrorFunction;
 
-          typedef ceres::AutoDiffCostFunction<GlobalError, ceres::DYNAMIC, 6, 6> GlobalErrorFunction;
-
-          ceres::CostFunction * cost_function = new GlobalErrorFunction(error, checkerboard_->size());
+          ceres::CostFunction * cost_function = new PinholeErrorFunction(error, checkerboard_->size());
           problem.AddResidualBlock(cost_function, new ceres::CauchyLoss(0.5), sensor_data.row(sensor_node->id_).data(), cb_data.row(i).data());
 
         }
         else
         {
-          CheckerboardError * error = new CheckerboardError(sensor->cameraModel(), checkerboard_, view->points());
+          RootPinholeError * error = new RootPinholeError(sensor->cameraModel(), checkerboard_, view->points());
+          typedef ceres::AutoDiffCostFunction<RootPinholeError, ceres::DYNAMIC, 6> RootPinholeErrorFunction;
 
-          typedef ceres::AutoDiffCostFunction<CheckerboardError, ceres::DYNAMIC, 6> CheckerboardErrorFunction;
-
-          ceres::CostFunction * cost_function = new CheckerboardErrorFunction(error, checkerboard_->size());
+          ceres::CostFunction * cost_function = new RootPinholeErrorFunction(error, checkerboard_->size());
           problem.AddResidualBlock(cost_function, new ceres::CauchyLoss(0.5), cb_data.row(i).data());
         }
       }
@@ -466,11 +463,11 @@ void OPTCalibration::optimize()
   ceres::Solver::Summary summary;
   ceres::Solve(options, &problem, &summary);
 
-  //ROS_INFO("After optimization:");
+//  ROS_INFO("After optimization:");
   for (size_t i = 0; i < sensor_vec_.size(); ++i)
   {
-  //  ROS_INFO_STREAM("(" << sensor_vec_[i]->sensor_->parent()->frameId() << ") "
-  //                      << sensor_vec_[i]->sensor_->frameId() << ": " << sensor_data.row(i));
+//    ROS_INFO_STREAM("(" << sensor_vec_[i]->sensor_->parent()->frameId() << ") "
+//                        << sensor_vec_[i]->sensor_->frameId() << ": " << sensor_data.row(i));
     SensorNode::Ptr & sensor_node = sensor_vec_[i];
     if (sensor_data.row(i).head<3>().norm() != 0)
     {
