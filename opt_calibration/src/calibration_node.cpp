@@ -164,25 +164,11 @@ void OPTCalibrationNode::actionCallback(const std_msgs::String::ConstPtr & msg)
 
   if (msg->data == "save" or msg->data == "saveExtrinsicCalibration")
   {
-//    for (size_t i = 0; i < sensor_vec_.size(); ++i)
-//    {
-//      if (not sensor_vec_[i].sensor()->parent())
-//      {
-//        ROS_WARN("Not all camera poses estimated!!! File not saved!!!");
-//        return;
-//      }
-//      else
-//      {
-//        ROS_INFO("Saving...");
-//      }
-//    }
-//    ROS_INFO("Optimizing...");
     calibration_->optimize();
     calibration_->save();
   }
   else if (msg->data == "stop")
   {
-    ROS_INFO("Optimizing...");
     calibration_->optimize();
   }
 }

@@ -125,17 +125,14 @@ void OPTCalibration::perform()
     if (view_map.empty())
     {
       view_vec_.resize(view_vec_.size() - 1); // Remove data
-      ROS_INFO_STREAM("0  " << view_vec_.size() << " " << single_view_vec_.size());
     }
     else if(view_map.size() == 1)
     {
       single_view_vec_.push_back(view_map);
       view_vec_.resize(view_vec_.size() - 1);
-      ROS_INFO_STREAM("1  " << view_vec_.size() << " " << single_view_vec_.size());
     }
     else if (view_map.size() >= 2) // At least 2 cameras
     {
-      ROS_INFO_STREAM("2+ " << view_vec_.size() << " " << single_view_vec_.size());
       int min_level = SensorNode::MAX_LEVEL;
       SensorNode::Ptr min_sensor_node;
       for (ViewMap::const_iterator it = view_map.begin(); it != view_map.end(); ++it)
@@ -204,17 +201,14 @@ void OPTCalibration::perform()
     if (view_map.empty())
     {
       view_vec_.resize(view_vec_.size() - 1); // Remove data
-      ROS_INFO_STREAM("0  " << view_vec_.size() << " " << single_view_vec_.size());
     }
     else if(view_map.size() == 1)
     {
       single_view_vec_.push_back(view_map);
       view_vec_.resize(view_vec_.size() - 1);
-      ROS_INFO_STREAM("1  " << view_vec_.size() << " " << single_view_vec_.size());
     }
     else if (view_map.size() >= 2) // At least 2 cameras
     {
-      ROS_INFO_STREAM("2+ " << view_vec_.size() << " " << single_view_vec_.size());
       if (last_optimization_ == 0)
       {
         optimize();
