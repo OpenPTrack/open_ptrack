@@ -1,0 +1,14 @@
+<launch>
+
+  <arg name="launch_file_path" default="$(find opt_calibration)/launch" />
+
+  <!-- Launching calibration initializer -->
+  <node pkg="opt_calibration" type="calibration_initializer_slave.py" ns="$(env ROS_PC_NAME)"
+        name="calibration_initializer_slave" output="screen" required="true">
+    <param name="driver"           value="$(env KINECT_DRIVER)" />
+    <!--param name="pc_name"          value="$(env ROS_PC_NAME)" /-->
+    <param name="launch_file_path" value="$(arg launch_file_path)" />
+  </node>
+
+</launch>
+

@@ -3,37 +3,38 @@
 #  * Kinect 1st version (type: kinect1)
 #  * SwissRanger 4500 (type: sr4500)
 #  * [Work-in-progress] Stereo cameras (type: stereo)
-network:
-  - pc: "Cassiopea"
-    sensors:
-      - id: "Kinect0"
-        type: kinect1
-      - id: "Kinect1"
-        type: kinect1
-    use_serials: false
-  - pc: "pc_2"
-    sensors:
-      - id: "A00364820345039A"
-        type: kinect1
-      - id: "192.168.1.31"
-        type: sr4500
-    use_serials: true
-    
+
 #network:
 #  - pc: "Cassiopea"
 #    sensors:
-#      - type: kinect1
-#        id: "Kinect0"
-#      - type: kinect1
-#        id: "Kinect1"
+#      - id: "Kinect0"
+#        type: kinect1
+#      - id: "Kinect1"
+#        type: kinect1
+#    use_serials: false
 #  - pc: "pc_2"
 #    sensors:
-#      - type: kinect1
-#        serial: "A00364820345039A"
-#        id: "Kinect2"
-#      - type: sr4500
-#        ip: "192.168.1.31"
-#        id: "SwissRanger0"
+#      - id: "A00364820345039A"
+#        type: kinect1
+#      - id: "192.168.1.31"
+#        type: sr4500
+#    use_serials: true
+    
+network:
+  - pc: "Cassiopea"
+    sensors:
+      - type: kinect1
+        id: "Kinect0"
+      - type: kinect1
+        id: "Kinect1"
+  - pc: "pc_2"
+    sensors:
+      - type: kinect1
+        id: "Kinect2"
+        serial: "A00364820345039A"
+      - type: sr4500
+        id: "SwissRanger0"
+        ip: "192.168.1.31"
       
 
 # Checkerboard parameters

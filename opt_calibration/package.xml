@@ -15,6 +15,7 @@
   <build_depend>cmake_modules</build_depend>
 
   <build_depend>roscpp</build_depend>
+  <build_depend>opt_msgs</build_depend>
   <build_depend>calibration_common</build_depend>
   <build_depend>kinect</build_depend>
   <build_depend>geometry_msgs</build_depend>
@@ -25,6 +26,7 @@
   
   <run_depend>roscpp</run_depend>
   <run_depend>rospy</run_depend>
+  <run_depend>opt_msgs</run_depend>
   <run_depend>calibration_common</run_depend>
   <run_depend>kinect</run_depend>
   <run_depend>geometry_msgs</run_depend>
