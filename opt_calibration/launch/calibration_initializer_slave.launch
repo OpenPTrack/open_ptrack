@@ -1,13 +1,16 @@
+<?xml version="1.0"?>
 <launch>
 
-  <arg name="launch_file_path" default="$(find opt_calibration)/launch" />
+  <arg name="sensor_file_path"   default="$(find opt_calibration)/launch" />
+  <arg name="detector_file_path" default="$(find detection)/launch" />
 
   <!-- Launching calibration initializer -->
   <node pkg="opt_calibration" type="calibration_initializer_slave.py" ns="$(env ROS_PC_NAME)"
         name="calibration_initializer_slave" output="screen" required="true">
-    <param name="driver"           value="$(env KINECT_DRIVER)" />
-    <!--param name="pc_name"          value="$(env ROS_PC_NAME)" /-->
-    <param name="launch_file_path" value="$(arg launch_file_path)" />
+        
+    <param name="sensor_file_path"   value="$(arg sensor_file_path)" />
+    <param name="detector_file_path" value="$(arg detector_file_path)" />
+    
   </node>
 
 </launch>

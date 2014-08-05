@@ -41,7 +41,7 @@
 import roslib; roslib.load_manifest('opt_calibration')
 import rospy
 import rospkg
-from opt_msgs.msg import OPTSensorSet, OPTSensor
+from opt_msgs.srv import *
 
 class CalibrationInitializer :
 
@@ -52,24 +52,22 @@ class CalibrationInitializer :
     self.file_name = rospy.get_param('~launch_file')
     
     self.sensor_list = []
-    self.pub_map = {}
     self.sensor_map = {}
     for item in network:
       pc = item['pc']
       sensors = item['sensors']
-      self.pub_map[pc] = rospy.Publisher(pc + '/sensors', OPTSensorSet, queue_size=10)
       self.sensor_map[pc] = sensors
       for sensor_item in sensors:
         self.sensor_list = self.sensor_list + [sensor_item]
         
-    self.id = rospy.Time.now().to_nsec()
+    self.session_id = rospy.Time.now().to_nsec()
         
   
   def createMaster(self) :
     
     file = open(self.file_name, 'w')
-    file.write('<?xml version="1.0"?>')
-    file.write('<!-- SESSION ID: ' + str(self.id) + ' -->\n')
+    file.write('<?xml version="1.0"?>\n')
+    file.write('<!-- SESSION ID: ' + str(self.session_id) + ' -->\n')
     file.write('<launch>\n\n')
   
     # Network parameters
@@ -131,28 +129,45 @@ class CalibrationInitializer :
   def fileName(self) :
     return self.file_name
     
+  def __invokeService(self, local_service_name) :
     
-  def publishSensors(self) :
-    
-    # Create an OPTSensorSet message for each pc
-    for pc in self.pub_map:
-      sensor_set_msg = OPTSensorSet()
-      sensor_set_msg.header.stamp = rospy.Time.now()
+    # For each pc
+    for pc in self.sensor_map:
+      service_name = pc + '/' + local_service_name
+      rospy.loginfo('Waiting for ' + service_name + ' service...')
+      rospy.wait_for_service(service_name)
       
-      # Create an OPTSensor message for each sensor
+      # For each sensor
       for sensor_item in self.sensor_map[pc]:
-        sensor_msg = OPTSensor()
+        
+        # Create an OPTSensor message
+        sensor_msg = OPTSensorRequest()
+        sensor_msg.session_id = self.session_id
         sensor_msg.id = sensor_item['id']
         if sensor_item['type'] == 'kinect1':
-          sensor_msg.type = sensor_msg.TYPE_KINECT1
+          sensor_msg.type = OPTSensorRequest.TYPE_KINECT1
           if 'serial' in sensor_item:
             sensor_msg.serial = sensor_item['serial']
         elif sensor_item['type'] == 'sr4500':
-          sensor_msg.type = sensor_msg.TYPE_SR4500
+          sensor_msg.type = OPTSensorRequest.TYPE_SR4500
           sensor_msg.ip = sensor_item['ip']
-        sensor_set_msg.sensors.append(sensor_msg)
       
-      self.pub_map[pc].publish(sensor_set_msg)
+        # Invoke service
+        try:
+          add_sensor = rospy.ServiceProxy(service_name, OPTSensor)
+          response = add_sensor(sensor_msg)
+          if response.status == OPTSensorResponse.STATUS_OK:
+            rospy.loginfo('[' + pc + '] ' + response.message);
+          else:
+            rospy.logerr('[' + pc + '] ' + response.message);
+        except rospy.ServiceException, e:
+          rospy.logerr("Service call failed: %s"%e)
+  
+  def createSensorLaunch(self) :
+    self.__invokeService('create_sensor_launch')
+          
+  def createDetectorLaunch(self) :
+    self.__invokeService('create_detector_launch')
     
 
 if __name__ == '__main__' :
@@ -166,10 +181,12 @@ if __name__ == '__main__' :
     initializer.createMaster()
     rospy.loginfo(initializer.fileName() + ' created!');
     
-    rate = rospy.Rate(5)
-    while not rospy.is_shutdown():
-      initializer.publishSensors()
-      rate.sleep()
+    initializer.createSensorLaunch()
+    initializer.createDetectorLaunch()
+    
+    rospy.loginfo('Initialization completed. Press [ctrl+c] to exit.')
+    
+    rospy.spin()
     
   except rospy.ROSInterruptException:
     pass

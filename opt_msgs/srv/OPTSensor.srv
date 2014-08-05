@@ -1,6 +1,9 @@
+uint8 TYPE_NOT_SET=0
 uint8 TYPE_KINECT1=1
 uint8 TYPE_SR4500=2
 uint8 TYPE_STEREO=3
+
+uint64 session_id
 
 string id
 uint8  type
@@ -10,3 +13,11 @@ string serial
 
 # if TYPE_SR4500
 string ip
+
+---
+
+uint8 STATUS_OK=0
+uint8 STATUS_ERROR=1
+
+uint8  status
+string message

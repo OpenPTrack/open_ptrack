@@ -40,20 +40,116 @@
 
 import roslib; roslib.load_manifest('opt_calibration')
 import rospy
-import rospkg
-from opt_msgs.msg import OPTSensorSet, OPTSensor
+from opt_msgs.srv import *
 
 class CalibrationInitializerSlave :
 
   def __init__(self) :
+    self.sensor_file_path = rospy.get_param('~sensor_file_path')
+    if self.sensor_file_path[len(self.sensor_file_path) - 1] != '/':
+      self.sensor_file_path = self.sensor_file_path + '/'
+      
+    self.detector_file_path = rospy.get_param('~detector_file_path')
+    if self.detector_file_path[len(self.detector_file_path) - 1] != '/':
+      self.detector_file_path = self.detector_file_path + '/'
     
-    #self.pc_name = rospy.get_param('~pc_name')
-    self.launch_file_path = rospy.get_param('~launch_file_path')
-    rospy.Subscriber('sensors', OPTSensorSet, self.callback)
+    self.create_sensor_launch_srv = rospy.Service('create_sensor_launch', OPTSensor, self.handle_create_sensor_launch)
+    self.create_detector_launch_srv = rospy.Service('create_detector_launch', OPTSensor, self.handle_create_detector_launch)
     
   
-  def callback(self, msg) :
-    rospy.loginfo(rospy.get_caller_id() + "I heard %s", data.data)
+  def handle_create_sensor_launch(self, request) :
+    
+    file_name = self.sensor_file_path + 'sensor_' + request.id + '.launch'
+    file = open(file_name, 'w')
+    file.write('<?xml version="1.0"?>\n')
+    file.write('<!-- SESSION ID: ' + str(request.session_id) + ' -->\n')
+    file.write('<launch>\n\n')
+    
+    file.write('  <!-- Sensor parameters -->\n')
+    
+    if request.type == OPTSensorRequest.TYPE_SR4500:
+      file.write('  <arg name="camera_id"   default="' + request.id + '" />\n')
+      if request.ip == '':
+        file.close();
+        rospy.logerr('Missing "ip" field for the SR4500 sensor!')
+        return (OPTSensorResponse.STATUS_ERROR, 'Missing "ip" field!')
+      file.write('  <arg name="device_ip"   default="' + request.ip + '" />\n\n')
+      
+      file.write('  <!-- Launch sensor -->\n')
+      file.write('  <include file="$(find swissranger_camera)/launch/sr_eth.launch">\n')
+      file.write('    <arg name="camera_id" value="$(arg camera_id)" />\n')
+      file.write('    <arg name="device_ip" value="$(arg device_ip)" />\n')
+      file.write('  </include>\n\n')
+      
+      file.write('  <include file="$(find swissranger_camera)/launch/publisher_for_calibration.launch">\n')
+      file.write('    <arg name="camera_id" value="$(arg camera_id)" />\n')
+      file.write('  </include>\n\n')
+      
+    elif request.type == OPTSensorRequest.TYPE_KINECT1:
+      file.write('  <arg name="sensor_id"   default="' + request.id + '" />\n')
+      if request.serial != '':
+        file.write('  <arg name="sensor_serial"   default="' + request.serial + '" />\n')
+      file.write('\n')
+      
+      file.write('  <!-- Launch sensor -->\n')
+      file.write('  <include file="$(find detection)/launch/$(env KINECT_DRIVER).launch">')
+      if request.serial != '':
+        file.write('    <arg name="device_id" value="$(arg sensor_serial)" />\n')
+      file.write('    <arg name="camera" value="$(arg sensor_id)" />\n')
+      file.write('  </include>\n\n')
+      
+      file.write('  <!-- Publish a further transform -->\n')
+      file.write('  <node pkg="tf" type="static_transform_publisher" name="$(arg sensor_id)_broadcaster" args="-0.045 0 0 1.57079 -1.57079 0 /$(arg sensor_id) /$(arg sensor_id)_link  100" />\n\n')
+    
+    file.write('</launch>\n')
+    file.close();
+    rospy.loginfo(file_name + ' created!');
+    
+    return (OPTSensorResponse.STATUS_OK, file_name + ' created!')
+    
+  def handle_create_detector_launch(self, request) :
+    
+    file_name = self.detector_file_path + 'detection_node_' + request.id + '.launch'
+    file = open(file_name, 'w')
+    file.write('<?xml version="1.0"?>\n')
+    file.write('<!-- SESSION ID: ' + str(request.session_id) + ' -->\n')
+    file.write('<launch>\n\n')
+    
+    file.write('  <!-- Sensor parameters -->\n')
+    
+    if request.type == OPTSensorRequest.TYPE_SR4500:
+      file.write('  <arg name="camera_id"   default="' + request.id + '" />\n')
+      if request.ip == '':
+        file.close();
+        rospy.logerr('Missing "ip" field for the SR4500 sensor!')
+        return (OPTSensorResponse.STATUS_ERROR, 'Missing "ip" field!')
+      file.write('  <arg name="device_ip"   default="' + request.ip + '" />\n\n')
+      
+      file.write('  <!-- Detection node -->\n')
+      file.write('  <include file="$(find detection)/launch/detector_sr4500.launch">\n')
+      file.write('    <arg name="camera_id"               value="$(arg camera_id)" />\n')
+      file.write('    <arg name="device_ip"               value="$(arg device_ip)" />\n')
+      file.write('    <arg name="ground_from_calibration" value="true" />\n')
+      file.write('  </include>\n\n')
+    
+    elif request.type == OPTSensorRequest.TYPE_KINECT1:
+      if request.serial != '':
+        file.write('  <arg name="device_id"   default="' + request.serial + '" />\n')
+      file.write('  <arg name="camera_name" default="' + request.id + '" />\n\n')
+      
+      file.write('  <!-- Detection node -->\n')
+      file.write('  <include file="$(find detection)/launch/detector_kinect1.launch">\n')
+      if request.serial != '':
+        file.write('    <arg name="device_id"               value="$(arg device_id)" />\n')
+      file.write('    <arg name="camera_name"             value="$(arg camera_name)" />\n')
+      file.write('    <arg name="ground_from_calibration" value="true" />\n')
+      file.write('  </include>\n\n')
+
+    file.write('</launch>\n')
+    file.close();
+    rospy.loginfo(file_name + ' created!');
+  
+    return (OPTSensorResponse.STATUS_OK, file_name + ' created!')
     
 if __name__ == '__main__' :
   

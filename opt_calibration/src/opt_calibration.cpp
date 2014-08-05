@@ -522,12 +522,6 @@ void OPTCalibration::save()
     }
     launch_file << std::endl;
 
-
-
-
-
-
-
     ViewMap & view_map = single_view_vec_.back();
     const CheckerboardView::Ptr & cb_view = view_map.begin()->second;
     const SensorNode::Ptr & sensor_node = view_map.begin()->first;
@@ -545,13 +539,6 @@ void OPTCalibration::save()
 
     AngleAxis rotation(M_PI, Vector3(1.0, 1.0, 0.0).normalized());
     Pose new_world_pose = cb->pose().inverse();
-
-
-
-
-
-//    AngleAxis rotation(M_PI, Vector3(1.0, 1.0, 0.0).normalized());
-//    Pose new_world_pose = checkerboard_vec_.back()->pose().inverse();
 
     // Write TF transforms between cameras and world frame:
     launch_file << "  <!-- Transforms tree -->" << std::endl;
@@ -584,47 +571,47 @@ void OPTCalibration::save()
 
   ROS_INFO_STREAM(file_name << " created!");
 
-  // Save launch files to be used to perform people detection with every sensor:
-  for (size_t i = 0; i < sensor_vec_.size(); i++)
-  {
-    SensorNode::Ptr & sensor_node = sensor_vec_[i];
+//  // Save launch files to be used to perform people detection with every sensor:
+//  for (size_t i = 0; i < sensor_vec_.size(); i++)
+//  {
+//    SensorNode::Ptr & sensor_node = sensor_vec_[i];
 
-    std::string serial_number = sensor_node->sensor_->frameId().substr(1, sensor_node->sensor_->frameId().length() - 1);
-    std::string file_name = ros::package::getPath("detection") + "/launch/detection_node_" + serial_number + ".launch";
-    std::ofstream launch_file;
-    launch_file.open(file_name.c_str());
-    if (launch_file.is_open())
-    {
-      launch_file << "<launch>" << std::endl << std::endl;
-      launch_file << "  <!-- Camera ID -->" << std::endl
-                  << "  <arg name=\"camera_id\" value=\"" << serial_number << "\" />" << std::endl << std::endl
-                  << "  <!-- Detection node -->" << std::endl;
+//    std::string serial_number = sensor_node->sensor_->frameId().substr(1, sensor_node->sensor_->frameId().length() - 1);
+//    std::string file_name = ros::package::getPath("detection") + "/launch/detection_node_" + serial_number + ".launch";
+//    std::ofstream launch_file;
+//    launch_file.open(file_name.c_str());
+//    if (launch_file.is_open())
+//    {
+//      launch_file << "<launch>" << std::endl << std::endl;
+//      launch_file << "  <!-- Camera ID -->" << std::endl
+//                  << "  <arg name=\"camera_id\" value=\"" << serial_number << "\" />" << std::endl << std::endl
+//                  << "  <!-- Detection node -->" << std::endl;
 
-      if (std::strcmp(sensor_node->sensor_->frameId().substr(1, 2).c_str(), "SR")) // if Kinect
-      {
-        if (calibration_with_serials_)
-          launch_file << "  <include file=\"$(find detection)/launch/detector_serial.launch\">" << std::endl;
-        else
-          launch_file << "  <include file=\"$(find detection)/launch/detector_with_name.launch\">" << std::endl;
-      }
-      else // if SwissRanger
-      {
-        std::string device_ip = sensor_vec_[i]->sensor_->frameId();
-        std::replace(device_ip.begin(), device_ip.end(), '_', '.');
-        device_ip = device_ip.substr(4, device_ip.length() - 4);
-        launch_file << "  <include file=\"$(find detection)/launch/detector_with_name_sr.launch\">" << std::endl
-                    << "    <arg name=\"device_ip\" value=\"" << device_ip << "\" />" << std::endl;
-      }
+//      if (std::strcmp(sensor_node->sensor_->frameId().substr(1, 2).c_str(), "SR")) // if Kinect
+//      {
+//        if (calibration_with_serials_)
+//          launch_file << "  <include file=\"$(find detection)/launch/detector_serial.launch\">" << std::endl;
+//        else
+//          launch_file << "  <include file=\"$(find detection)/launch/detector_with_name.launch\">" << std::endl;
+//      }
+//      else // if SwissRanger
+//      {
+//        std::string device_ip = sensor_vec_[i]->sensor_->frameId();
+//        std::replace(device_ip.begin(), device_ip.end(), '_', '.');
+//        device_ip = device_ip.substr(4, device_ip.length() - 4);
+//        launch_file << "  <include file=\"$(find detection)/launch/detector_with_name_sr.launch\">" << std::endl
+//                    << "    <arg name=\"device_ip\" value=\"" << device_ip << "\" />" << std::endl;
+//      }
 
-      launch_file << "    <arg name=\"camera_id\" value=\"$(arg camera_id)\" />" << std::endl
-                  << "    <arg name=\"ground_from_calibration\" value=\"true\" />" << std::endl
-                  << "  </include>" << std::endl;
+//      launch_file << "    <arg name=\"camera_id\" value=\"$(arg camera_id)\" />" << std::endl
+//                  << "    <arg name=\"ground_from_calibration\" value=\"true\" />" << std::endl
+//                  << "  </include>" << std::endl;
 
-      launch_file << "</launch>" << std::endl;
-    }
-    launch_file.close();
-    ROS_INFO_STREAM(file_name << " created!");
-  }
+//      launch_file << "</launch>" << std::endl;
+//    }
+//    launch_file.close();
+//    ROS_INFO_STREAM(file_name << " created!");
+//  }
 
   // Run node which saves camera poses to text file:
   int r = system("roslaunch opt_calibration calibration_saver.launch");
