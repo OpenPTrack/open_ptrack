@@ -8,32 +8,16 @@ git clone https://github.com/OpenPTrack/open_ptrack.git
 
 2) ROS Hydro installation (from a terminal):
 cd <open_ptrack_main_folder>/scripts
-chmod +x ros_install.sh
+chmod +x *.sh
 ./ros_install.sh
 
-(Answer yes to all questions)
-
-3) make a symlink
-
-ln -s ~/open_ptrack ~/workspace/ros/src/open_ptrack
-
-4) cd ~/workspace/ros/src/open_ptrack/scripts/
-
-5) ROS Hydro configuration:
+3) ROS Hydro configuration:
 source /opt/ros/hydro/setup.bash
-chmod +x ros_configure.sh
 ./ros_configure.sh
 
-
-6) Calibration_toolkit installation:
-chmod +x calibration_toolkit_install.sh
-./calibration_toolkit_install.sh
-
-7) Open PTrack compilation:
-cd ~/workspace/ros/catkin
-catkin_make --pkg opt_msgs
-catkin_make --pkg opt_msgs
-catkin_make --force-cmake
+4) OpenPTrack installation:
+chmod +x openptrack_install.sh
+./openptrack_install.sh
 
 
 

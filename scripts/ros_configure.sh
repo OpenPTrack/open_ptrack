@@ -1,5 +1,15 @@
-#!/bin/sh
-source /opt/ros/hydro/setup.bash
+#!/bin/bash
+UBUNTU_VERSION=(`lsb_release -c -s`)
+TRUSTY="trusty"
+RARING="raring"
+
+if [ "$UBUNTU_VERSION" = "$TRUSTY" ]; then 
+  source /opt/ros/indigo/setup.bash
+fi
+if [ "$UBUNTU_VERSION" = "$RARING" ]; then 
+  source /opt/ros/hydro/setup.bash
+fi
+
 mkdir -p ~/workspace/ros/catkin/src
 cd ~/workspace/ros/catkin
 catkin_make --force-cmake
@@ -9,11 +19,3 @@ echo "source ~/workspace/ros/rosbuild/setup.bash" >> ~/.bashrc
 echo "export KINECT_DRIVER=\"openni\"" >> ~/.bashrc
 . ~/.bashrc
 
-# Update libfreenect driver for Kinect:
-cd ~/workspace/ros/catkin/src/open_ptrack/scripts
-chmod +x libfreenect_update.sh
-./libfreenect_update.sh
-
-# Install SwissRanger driver:
-chmod +x mesa_install.sh
-./mesa_install.sh

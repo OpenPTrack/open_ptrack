@@ -1,4 +1,9 @@
+#!/bin/bash
 # Ceres installation and building following instructions at http://homes.cs.washington.edu/~sagarwal/ceres-solver/stable/building.html
+
+UBUNTU_VERSION=(`lsb_release -c -s`)
+TRUSTY="trusty"
+RARING="raring"
 
 # Initialization
 mkdir /tmp/ceres_install
@@ -52,8 +57,10 @@ cd ..
 wget http://ceres-solver.googlecode.com/files/ceres-solver-1.8.0.tar.gz
 tar zxf ceres-solver-1.8.0.tar.gz
 
-# Apply patch
-patch -p 0 -N -r ceres.rej -i ceres.patch
+if [ "$UBUNTU_VERSION" = "$RARING" ]; then 
+  # Apply patch
+  patch -p 0 -N -r ceres.rej -i ceres.patch
+fi
 
 # Install
 mkdir ceres-bin
