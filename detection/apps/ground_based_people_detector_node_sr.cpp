@@ -122,12 +122,6 @@ cloud_cb (const PointCloudConstPtr& callback_cloud)
 
   // Create point cloud XYZRGB:
   cloud->header = pcl_conversions::toPCL(callback_cloud->header);
-  cloud->points.clear();
-  pcl::PointXYZRGB p;
-  cloud->points.resize(callback_cloud->points.size(), p);
-  cloud->width = COLS;
-  cloud->height = ROWS;
-  cloud->is_dense = true;
   for (unsigned int i = 0; i < callback_cloud->points.size(); i++)
   {
     cloud->points[i].x = callback_cloud->points[i].x;
@@ -177,7 +171,7 @@ void removeLowConfidencePoints(cv::Mat& confidence_image, int threshold, PointCl
         cloud->at(j,i).x = std::numeric_limits<float>::quiet_NaN();
         cloud->at(j,i).y = std::numeric_limits<float>::quiet_NaN();
         cloud->at(j,i).z = std::numeric_limits<float>::quiet_NaN();
-
+       
         confidence_image.at<unsigned char>(i,j) = 0;    // just for visualization
       }
       else
@@ -258,6 +252,13 @@ main (int argc, char** argv)
 	intensity_image = cv::Mat(144, 176, CV_8U, cv::Scalar(255));
 	confidence_image = cv::Mat(144, 176, CV_8U, cv::Scalar(0));
 
+	// Initialize point cloud:
+	pcl::PointXYZRGB p(0,0,0);
+	cloud->points.resize(intensity_image.cols * intensity_image.rows, p);
+	cloud->width = COLS;
+	cloud->height = ROWS;
+	cloud->is_dense = true;
+
 	debug = false;
 	if (debug)
 	  cv::namedWindow("Valid points", CV_WINDOW_NORMAL);
@@ -295,13 +296,14 @@ main (int argc, char** argv)
 	  }
 	}
 
+std::cout << "***A" << std::endl;
 	// Remove low confidence points:
 	removeLowConfidencePoints(confidence_image, sr_conf_threshold, cloud);
-
+std::cout << "***B" << std::endl;
 	// Ground estimation:
 	ground_estimator.setInputCloud(cloud);
 	Eigen::VectorXf ground_coeffs = ground_estimator.compute();
-
+std::cout << "***C" << std::endl;
 	if (ground_from_extrinsic_calibration)
 	{ // Ground plane equation derived from extrinsic calibration:
 	  int pos = pointcloud_topic.find("/", 1);

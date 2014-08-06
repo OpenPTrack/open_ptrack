@@ -1,7 +1,7 @@
 <!-- -*- mode: XML -*- -->
 
 <launch>
-  <arg name="device_ip" default="192.168.1.33" />
+  <arg name="device_ip" default="192.168.1.31" />
   <arg name="camera_id" default="swissranger" />
 
   <node pkg="swissranger_camera" type="swissranger_camera" name="$(arg camera_id)"
