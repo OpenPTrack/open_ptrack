@@ -31,11 +31,7 @@
  *          Matteo Munaro [matteo.munaro@dei.unipd.it]
  */
 
-#include <open_ptrack/opt_calibration/calibration_node.h>
-
 #include <fstream>
-
-#include <pcl/filters/filter_indices.h>
 
 #include <tf_conversions/tf_eigen.h>
 #include <tf/transform_listener.h>
@@ -44,9 +40,12 @@
 
 #include <ceres/ceres.h>
 
+#include <pcl/filters/filter_indices.h>
+#include <pcl/filters/random_sample.h>
+
 #include <calibration_common/pcl/utils.h>
 
-#include <pcl/filters/random_sample.h>
+#include <open_ptrack/opt_calibration/calibration_node.h>
 
 namespace open_ptrack
 {
@@ -60,10 +59,6 @@ OPTCalibrationNode::OPTCalibrationNode(const ros::NodeHandle & node_handle)
   action_sub_ = node_handle_.subscribe("action", 1, &OPTCalibrationNode::actionCallback, this);
 
   node_handle_.param("num_sensors", num_sensors_, 0);
-//  if (not node_handle_.getParam("base_sensor", base_sensor_frame_id_))
-//    ROS_FATAL("No base_sensor parameter found!!");
-
-  node_handle_.param("calibration_with_serials", calibration_with_serials_, false);
 
   double cell_width, cell_height;
   int rows, cols;
@@ -79,13 +74,13 @@ OPTCalibrationNode::OPTCalibrationNode(const ros::NodeHandle & node_handle)
   checkerboard_ = boost::make_shared<Checkerboard>(cols, rows, cell_width, cell_height);
   checkerboard_->setFrameId("/checkerboard");
 
-  for (int id = 0; id < num_sensors_; ++id)
+  for (int i = 0; i < num_sensors_; ++i)
   {
     std::stringstream ss;
 
     std::string type_s;
     ss.str("");
-    ss << "sensor_" << id << "/type";
+    ss << "sensor_" << i << "/type";
     if (not node_handle_.getParam(ss.str(), type_s))
       ROS_FATAL_STREAM("No \"" << ss.str() << "\" parameter found!!");
 
@@ -98,20 +93,20 @@ OPTCalibrationNode::OPTCalibrationNode(const ros::NodeHandle & node_handle)
       ROS_FATAL_STREAM("\"" << ss.str() << "\" parameter value not valid. Please use \"pinhole_rgb\" or \"kinect_depth\".");
 
     ss.str("");
-    ss << "/sensor_" << id;
+    ss << "/sensor_" << i;
     std::string frame_id = ss.str();
 
     ss.str("");
-    ss << "sensor_" << id << "/name";
+    ss << "sensor_" << i << "/name";
     node_handle_.param(ss.str(), frame_id, frame_id);
     SensorROS::Ptr sensor = boost::make_shared<SensorROS>(frame_id, type);
 
     ss.str("");
-    ss << "sensor_" << id << "/image";
+    ss << "sensor_" << i << "/image";
     sensor->setImageSubscriber(image_transport_.subscribe(ss.str(), 1, &SensorROS::imageCallback, sensor));
 
     ss.str("");
-    ss << "sensor_" << id << "/camera_info";
+    ss << "sensor_" << i << "/camera_info";
     sensor->setCameraInfoSubscriber(node_handle_.subscribe<sensor_msgs::CameraInfo>(ss.str(),
                                                                                     1,
                                                                                     &SensorROS::cameraInfoCallback,
@@ -146,7 +141,7 @@ bool OPTCalibrationNode::initialize()
 
   ROS_INFO("All sensors connected.");
 
-  calibration_ = boost::make_shared<OPTCalibration>(node_handle_, calibration_with_serials_);
+  calibration_ = boost::make_shared<OPTCalibration>(node_handle_);
   calibration_->setCheckerboard(checkerboard_);
 
   for (size_t i = 0; i < sensor_vec_.size(); ++i)
@@ -165,7 +160,7 @@ void OPTCalibrationNode::actionCallback(const std_msgs::String::ConstPtr & msg)
   if (msg->data == "save" or msg->data == "saveExtrinsicCalibration")
   {
     calibration_->optimize();
-    calibration_->save();
+    save();
   }
   else if (msg->data == "stop")
   {
@@ -181,7 +176,7 @@ void OPTCalibrationNode::spin()
   {
     ros::spinOnce();
 
-    size_t n = calibration_->nextAcquisition();
+    calibration_->nextAcquisition();
 
     for (int i = 0; i < num_sensors_; ++i)
     {
@@ -195,15 +190,8 @@ void OPTCalibrationNode::spin()
         {
           cv_bridge::CvImage::Ptr image_ptr = cv_bridge::toCvCopy(sensor_ros->lastImage(),
                                                                   sensor_msgs::image_encodings::BGR8);
-
           calibration_->addData(boost::static_pointer_cast<PinholeSensor>(sensor_ros->sensor()), image_ptr->image);
-
-//          std::stringstream image_file_name;
-//          image_file_name << "/tmp/cam" << i << "_image" << std::setw(4) << std::setfill('0') << n << ".png";
-//          cv::imwrite(image_file_name.str(), image_ptr->image);
-
         }
-
       }
       catch (cv_bridge::Exception & ex)
       {
@@ -213,17 +201,164 @@ void OPTCalibrationNode::spin()
       catch (std::runtime_error & ex)
       {
         ROS_ERROR("exception: %s", ex.what());
+        return;
       }
 
     }
 
     calibration_->perform();
+    calibration_->publish();
 
     rate.sleep();
 
   }
 
 }
+
+bool OPTCalibrationNode::save()
+{
+  // Save tfs between sensors and world coordinate system (last checherboard) to file
+  std::string file_name = ros::package::getPath("opt_calibration") + "/conf/sensor_poses.yaml";
+  std::ofstream file;
+  file.open(file_name.c_str());
+
+  if (file.is_open())
+  {
+    file << "# Auto generated file. Do not modify!!" << std::endl
+         << "# Calibration ID: " << ros::Time::now().toNSec() << std::endl << std::endl;
+
+    AngleAxis rotation(M_PI, Vector3(1.0, 1.0, 0.0).normalized());
+    Pose new_world_pose = calibration_->getLastCheckerboardPose().inverse();
+
+    // Write TF transforms between cameras and world frame
+    file << "# Poses w.r.t. the \"world\" reference frame" << std::endl;
+    for (size_t i = 0; i < sensor_vec_.size(); ++i)
+    {
+      const SensorROS::Ptr & sensor_ros = sensor_vec_[i];
+      const Sensor::Ptr & sensor = sensor_ros->sensor();
+
+      Pose pose = rotation * new_world_pose * sensor->pose();
+
+      file << sensor->frameId().substr(1) << ":" << std::endl;
+
+      file << "  translation:" << std::endl
+           << "    x: " << pose.translation().x() << std::endl
+           << "    y: " << pose.translation().y() << std::endl
+           << "    z: " << pose.translation().z() << std::endl;
+
+      Quaternion rotation(pose.rotation());
+      file << "  rotation:" << std::endl
+           << "    x: " << rotation.x() << std::endl
+           << "    y: " << rotation.y() << std::endl
+           << "    z: " << rotation.z() << std::endl
+           << "    w: " << rotation.w() << std::endl;
+
+    }
+
+  }
+  file.close();
+
+  ROS_INFO_STREAM(file_name << " created!");
+
+  return true;
+
+}
+
+//bool OPTCalibrationNode::save()
+//{
+//  // save tf between camera and world coordinate system ( chessboard ) to launch file
+////  std::string file_name = ros::package::getPath("opt_calibration") + "/launch/multicamera_calibration_results.launch";
+////  std::ofstream launch_file;
+////  launch_file.open(file_name.c_str());
+
+//  std::stringstream optical_frame_string, link_string;
+//  optical_frame_string << "_rgb_optical_frame";
+//  link_string << "_link";
+
+////  if (launch_file.is_open())
+////  {
+////    launch_file << "<launch>" << std::endl << std::endl;
+
+////    // Write number of cameras:
+////    launch_file << "  <!-- Network parameters -->" << std::endl
+////                << "  <arg name=\"num_cameras\" value=\"" << sensor_vec_.size() << "\" />" << std::endl;
+
+////    // Write camera ID and names:
+////    for (size_t i = 0; i < sensor_vec_.size(); ++i)
+////    {
+////      SensorROS::Ptr & sensor_ros = sensor_vec_[i];
+////      launch_file << "  <arg name=\"camera" << i << "_id\" value=\"" << sensor_ros->sensor()->frameId() << "\" />" << std::endl;
+////      launch_file << "  <arg name=\"camera" << i << "_name\" value=\"$(arg camera" << i << "_id)\" />" << std::endl;
+////    }
+////    launch_file << std::endl;
+
+//    AngleAxis rotation(M_PI, Vector3(1.0, 1.0, 0.0).normalized());
+//    Pose new_world_pose = calibration_->getLastCheckerboardPose().inverse();
+
+//    // Write TF transforms between cameras and world frame:
+////    launch_file << "  <!-- Transforms tree -->" << std::endl;
+//    for (size_t i = 0; i < sensor_vec_.size(); ++i)
+//    {
+//      const SensorROS::Ptr & sensor_ros = sensor_vec_[i];
+//      const Sensor::Ptr & sensor = sensor_ros->sensor();
+
+//      Pose new_pose = rotation * new_world_pose * sensor->pose();
+
+//      geometry_msgs::Transform msg;
+//      tf::transformEigenToMsg(new_pose, msg);
+//      std::cout << msg << std::endl;
+
+
+////      launch_file << "  <node pkg=\"tf\" type=\"static_transform_publisher\" name=\""
+////                  << sensor->frameId().substr(1) << "_broadcaster\" args=\""
+////                  << new_pose.translation().transpose() << " "
+////                  << Quaternion(new_pose.linear()).coeffs().transpose() << " "
+////                  << "/world " << sensor->frameId() << " 100\" />" << std::endl << std::endl;
+
+////      if (std::strcmp(sensor->frameId().substr(1, 2).c_str(), "SR")) // if Kinect
+////      {
+////        // Write transform between camera_link and camera_rgb_optical_frame to file:
+////        launch_file << "  <node pkg=\"tf\" type=\"static_transform_publisher\" name=\""
+////                    << sensor->frameId().substr(1) << "_broadcaster2\" args=\" -0.045 0 0 1.57 -1.57 0 "
+////                    << sensor->frameId() << " "
+////                    << sensor->frameId() + link_string.str() << " 100\" />" << std::endl << std::endl;
+////      }
+
+//    }
+
+////    launch_file << "</launch>" << std::endl;
+////  }
+////  launch_file.close();
+
+////  ROS_INFO_STREAM(file_name << " created!");
+
+//  return true;
+
+////  // Camera Poses
+
+////  std::string sensor_id = sensor_node->sensor_->frameId().substring(1);
+////  std::string service_name = "create_camera_poses";
+////  ros::ServiceClient client = node_handle_.serviceClient<opt_msgs::OPTTransform>(sensor_id + "/" + service_name);
+////  opt_msgs::OPTTransform msg;
+////  msg.request.parent_id = "world";
+////  msg.request.child_id = sensor_id;
+////  msg.request.calibration_id = ros::Time::now().toNSec();
+////  tf::transformEigenToMsg(new_pose, msg.request.transform);
+
+////  if (client.call(msg))
+////  {
+////    if (msg.response.status == opt_msgs::OPTTransformResponse.STATUS_OK)
+////      ROS_INFO_STREAM('[' << pc << '] ' + msg.response.message);
+////              else:
+////                rospy.logerr('[' + pc + '] ' + response.message);
+////  }
+////  else
+////  {
+////    ROS_ERROR("Failed to call service add_two_ints");
+////    return 1;
+////  }
+
+//}
 
 } /* namespace opt_calibration */
 } /* namespace open_ptrack */

@@ -53,14 +53,12 @@ const int SensorNode::MAX_LEVEL = 10000;
 const double SensorNode::MAX_DISTANCE = 10000.0;
 const double SensorNode::MAX_ERROR = 10000.0;
 
-OPTCalibration::OPTCalibration(const ros::NodeHandle & node_handle,
-                               bool calibration_with_serials)
+OPTCalibration::OPTCalibration(const ros::NodeHandle & node_handle)
   : node_handle_(node_handle),
     world_(boost::make_shared<BaseObject>("/world")),
     world_set_(false),
     initialization_(true),
-    last_optimization_(0),
-    calibration_with_serials_(calibration_with_serials)
+    last_optimization_(0)
 {
   marker_pub_ = node_handle_.advertise<visualization_msgs::Marker>("markers", 0);
 }
@@ -125,11 +123,6 @@ void OPTCalibration::perform()
     if (view_map.empty())
     {
       view_vec_.resize(view_vec_.size() - 1); // Remove data
-    }
-    else if(view_map.size() == 1)
-    {
-      single_view_vec_.push_back(view_map);
-      view_vec_.resize(view_vec_.size() - 1);
     }
     else if (view_map.size() >= 2) // At least 2 cameras
     {
@@ -202,11 +195,6 @@ void OPTCalibration::perform()
     {
       view_vec_.resize(view_vec_.size() - 1); // Remove data
     }
-    else if(view_map.size() == 1)
-    {
-      single_view_vec_.push_back(view_map);
-      view_vec_.resize(view_vec_.size() - 1);
-    }
     else if (view_map.size() >= 2) // At least 2 cameras
     {
       if (last_optimization_ == 0)
@@ -219,8 +207,6 @@ void OPTCalibration::perform()
     }
 
   }
-
-  publish();
 
 }
 
@@ -377,18 +363,8 @@ void OPTCalibration::optimize()
   for (size_t i = checkerboard_vec_.size(); i < view_vec_.size(); ++i)
   {
     ViewMap & view_map = view_vec_[i];
-    ViewMap::iterator it = view_map.begin();
-    bool ok = false;
-    while (not ok and it != view_map.end())
-    {
-      if (it->first->type_ != SensorNode::PINHOLE_RGB)
-        it++;
-      else
-        ok = true;
-    }
-
-    const CheckerboardView::Ptr & cb_view = it->second;
-    const SensorNode::Ptr & sensor_node = it->first;
+    const CheckerboardView::Ptr & cb_view = view_map.begin()->second;
+    const SensorNode::Ptr & sensor_node = view_map.begin()->first;
 
     Checkerboard::Ptr cb = boost::make_shared<Checkerboard>(*boost::static_pointer_cast<Checkerboard>(cb_view->object_));
 
@@ -401,12 +377,11 @@ void OPTCalibration::optimize()
     cb->setParent(parent);
 
     checkerboard_vec_.push_back(cb);
-
   }
 
   for (size_t i = 0; i < view_vec_.size(); ++i)
   {
-    ViewMap & data_map = view_vec_[i];
+    ViewMap & view_map = view_vec_[i];
 
     Pose pose = checkerboard_vec_[i]->pose();
 
@@ -414,7 +389,10 @@ void OPTCalibration::optimize()
     cb_data.row(i).head<3>() = rotation.angle() * rotation.axis();
     cb_data.row(i).tail<3>() = pose.translation();
 
-    for (ViewMap::iterator it = data_map.begin(); it != data_map.end(); ++it)
+    if (view_map.size() == 1) // Nothing to optimize
+      continue;
+
+    for (ViewMap::iterator it = view_map.begin(); it != view_map.end(); ++it)
     {
       CheckerboardView::Ptr cb_view = it->second;
       const SensorNode::Ptr & sensor_node = it->first;
@@ -494,128 +472,159 @@ void OPTCalibration::optimize()
 
 }
 
-void OPTCalibration::save()
+const Pose & OPTCalibration::getLastCheckerboardPose() const
 {
-  // save tf between camera and world coordinate system ( chessboard ) to launch file
-  std::string file_name = ros::package::getPath("opt_calibration") + "/launch/multicamera_calibration_results.launch";
-  std::ofstream launch_file;
-  launch_file.open(file_name.c_str());
+  return checkerboard_vec_.back()->pose();
+}
 
-  std::stringstream optical_frame_string, link_string;
-  optical_frame_string << "_rgb_optical_frame";
-  link_string << "_link";
+//void OPTCalibration::save()
+//{
+//  // save tf between camera and world coordinate system ( chessboard ) to launch file
+//  std::string file_name = ros::package::getPath("opt_calibration") + "/launch/multicamera_calibration_results.launch";
+//  std::ofstream launch_file;
+//  launch_file.open(file_name.c_str());
 
-  if (launch_file.is_open())
-  {
-    launch_file << "<launch>" << std::endl << std::endl;
+//  std::stringstream optical_frame_string, link_string;
+//  optical_frame_string << "_rgb_optical_frame";
+//  link_string << "_link";
 
-    // Write number of cameras:
-    launch_file << "  <!-- Network parameters -->" << std::endl
-                << "  <arg name=\"num_cameras\" value=\"" << sensor_vec_.size() << "\" />" << std::endl;
-
-    // Write camera ID and names:
-    for (size_t i = 0; i < sensor_vec_.size(); ++i)
-    {
-      SensorNode::Ptr & sensor_node = sensor_vec_[i];
-      launch_file << "  <arg name=\"camera" << i << "_id\" value=\"" << sensor_node->sensor_->frameId() << "\" />" << std::endl;
-      launch_file << "  <arg name=\"camera" << i << "_name\" value=\"$(arg camera" << i << "_id)\" />" << std::endl;
-    }
-    launch_file << std::endl;
-
-    ViewMap & view_map = single_view_vec_.back();
-    const CheckerboardView::Ptr & cb_view = view_map.begin()->second;
-    const SensorNode::Ptr & sensor_node = view_map.begin()->first;
-
-    Checkerboard::Ptr cb = boost::make_shared<Checkerboard>(*boost::static_pointer_cast<Checkerboard>(cb_view->object_));
-
-    BaseObject::ConstPtr parent = sensor_node->sensor_;
-    while (parent->parent())
-    {
-      cb->transform(parent->pose());
-      parent = parent->parent();
-    }
-    cb->setParent(parent);
-
-
-    AngleAxis rotation(M_PI, Vector3(1.0, 1.0, 0.0).normalized());
-    Pose new_world_pose = cb->pose().inverse();
-
-    // Write TF transforms between cameras and world frame:
-    launch_file << "  <!-- Transforms tree -->" << std::endl;
-    for (size_t i = 0; i < sensor_vec_.size(); ++i)
-    {
-      SensorNode::Ptr & sensor_node = sensor_vec_[i];
-
-      Pose new_pose = rotation * new_world_pose * sensor_node->sensor_->pose();
-
-      launch_file << "  <node pkg=\"tf\" type=\"static_transform_publisher\" name=\""
-                  << sensor_node->sensor_->frameId().substr(1) << "_broadcaster\" args=\""
-                  << new_pose.translation().transpose() << " "
-                  << Quaternion(new_pose.linear()).coeffs().transpose() << " "
-                  << world_->frameId() << " " << sensor_node->sensor_->frameId() << " 100\" />" << std::endl << std::endl;
-
-      if (std::strcmp(sensor_node->sensor_->frameId().substr(1, 2).c_str(), "SR")) // if Kinect
-      {
-        // Write transform between camera_link and camera_rgb_optical_frame to file:
-        launch_file << "  <node pkg=\"tf\" type=\"static_transform_publisher\" name=\""
-                    << sensor_node->sensor_->frameId().substr(1) << "_broadcaster2\" args=\" -0.045 0 0 1.57 -1.57 0 "
-                    << sensor_node->sensor_->frameId() << " "
-                    << sensor_node->sensor_->frameId() + link_string.str() << " 100\" />" << std::endl << std::endl;
-      }
-
-    }
-
-    launch_file << "</launch>" << std::endl;
-  }
-  launch_file.close();
-
-  ROS_INFO_STREAM(file_name << " created!");
-
-//  // Save launch files to be used to perform people detection with every sensor:
-//  for (size_t i = 0; i < sensor_vec_.size(); i++)
+//  if (launch_file.is_open())
 //  {
-//    SensorNode::Ptr & sensor_node = sensor_vec_[i];
+//    launch_file << "<launch>" << std::endl << std::endl;
 
-//    std::string serial_number = sensor_node->sensor_->frameId().substr(1, sensor_node->sensor_->frameId().length() - 1);
-//    std::string file_name = ros::package::getPath("detection") + "/launch/detection_node_" + serial_number + ".launch";
-//    std::ofstream launch_file;
-//    launch_file.open(file_name.c_str());
-//    if (launch_file.is_open())
+//    // Write number of cameras:
+//    launch_file << "  <!-- Network parameters -->" << std::endl
+//                << "  <arg name=\"num_cameras\" value=\"" << sensor_vec_.size() << "\" />" << std::endl;
+
+//    // Write camera ID and names:
+//    for (size_t i = 0; i < sensor_vec_.size(); ++i)
 //    {
-//      launch_file << "<launch>" << std::endl << std::endl;
-//      launch_file << "  <!-- Camera ID -->" << std::endl
-//                  << "  <arg name=\"camera_id\" value=\"" << serial_number << "\" />" << std::endl << std::endl
-//                  << "  <!-- Detection node -->" << std::endl;
+//      SensorNode::Ptr & sensor_node = sensor_vec_[i];
+//      launch_file << "  <arg name=\"camera" << i << "_id\" value=\"" << sensor_node->sensor_->frameId() << "\" />" << std::endl;
+//      launch_file << "  <arg name=\"camera" << i << "_name\" value=\"$(arg camera" << i << "_id)\" />" << std::endl;
+//    }
+//    launch_file << std::endl;
+
+//    ViewMap & view_map = single_view_vec_.back();
+//    const CheckerboardView::Ptr & cb_view = view_map.begin()->second;
+//    const SensorNode::Ptr & sensor_node = view_map.begin()->first;
+
+//    Checkerboard::Ptr cb = boost::make_shared<Checkerboard>(*boost::static_pointer_cast<Checkerboard>(cb_view->object_));
+
+//    BaseObject::ConstPtr parent = sensor_node->sensor_;
+//    while (parent->parent())
+//    {
+//      cb->transform(parent->pose());
+//      parent = parent->parent();
+//    }
+//    cb->setParent(parent);
+
+
+//    AngleAxis rotation(M_PI, Vector3(1.0, 1.0, 0.0).normalized());
+//    Pose new_world_pose = cb->pose().inverse();
+
+//    // Write TF transforms between cameras and world frame:
+//    launch_file << "  <!-- Transforms tree -->" << std::endl;
+//    for (size_t i = 0; i < sensor_vec_.size(); ++i)
+//    {
+//      SensorNode::Ptr & sensor_node = sensor_vec_[i];
+
+//      Pose new_pose = rotation * new_world_pose * sensor_node->sensor_->pose();
+
+//      launch_file << "  <node pkg=\"tf\" type=\"static_transform_publisher\" name=\""
+//                  << sensor_node->sensor_->frameId().substr(1) << "_broadcaster\" args=\""
+//                  << new_pose.translation().transpose() << " "
+//                  << Quaternion(new_pose.linear()).coeffs().transpose() << " "
+//                  << world_->frameId() << " " << sensor_node->sensor_->frameId() << " 100\" />" << std::endl << std::endl;
+
+
 
 //      if (std::strcmp(sensor_node->sensor_->frameId().substr(1, 2).c_str(), "SR")) // if Kinect
 //      {
-//        if (calibration_with_serials_)
-//          launch_file << "  <include file=\"$(find detection)/launch/detector_serial.launch\">" << std::endl;
-//        else
-//          launch_file << "  <include file=\"$(find detection)/launch/detector_with_name.launch\">" << std::endl;
-//      }
-//      else // if SwissRanger
-//      {
-//        std::string device_ip = sensor_vec_[i]->sensor_->frameId();
-//        std::replace(device_ip.begin(), device_ip.end(), '_', '.');
-//        device_ip = device_ip.substr(4, device_ip.length() - 4);
-//        launch_file << "  <include file=\"$(find detection)/launch/detector_with_name_sr.launch\">" << std::endl
-//                    << "    <arg name=\"device_ip\" value=\"" << device_ip << "\" />" << std::endl;
+//        // Write transform between camera_link and camera_rgb_optical_frame to file:
+//        launch_file << "  <node pkg=\"tf\" type=\"static_transform_publisher\" name=\""
+//                    << sensor_node->sensor_->frameId().substr(1) << "_broadcaster2\" args=\" -0.045 0 0 1.57 -1.57 0 "
+//                    << sensor_node->sensor_->frameId() << " "
+//                    << sensor_node->sensor_->frameId() + link_string.str() << " 100\" />" << std::endl << std::endl;
 //      }
 
-//      launch_file << "    <arg name=\"camera_id\" value=\"$(arg camera_id)\" />" << std::endl
-//                  << "    <arg name=\"ground_from_calibration\" value=\"true\" />" << std::endl
-//                  << "  </include>" << std::endl;
-
-//      launch_file << "</launch>" << std::endl;
 //    }
-//    launch_file.close();
-//    ROS_INFO_STREAM(file_name << " created!");
-//  }
 
-  // Run node which saves camera poses to text file:
-  int r = system("roslaunch opt_calibration calibration_saver.launch");
-}
+//    launch_file << "</launch>" << std::endl;
+//  }
+//  launch_file.close();
+
+//  ROS_INFO_STREAM(file_name << " created!");
+
+////  // Camera Poses
+
+////  std::string sensor_id = sensor_node->sensor_->frameId().substring(1);
+////  std::string service_name = "create_camera_poses";
+////  ros::ServiceClient client = node_handle_.serviceClient<opt_msgs::OPTTransform>(sensor_id + "/" + service_name);
+////  opt_msgs::OPTTransform msg;
+////  msg.request.parent_id = "world";
+////  msg.request.child_id = sensor_id;
+////  msg.request.calibration_id = ros::Time::now().toNSec();
+////  tf::transformEigenToMsg(new_pose, msg.request.transform);
+
+////  if (client.call(msg))
+////  {
+////    if (msg.response.status == opt_msgs::OPTTransformResponse.STATUS_OK)
+////      ROS_INFO_STREAM('[' << pc << '] ' + msg.response.message);
+////              else:
+////                rospy.logerr('[' + pc + '] ' + response.message);
+////  }
+////  else
+////  {
+////    ROS_ERROR("Failed to call service add_two_ints");
+////    return 1;
+////  }
+
+////  // Save launch files to be used to perform people detection with every sensor:
+////  for (size_t i = 0; i < sensor_vec_.size(); i++)
+////  {
+////    SensorNode::Ptr & sensor_node = sensor_vec_[i];
+
+////    std::string serial_number = sensor_node->sensor_->frameId().substr(1, sensor_node->sensor_->frameId().length() - 1);
+////    std::string file_name = ros::package::getPath("detection") + "/launch/detection_node_" + serial_number + ".launch";
+////    std::ofstream launch_file;
+////    launch_file.open(file_name.c_str());
+////    if (launch_file.is_open())
+////    {
+////      launch_file << "<launch>" << std::endl << std::endl;
+////      launch_file << "  <!-- Camera ID -->" << std::endl
+////                  << "  <arg name=\"camera_id\" value=\"" << serial_number << "\" />" << std::endl << std::endl
+////                  << "  <!-- Detection node -->" << std::endl;
+
+////      if (std::strcmp(sensor_node->sensor_->frameId().substr(1, 2).c_str(), "SR")) // if Kinect
+////      {
+////        if (calibration_with_serials_)
+////          launch_file << "  <include file=\"$(find detection)/launch/detector_serial.launch\">" << std::endl;
+////        else
+////          launch_file << "  <include file=\"$(find detection)/launch/detector_with_name.launch\">" << std::endl;
+////      }
+////      else // if SwissRanger
+////      {
+////        std::string device_ip = sensor_vec_[i]->sensor_->frameId();
+////        std::replace(device_ip.begin(), device_ip.end(), '_', '.');
+////        device_ip = device_ip.substr(4, device_ip.length() - 4);
+////        launch_file << "  <include file=\"$(find detection)/launch/detector_with_name_sr.launch\">" << std::endl
+////                    << "    <arg name=\"device_ip\" value=\"" << device_ip << "\" />" << std::endl;
+////      }
+
+////      launch_file << "    <arg name=\"camera_id\" value=\"$(arg camera_id)\" />" << std::endl
+////                  << "    <arg name=\"ground_from_calibration\" value=\"true\" />" << std::endl
+////                  << "  </include>" << std::endl;
+
+////      launch_file << "</launch>" << std::endl;
+////    }
+////    launch_file.close();
+////    ROS_INFO_STREAM(file_name << " created!");
+////  }
+
+//  // Run node which saves camera poses to text file:
+//  int r = system("roslaunch opt_calibration calibration_saver.launch");
+//}
 
 } /* namespace opt_calibration */
 } /* namespace open_ptrack */

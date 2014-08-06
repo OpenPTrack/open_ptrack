@@ -97,7 +97,7 @@ class CalibrationInitializer :
     
     file.write('  <!-- Launching calibration -->\n')
     file.write('  <node pkg="opt_calibration" type="opt_calibration" name="opt_calibration" output="screen">\n\n')
-    file.write('    <param name="num_sensors" value="$(arg num_sensors)\" />\n\n')
+    file.write('    <param name="num_sensors" value="$(arg num_sensors)" />\n\n')
     file.write('    <param name="rows"        value="$(arg rows)" />\n')
     file.write('    <param name="cols"        value="$(arg cols)" />\n')
     file.write('    <param name="cell_width"  value="$(arg cell_width)" />\n')

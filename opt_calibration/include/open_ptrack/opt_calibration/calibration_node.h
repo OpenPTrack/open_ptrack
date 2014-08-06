@@ -197,6 +197,12 @@ public:
    */
   void spin();
 
+  /**
+   * @brief Save calibration results.
+   * @return @c true whether the save has succeded, @c false otherwise.
+   */
+  bool save();
+
 private:
 
   ros::NodeHandle node_handle_;                             ///< @brief Handle to the ROS node.
@@ -206,15 +212,9 @@ private:
   Checkerboard::Ptr checkerboard_;                          ///< @brief Object representing a checkerboard.
 
   std::vector<SensorROS::Ptr> sensor_vec_;
-  int num_sensors_;                                         ///< @brief Number of cameras connected to the network.
-
-//  std::vector<std::string> sensor_frame_id_vec_;
-//  std::map<std::string, SensorROS::Ptr> sensor_map_;
-//  std::map<std::string, std::string> sensor_corr_map_;
+  int num_sensors_;                                         ///< @brief Number of sensors connected to the network.
 
   OPTCalibration::Ptr calibration_;                         ///< @brief Calibration object.
-
-  bool calibration_with_serials_;                           ///< @brief Flag stating if sensors are identified with serial numbers (true) or with names (false).
 
 };
 

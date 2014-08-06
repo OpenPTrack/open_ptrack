@@ -45,21 +45,26 @@ from opt_msgs.srv import *
 class CalibrationInitializerSlave :
 
   def __init__(self) :
-    self.sensor_file_path = rospy.get_param('~sensor_file_path')
-    if self.sensor_file_path[len(self.sensor_file_path) - 1] != '/':
-      self.sensor_file_path = self.sensor_file_path + '/'
+    self.sensor_launchers_dir = rospy.get_param('~sensor_launchers_dir')
+    if self.sensor_launchers_dir[len(self.sensor_launchers_dir) - 1] != '/':
+      self.sensor_launchers_dir = self.sensor_launchers_dir + '/'
       
-    self.detector_file_path = rospy.get_param('~detector_file_path')
-    if self.detector_file_path[len(self.detector_file_path) - 1] != '/':
-      self.detector_file_path = self.detector_file_path + '/'
+    self.detector_launchers_dir = rospy.get_param('~detector_launchers_dir')
+    if self.detector_launchers_dir[len(self.detector_launchers_dir) - 1] != '/':
+      self.detector_launchers_dir = self.detector_launchers_dir + '/'
+      
+    self.camera_poses_dir = rospy.get_param('~camera_poses_dir')
+    if self.camera_poses_dir[len(self.camera_poses_dir) - 1] != '/':
+      self.camera_poses_dir = self.camera_poses_dir + '/'
     
     self.create_sensor_launch_srv = rospy.Service('create_sensor_launch', OPTSensor, self.handle_create_sensor_launch)
     self.create_detector_launch_srv = rospy.Service('create_detector_launch', OPTSensor, self.handle_create_detector_launch)
+    self.create_sensor_poses_srv = rospy.Service('create_sensor_poses', OPTTransform, self.handle_create_sensor_poses_txt)
     
   
   def handle_create_sensor_launch(self, request) :
     
-    file_name = self.sensor_file_path + 'sensor_' + request.id + '.launch'
+    file_name = self.sensor_launchers_dir + 'sensor_' + request.id + '.launch'
     file = open(file_name, 'w')
     file.write('<?xml version="1.0"?>\n')
     file.write('<!-- SESSION ID: ' + str(request.session_id) + ' -->\n')
@@ -109,7 +114,7 @@ class CalibrationInitializerSlave :
     
   def handle_create_detector_launch(self, request) :
     
-    file_name = self.detector_file_path + 'detection_node_' + request.id + '.launch'
+    file_name = self.detector_launchers_dir + 'detection_node_' + request.id + '.launch'
     file = open(file_name, 'w')
     file.write('<?xml version="1.0"?>\n')
     file.write('<!-- SESSION ID: ' + str(request.session_id) + ' -->\n')
@@ -150,6 +155,8 @@ class CalibrationInitializerSlave :
     rospy.loginfo(file_name + ' created!');
   
     return (OPTSensorResponse.STATUS_OK, file_name + ' created!')
+  
+#  def handle_create_camera_poses(self, request) :
     
 if __name__ == '__main__' :
   

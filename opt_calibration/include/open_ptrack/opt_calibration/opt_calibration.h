@@ -118,8 +118,7 @@ public:
   typedef boost::shared_ptr<OPTCalibration> Ptr;
   typedef boost::shared_ptr<const OPTCalibration> ConstPtr;
 
-  OPTCalibration(const ros::NodeHandle & node_handle,
-                 bool calibration_with_serials);
+  OPTCalibration(const ros::NodeHandle & node_handle);
 
   inline void setCheckerboard(const Checkerboard::Ptr & checkerboard)
   {
@@ -133,10 +132,9 @@ public:
     sensor_vec_.push_back(sensor_node);
   }
 
-  inline size_t nextAcquisition()
+  inline void nextAcquisition()
   {
     view_vec_.push_back(ViewMap());
-    return view_vec_.size() - 1;
   }
 
   bool addData(const PinholeSensor::Ptr & sensor,
@@ -167,7 +165,7 @@ public:
   void perform();
   void publish();
   void optimize();
-  void save();
+  const Pose & getLastCheckerboardPose() const;
 
 private:
 
@@ -218,10 +216,8 @@ private:
 
   typedef std::map<SensorNode::Ptr, CheckerboardView::Ptr> ViewMap;
   std::vector<ViewMap> view_vec_;
-  std::vector<ViewMap> single_view_vec_;
 
   std::vector<Checkerboard::Ptr> checkerboard_vec_;
-  std::vector<Checkerboard::Ptr> floor_checkerboard_vec_;
 
   bool initialization_;
   int last_optimization_;

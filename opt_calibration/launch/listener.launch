@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<launch>
+
+  <arg name="sensor_launchers_dir"   default="$(find opt_calibration)/launch" />
+  <arg name="detector_launchers_dir" default="$(find detection)/launch" />
+  <arg name="camera_poses_dir"       default="$(arg detector_launchers_dir)" />
+
+  <!-- Launching calibration initializer -->
+  <node pkg="opt_calibration" type="listener.py" ns="$(env ROS_PC_NAME)"
+        name="listener" output="screen" required="true">
+        
+    <param name="sensor_launchers_dir"   value="$(arg sensor_launchers_dir)" />
+    <param name="detector_launchers_dir" value="$(arg detector_launchers_dir)" />
+    <param name="camera_poses_dir"       value="$(arg camera_poses_dir)" />
+    
+  </node>
+
+</launch>
+

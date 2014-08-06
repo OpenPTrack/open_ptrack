@@ -4,7 +4,7 @@ find_package(catkin REQUIRED COMPONENTS roscpp message_generation geometry_msgs 
 
 add_message_files(FILES Rois.msg RoiRect.msg HumanEntry.msg HumanEntries.msg BoundingBox2D.msg BoundingBox3D.msg Detection.msg DetectionArray.msg Track.msg TrackArray.msg)
 
-add_service_files(FILES OPTSensor.srv)
+add_service_files(FILES OPTSensor.srv OPTTransform.srv)
 
 generate_messages(DEPENDENCIES std_msgs geometry_msgs sensor_msgs)
 
