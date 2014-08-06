@@ -296,14 +296,13 @@ main (int argc, char** argv)
 	  }
 	}
 
-std::cout << "***A" << std::endl;
 	// Remove low confidence points:
 	removeLowConfidencePoints(confidence_image, sr_conf_threshold, cloud);
-std::cout << "***B" << std::endl;
+
 	// Ground estimation:
 	ground_estimator.setInputCloud(cloud);
 	Eigen::VectorXf ground_coeffs = ground_estimator.compute();
-std::cout << "***C" << std::endl;
+
 	if (ground_from_extrinsic_calibration)
 	{ // Ground plane equation derived from extrinsic calibration:
 	  int pos = pointcloud_topic.find("/", 1);
