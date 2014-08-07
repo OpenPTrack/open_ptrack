@@ -233,13 +233,39 @@ bool OPTCalibrationNode::save()
 
     // Write TF transforms between cameras and world frame
     file << "# Poses w.r.t. the \"world\" reference frame" << std::endl;
-    file << "sensors:" << std::endl;
+    file << "poses:" << std::endl;
     for (size_t i = 0; i < sensor_vec_.size(); ++i)
     {
       const SensorROS::Ptr & sensor_ros = sensor_vec_[i];
       const Sensor::Ptr & sensor = sensor_ros->sensor();
 
       Pose pose = rotation * new_world_pose * sensor->pose();
+
+      file << "  " << sensor->frameId().substr(1) << ":" << std::endl;
+
+      file << "    translation:" << std::endl
+           << "      x: " << pose.translation().x() << std::endl
+           << "      y: " << pose.translation().y() << std::endl
+           << "      z: " << pose.translation().z() << std::endl;
+
+      Quaternion rotation(pose.rotation());
+      file << "    rotation:" << std::endl
+           << "      x: " << rotation.x() << std::endl
+           << "      y: " << rotation.y() << std::endl
+           << "      z: " << rotation.z() << std::endl
+           << "      w: " << rotation.w() << std::endl;
+
+    }
+
+    file << std::endl << "# Inverse poses" << std::endl;
+    file << "inverse_poses:" << std::endl;
+    for (size_t i = 0; i < sensor_vec_.size(); ++i)
+    {
+      const SensorROS::Ptr & sensor_ros = sensor_vec_[i];
+      const Sensor::Ptr & sensor = sensor_ros->sensor();
+
+      Pose pose = rotation * new_world_pose * sensor->pose();
+      pose = pose.inverse();
 
       file << "  " << sensor->frameId().substr(1) << ":" << std::endl;
 

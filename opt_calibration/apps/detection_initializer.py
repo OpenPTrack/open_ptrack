@@ -49,7 +49,8 @@ class DetectionInitializer :
   def __init__(self) :
     
     network = rospy.get_param('~network')
-    calib_parameters = rospy.get_param('~sensors')
+    calib_parameters = rospy.get_param('~poses')
+    inv_calib_parameters = rospy.get_param('~inverse_poses')
     self.file_name = rospy.get_param('~launch_file')
     self.calibration_id = rospy.get_param('~calibration_id')
     
@@ -59,7 +60,9 @@ class DetectionInitializer :
       sensors = item['sensors']
       tmp_map = {}
       for sensor in sensors:
-        tmp_map[sensor['id']] = calib_parameters[sensor['id']]
+        tmp_map[sensor['id']] = {}
+        tmp_map[sensor['id']]['pose'] = calib_parameters[sensor['id']]
+        tmp_map[sensor['id']]['inv_pose'] = inv_calib_parameters[sensor['id']]
         tmp_map[sensor['id']]['type'] = sensor['type']
       self.sensor_map[pc] = tmp_map
       
@@ -77,8 +80,8 @@ class DetectionInitializer :
     for pc in self.sensor_map:
       file.write('  <!-- pc: ' + pc + ' -->\n')
       for sensor in self.sensor_map[pc]:
-        t = self.sensor_map[pc][sensor]['translation']
-        r = self.sensor_map[pc][sensor]['rotation']
+        t = self.sensor_map[pc][sensor]['pose']['translation']
+        r = self.sensor_map[pc][sensor]['pose']['rotation']
         file.write('  <!-- sensor: ' + sensor + ' -->\n')
         file.write('  <node pkg="tf" type="static_transform_publisher" ')
         file.write('name="' + sensor +'_broadcaster"\n')
@@ -118,8 +121,8 @@ class DetectionInitializer :
       for sensor in self.sensor_map[pc]:
         sensor_msg.parent_id = sensor_msg.parent_id + ['world']
         sensor_msg.child_id = sensor_msg.child_id + [sensor]
-        t = self.sensor_map[pc][sensor]['translation']
-        r = self.sensor_map[pc][sensor]['rotation']
+        t = self.sensor_map[pc][sensor]['inv_pose']['translation']
+        r = self.sensor_map[pc][sensor]['inv_pose']['rotation']
         sensor_msg.transform = sensor_msg.transform + [Transform(Vector3(t['x'], t['y'], t['z']), Quaternion(r['x'], r['y'], r['z'], r['w']))]
       
       # Invoke service
