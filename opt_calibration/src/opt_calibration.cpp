@@ -58,7 +58,7 @@ OPTCalibration::OPTCalibration(const ros::NodeHandle & node_handle)
     world_(boost::make_shared<BaseObject>("/world")),
     world_set_(false),
     initialization_(true),
-    last_optimization_(0)
+    last_optimization_(OPTIMIZATION_COUNT)
 {
   marker_pub_ = node_handle_.advertise<visualization_msgs::Marker>("markers", 0);
 }
