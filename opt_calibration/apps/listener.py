@@ -42,7 +42,7 @@ import roslib; roslib.load_manifest('opt_calibration')
 import rospy
 from opt_msgs.srv import *
 
-class CalibrationInitializerSlave :
+class Listener :
 
   def __init__(self) :
     self.sensor_launchers_dir = rospy.get_param('~sensor_launchers_dir')
@@ -59,7 +59,7 @@ class CalibrationInitializerSlave :
     
     self.create_sensor_launch_srv = rospy.Service('create_sensor_launch', OPTSensor, self.handle_create_sensor_launch)
     self.create_detector_launch_srv = rospy.Service('create_detector_launch', OPTSensor, self.handle_create_detector_launch)
-    self.create_sensor_poses_srv = rospy.Service('create_sensor_poses', OPTTransform, self.handle_create_sensor_poses_txt)
+    self.create_camera_poses_srv = rospy.Service('create_camera_poses', OPTTransform, self.handle_create_camera_poses)
     
   
   def handle_create_sensor_launch(self, request) :
@@ -156,15 +156,31 @@ class CalibrationInitializerSlave :
   
     return (OPTSensorResponse.STATUS_OK, file_name + ' created!')
   
-#  def handle_create_camera_poses(self, request) :
+  def handle_create_camera_poses(self, request) :
+    
+    file_name = self.camera_poses_dir + 'camera_poses.txt'
+    file = open(file_name, 'w')
+    file.write('# Auto-generated file.\n')
+    file.write('# CALIBRATION ID: ' + str(request.calibration_id) + '\n')
+    
+    data = zip(request.child_id, request.transform)
+    for item in data:
+      t = item[1].translation
+      r = item[1].rotation
+      file.write(item[0] + ': ' + str(t.x) + ' ' + str(t.y) + ' ' + str(t.z) + ' ')
+      file.write(str(r.x) + ' ' + str(r.y) + ' ' + str(r.z) + ' ' + str(r.w) + '\n')
+    
+    file.close()
+    
+    return (OPTTransformResponse.STATUS_OK, file_name + ' created!')
     
 if __name__ == '__main__' :
   
-  rospy.init_node('calibration_initializer_slave')
+  rospy.init_node('listener')
   
   try:
     
-    initializer = CalibrationInitializerSlave()
+    listener = Listener()
     rospy.spin()
     
   except rospy.ROSInterruptException:

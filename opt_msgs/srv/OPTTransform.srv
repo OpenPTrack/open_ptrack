@@ -1,9 +1,8 @@
-uint64    calibration_id
+uint64 calibration_id
 
-string    parent_id
-string    child_id
-
-geometry_msgs/Transform transform
+string[]                  parent_id
+string[]                  child_id
+geometry_msgs/Transform[] transform
 
 ---
 

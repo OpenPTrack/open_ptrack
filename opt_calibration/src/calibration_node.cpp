@@ -224,14 +224,16 @@ bool OPTCalibrationNode::save()
 
   if (file.is_open())
   {
-    file << "# Auto generated file. Do not modify!!" << std::endl
-         << "# Calibration ID: " << ros::Time::now().toNSec() << std::endl << std::endl;
+    ros::Time time = ros::Time::now();
+    file << "# Auto generated file." << std::endl;
+    file << "calibration_id: " << time.toNSec() << std::endl << std::endl;
 
     AngleAxis rotation(M_PI, Vector3(1.0, 1.0, 0.0).normalized());
     Pose new_world_pose = calibration_->getLastCheckerboardPose().inverse();
 
     // Write TF transforms between cameras and world frame
     file << "# Poses w.r.t. the \"world\" reference frame" << std::endl;
+    file << "sensors:" << std::endl;
     for (size_t i = 0; i < sensor_vec_.size(); ++i)
     {
       const SensorROS::Ptr & sensor_ros = sensor_vec_[i];
@@ -239,19 +241,19 @@ bool OPTCalibrationNode::save()
 
       Pose pose = rotation * new_world_pose * sensor->pose();
 
-      file << sensor->frameId().substr(1) << ":" << std::endl;
+      file << "  " << sensor->frameId().substr(1) << ":" << std::endl;
 
-      file << "  translation:" << std::endl
-           << "    x: " << pose.translation().x() << std::endl
-           << "    y: " << pose.translation().y() << std::endl
-           << "    z: " << pose.translation().z() << std::endl;
+      file << "    translation:" << std::endl
+           << "      x: " << pose.translation().x() << std::endl
+           << "      y: " << pose.translation().y() << std::endl
+           << "      z: " << pose.translation().z() << std::endl;
 
       Quaternion rotation(pose.rotation());
-      file << "  rotation:" << std::endl
-           << "    x: " << rotation.x() << std::endl
-           << "    y: " << rotation.y() << std::endl
-           << "    z: " << rotation.z() << std::endl
-           << "    w: " << rotation.w() << std::endl;
+      file << "    rotation:" << std::endl
+           << "      x: " << rotation.x() << std::endl
+           << "      y: " << rotation.y() << std::endl
+           << "      z: " << rotation.z() << std::endl
+           << "      w: " << rotation.w() << std::endl;
 
     }
 

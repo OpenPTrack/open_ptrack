@@ -172,7 +172,7 @@ class CalibrationInitializer :
 
 if __name__ == '__main__' :
   
-  rospy.init_node('calibration_initializer_master')
+  rospy.init_node('calibration_initializer')
     
   try:
     

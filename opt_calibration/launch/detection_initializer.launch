@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<launch>
+
+  <arg name="network_file" default="$(find opt_calibration)/conf/camera_network.yaml" />
+  <arg name="calib_file"   default="$(find opt_calibration)/conf/camera_poses.yaml" />
+  <arg name="launch_file"  default="$(find opt_calibration)/launch/opt_calibration_results.launch" />
+  
+  <!-- Launching calibration initializer -->
+  <node pkg="opt_calibration" type="detection_initializer.py"
+        name="detection_initializer" output="screen" required="true">
+    <rosparam command="load"  file="$(arg network_file)" />
+    <rosparam command="load"  file="$(arg calib_file)" />
+    <param name="launch_file" value="$(arg launch_file)" />
+  </node>
+
+</launch>
+
