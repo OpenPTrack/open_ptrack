@@ -7,7 +7,7 @@ RARING="raring"
 
 # Initialization
 mkdir /tmp/ceres_install
-cp ceres.patch /tmp/ceres_install
+#cp ceres.patch /tmp/ceres_install
 cd /tmp/ceres_install
 
 # CMake
@@ -54,18 +54,14 @@ sudo apt-get install libsuitesparse-dev -y
 
 # Build CERES:
 cd ..
-wget http://ceres-solver.googlecode.com/files/ceres-solver-1.8.0.tar.gz
-tar zxf ceres-solver-1.8.0.tar.gz
-
-if [ "$UBUNTU_VERSION" = "$RARING" ]; then 
-  # Apply patch
-  patch -p 0 -N -r ceres.rej -i ceres.patch
-fi
+git clone https://ceres-solver.googlesource.com/ceres-solver
+git fetch --tags
+git checkout tags/1.9.0
 
 # Install
 mkdir ceres-bin
 cd ceres-bin
-cmake ../ceres-solver-1.8.0
+cmake ../ceres-solver
 make -j8
 make test
 sudo make install
