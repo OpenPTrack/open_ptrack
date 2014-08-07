@@ -60,7 +60,7 @@ class CalibrationInitializer :
       for sensor_item in sensors:
         self.sensor_list = self.sensor_list + [sensor_item]
         
-    self.session_id = rospy.Time.now().to_nsec()
+    self.session_id = rospy.Time.now().secs
         
   
   def createMaster(self) :

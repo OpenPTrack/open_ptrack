@@ -24,7 +24,11 @@ network:
   - pc: "Cassiopea"
     sensors:
       - type: kinect1
-        id: "Kinect0"
+        id: "kinect_robot"
+  - pc: "Phoenix"
+    sensors:
+      - type: kinect1
+        id: "kinect_treppiede"
 
 # Checkerboard parameters
 checkerboard:
@@ -32,3 +36,4 @@ checkerboard:
   cols: 5
   cell_width: 0.12
   cell_height: 0.12
+  

@@ -1,7 +1,7 @@
 <launch>
 
   <!-- Load calibration results -->
-  <include file="$(find opt_calibration)/launch/multicamera_calibration_results.launch"/>
+  <include file="$(find opt_calibration)/launch/opt_calibration_results.launch"/>
 
   <!-- People tracking -->
   <include file="$(find tracking)/launch/tracker_network.launch"/>

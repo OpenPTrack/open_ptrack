@@ -171,6 +171,7 @@ class Listener :
       file.write(str(r.x) + ' ' + str(r.y) + ' ' + str(r.z) + ' ' + str(r.w) + '\n')
     
     file.close()
+    rospy.loginfo(file_name + ' created!');
     
     return (OPTTransformResponse.STATUS_OK, file_name + ' created!')
     

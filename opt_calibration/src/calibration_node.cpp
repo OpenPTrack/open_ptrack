@@ -218,7 +218,7 @@ void OPTCalibrationNode::spin()
 bool OPTCalibrationNode::save()
 {
   // Save tfs between sensors and world coordinate system (last checherboard) to file
-  std::string file_name = ros::package::getPath("opt_calibration") + "/conf/sensor_poses.yaml";
+  std::string file_name = ros::package::getPath("opt_calibration") + "/conf/camera_poses.yaml";
   std::ofstream file;
   file.open(file_name.c_str());
 
@@ -226,7 +226,7 @@ bool OPTCalibrationNode::save()
   {
     ros::Time time = ros::Time::now();
     file << "# Auto generated file." << std::endl;
-    file << "calibration_id: " << time.toNSec() << std::endl << std::endl;
+    file << "calibration_id: " << time.sec << std::endl << std::endl;
 
     AngleAxis rotation(M_PI, Vector3(1.0, 1.0, 0.0).normalized());
     Pose new_world_pose = calibration_->getLastCheckerboardPose().inverse();
@@ -265,102 +265,6 @@ bool OPTCalibrationNode::save()
   return true;
 
 }
-
-//bool OPTCalibrationNode::save()
-//{
-//  // save tf between camera and world coordinate system ( chessboard ) to launch file
-////  std::string file_name = ros::package::getPath("opt_calibration") + "/launch/multicamera_calibration_results.launch";
-////  std::ofstream launch_file;
-////  launch_file.open(file_name.c_str());
-
-//  std::stringstream optical_frame_string, link_string;
-//  optical_frame_string << "_rgb_optical_frame";
-//  link_string << "_link";
-
-////  if (launch_file.is_open())
-////  {
-////    launch_file << "<launch>" << std::endl << std::endl;
-
-////    // Write number of cameras:
-////    launch_file << "  <!-- Network parameters -->" << std::endl
-////                << "  <arg name=\"num_cameras\" value=\"" << sensor_vec_.size() << "\" />" << std::endl;
-
-////    // Write camera ID and names:
-////    for (size_t i = 0; i < sensor_vec_.size(); ++i)
-////    {
-////      SensorROS::Ptr & sensor_ros = sensor_vec_[i];
-////      launch_file << "  <arg name=\"camera" << i << "_id\" value=\"" << sensor_ros->sensor()->frameId() << "\" />" << std::endl;
-////      launch_file << "  <arg name=\"camera" << i << "_name\" value=\"$(arg camera" << i << "_id)\" />" << std::endl;
-////    }
-////    launch_file << std::endl;
-
-//    AngleAxis rotation(M_PI, Vector3(1.0, 1.0, 0.0).normalized());
-//    Pose new_world_pose = calibration_->getLastCheckerboardPose().inverse();
-
-//    // Write TF transforms between cameras and world frame:
-////    launch_file << "  <!-- Transforms tree -->" << std::endl;
-//    for (size_t i = 0; i < sensor_vec_.size(); ++i)
-//    {
-//      const SensorROS::Ptr & sensor_ros = sensor_vec_[i];
-//      const Sensor::Ptr & sensor = sensor_ros->sensor();
-
-//      Pose new_pose = rotation * new_world_pose * sensor->pose();
-
-//      geometry_msgs::Transform msg;
-//      tf::transformEigenToMsg(new_pose, msg);
-//      std::cout << msg << std::endl;
-
-
-////      launch_file << "  <node pkg=\"tf\" type=\"static_transform_publisher\" name=\""
-////                  << sensor->frameId().substr(1) << "_broadcaster\" args=\""
-////                  << new_pose.translation().transpose() << " "
-////                  << Quaternion(new_pose.linear()).coeffs().transpose() << " "
-////                  << "/world " << sensor->frameId() << " 100\" />" << std::endl << std::endl;
-
-////      if (std::strcmp(sensor->frameId().substr(1, 2).c_str(), "SR")) // if Kinect
-////      {
-////        // Write transform between camera_link and camera_rgb_optical_frame to file:
-////        launch_file << "  <node pkg=\"tf\" type=\"static_transform_publisher\" name=\""
-////                    << sensor->frameId().substr(1) << "_broadcaster2\" args=\" -0.045 0 0 1.57 -1.57 0 "
-////                    << sensor->frameId() << " "
-////                    << sensor->frameId() + link_string.str() << " 100\" />" << std::endl << std::endl;
-////      }
-
-//    }
-
-////    launch_file << "</launch>" << std::endl;
-////  }
-////  launch_file.close();
-
-////  ROS_INFO_STREAM(file_name << " created!");
-
-//  return true;
-
-////  // Camera Poses
-
-////  std::string sensor_id = sensor_node->sensor_->frameId().substring(1);
-////  std::string service_name = "create_camera_poses";
-////  ros::ServiceClient client = node_handle_.serviceClient<opt_msgs::OPTTransform>(sensor_id + "/" + service_name);
-////  opt_msgs::OPTTransform msg;
-////  msg.request.parent_id = "world";
-////  msg.request.child_id = sensor_id;
-////  msg.request.calibration_id = ros::Time::now().toNSec();
-////  tf::transformEigenToMsg(new_pose, msg.request.transform);
-
-////  if (client.call(msg))
-////  {
-////    if (msg.response.status == opt_msgs::OPTTransformResponse.STATUS_OK)
-////      ROS_INFO_STREAM('[' << pc << '] ' + msg.response.message);
-////              else:
-////                rospy.logerr('[' + pc + '] ' + response.message);
-////  }
-////  else
-////  {
-////    ROS_ERROR("Failed to call service add_two_ints");
-////    return 1;
-////  }
-
-//}
 
 } /* namespace opt_calibration */
 } /* namespace open_ptrack */
