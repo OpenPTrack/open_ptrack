@@ -15,7 +15,7 @@ chmod +x *.sh
 NB: Due to a packaging issue, when installing
 ros-indigo-openni-camera
 a problem can occur. To solve it:
-  sudo dpkg --remove --force-remove-reinstreq libopenni-sensor-pointclouds0 -y --force-yes
+  sudo dpkg --remove --force-remove-reinstreq libopenni-sensor-pointclouds0
   sudo apt-get install -f -y --force-yes
 and then finish the installation with
   sudo apt-get install ros-indigo-openni-launch -y --force-yes
