@@ -1,7 +1,7 @@
 #!/bin/bash
 # Installer for 'calibration_toolkit' from GitHub (needed for multicamera calibration)
 
-chmod +x ceres_install.sh
+chmod +x ceres_install*
 ./ceres_install.sh
 
 cd ~/workspace/ros/catkin/src
