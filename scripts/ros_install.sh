@@ -18,9 +18,7 @@ if [ "$UBUNTU_VERSION" = "$TRUSTY" ]; then
   sudo apt-get install ros-indigo-freenect-stack -y --force-yes
   sudo apt-get install ros-indigo-openni-camera -y --force-yes
   sudo apt-get install ros-indigo-openni-launch -y --force-yes
-fi
-
-if [ "$UBUNTU_VERSION" = "$RARING" ]; then 
+elif [ "$UBUNTU_VERSION" = "$RARING" ]; then 
   sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu raring main" > /etc/apt/sources.list.d/ros-latest.list'
   wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
   sudo apt-get update

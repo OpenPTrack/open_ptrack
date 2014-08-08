@@ -1,4 +1,4 @@
-+++ /tmp/ceres_install/ceres-solver-1.8.0/include/ceres/jet.h
++++ ceres-solver-1.8.0/include/ceres/jet.h
 @@ -649,6 +649,8 @@
      return ceres::Jet<T, N>(1e-12);
    }

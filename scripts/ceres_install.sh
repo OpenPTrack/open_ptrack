@@ -7,7 +7,7 @@ RARING="raring"
 
 # Initialization
 mkdir /tmp/ceres_install
-#cp ceres.patch /tmp/ceres_install
+cp ceres.patch /tmp/ceres_install
 cd /tmp/ceres_install
 
 # CMake
@@ -30,38 +30,53 @@ cd glog-0.3.2
 make
 sudo make install
 
-# BLAS & LAPACK
-sudo apt-get install libatlas-base-dev -y
+# Install BLAS & LAPACK
+sudo apt-get install libatlas-base-dev -y --force-yes
 
-# Install a particular version of Eigen3:
-cd ..
-wget http://bitbucket.org/eigen/eigen/get/3.2.0.tar.bz2
-tar xvjf 3.2.0.tar.bz2
-sudo mv /usr/include/eigen3 /usr/include/eigen3_old
-mkdir eigen_bin
-cd eigen_bin/
-cmake ../eigen-eigen-ffa86ffb5570 -DCMAKE_INSTALL_PREFIX=/usr
-sudo make install
+# Install Eigen 3.2.0
+if [ "$UBUNTU_VERSION" = "$TRUSTY" ]; then
+  sudo apt-get install libeigen3-dev -y --force-yes
+elif [ "$UBUNTU_VERSION" = "$RARING" ]; then 
+  cd ..
+  wget http://bitbucket.org/eigen/eigen/get/3.2.0.tar.bz2
+  tar xvjf 3.2.0.tar.bz2
+  sudo mv /usr/include/eigen3 /usr/include/eigen3_old
+  mkdir eigen_bin
+  cd eigen_bin/
+  cmake ../eigen-eigen-ffa86ffb5570 -DCMAKE_INSTALL_PREFIX=/usr
+  sudo make install
+fi
 
 # SuiteSparse and CXSparse (optional)
 # - If you want to build Ceres as a *static* library (the default)
 #   you can use the SuiteSparse package in the main Ubuntu package
 #   repository:
-sudo apt-get install libsuitesparse-dev -y
+sudo apt-get install libsuitesparse-dev -y --force-yes
 # - However, if you want to build Ceres as a *shared* library, you must
 #   perform a source install of SuiteSparse (and uninstall the Ubuntu
 #   package if it is currently installed.
 
-# Build CERES:
+# Get ceres-solver
 cd ..
-git clone https://ceres-solver.googlesource.com/ceres-solver
-git fetch --tags
-git checkout tags/1.9.0
+if [ "$UBUNTU_VERSION" = "$TRUSTY" ]; then
+  git clone https://ceres-solver.googlesource.com/ceres-solver
+  git fetch --tags
+  git checkout tags/1.9.0
+elif [ "$UBUNTU_VERSION" = "$RARING" ]; then
+  wget http://ceres-solver.googlecode.com/files/ceres-solver-1.8.0.tar.gz
+  tar zxf ceres-solver-1.8.0.tar.gz
+  # Apply patch
+  patch -p 0 -N -r ceres.rej -i ceres.patch
+fi 
 
-# Install
+# Install ceres-solver
 mkdir ceres-bin
 cd ceres-bin
-cmake ../ceres-solver
+if [ "$UBUNTU_VERSION" = "$TRUSTY" ]; then
+  cmake ../ceres-solver
+elif [ "$UBUNTU_VERSION" = "$RARING" ]; then
+  cmake ../ceres-solver-1.8.0
+fi
 make -j8
 make test
 sudo make install

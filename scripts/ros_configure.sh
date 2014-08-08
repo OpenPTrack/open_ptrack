@@ -5,8 +5,7 @@ RARING="raring"
 
 if [ "$UBUNTU_VERSION" = "$TRUSTY" ]; then 
   source /opt/ros/indigo/setup.bash
-fi
-if [ "$UBUNTU_VERSION" = "$RARING" ]; then 
+elif [ "$UBUNTU_VERSION" = "$RARING" ]; then 
   source /opt/ros/hydro/setup.bash
 fi
 
