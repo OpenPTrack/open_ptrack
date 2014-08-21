@@ -205,9 +205,9 @@ main (int argc, char** argv)
 	std::string pointcloud_topic;
 	nh.param("pointcloud_topic", pointcloud_topic, std::string("/camera/depth_registered/points"));
 	std::string confidence_topic;
-	nh.param("confidence_topic", confidence_topic, std::string("/swissranger/confidence/image_raw"));
+	nh.param("confidence_topic", confidence_topic, std::string("/SwissRanger/confidence/image_raw"));
 	std::string intensity_topic;
-	nh.param("intensity_topic", intensity_topic, std::string("/swissranger/intensity/image_raw"));
+	nh.param("intensity_topic", intensity_topic, std::string("/SwissRanger/intensity/image_raw"));
 	std::string output_topic;
 	nh.param("output_topic", output_topic, std::string("/ground_based_people_detector/detections"));
 	std::string camera_info_topic;

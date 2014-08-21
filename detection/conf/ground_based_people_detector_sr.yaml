@@ -16,7 +16,7 @@ valid_points_threshold: 0.3
 sensor_tilt_compensation: true 
 
 # For auto-exposure (13 fps)
-sr_conf_threshold: 200
+sr_conf_threshold: 180
 
 # For integration_time: 40 (30 fps)
 #sr_conf_threshold: 85
