@@ -149,6 +149,19 @@ namespace open_ptrack
         Eigen::VectorXf
         compute ();
 
+        /**
+         * \brief Refine ground coefficients by iterating ground plane detection on the input cloud
+         *
+         * \param[in] cloud Input cloud.
+         * \param[in] num_iter Number of iterations.
+         * \param[in] inliers_threshold Distance threshold for selecting inliers.
+         * \param[in/out] Ground coefficients.
+         *
+         * return true if ground coefficients have been updated, false otherwise.
+         */
+        bool
+        refineGround (int num_iter, float voxel_size, float inliers_threshold, Eigen::VectorXf& ground_coeffs_calib);
+
       private:
 
         /**

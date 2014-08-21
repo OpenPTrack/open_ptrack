@@ -483,6 +483,38 @@ open_ptrack::detection::GroundplaneEstimation<PointT>::compute ()
   return ground_coeffs;
 }
 
+template <typename PointT> bool
+open_ptrack::detection::GroundplaneEstimation<PointT>::refineGround (int num_iter, float voxel_size, float inliers_threshold, Eigen::VectorXf& ground_coeffs_calib)
+{
+//  PointCloudT::Ptr no_ground_cloud(new PointCloudT);
+  bool updated = false;
+  for (unsigned int l = 0; l < num_iter; l++)
+  {
+    pcl::IndicesPtr inliers(new std::vector<int>);
+    boost::shared_ptr<pcl::SampleConsensusModelPlane<PointT> > ground_model(new pcl::SampleConsensusModelPlane<PointT>(cloud_));
+    ground_model->selectWithinDistance(ground_coeffs_calib, voxel_size, *inliers);
+
+    if (inliers->size () >= inliers_threshold)
+    {
+      ground_model->optimizeModelCoefficients (*inliers, ground_coeffs_calib, ground_coeffs_calib);
+      updated = true;
+    }
+    else
+    {
+      return updated;
+    }
+
+//    no_ground_cloud->points.clear();
+//    pcl::ExtractIndices<PointT> extract;
+//    extract.setInputCloud(cloud_);
+//    extract.setIndices(inliers);
+//    extract.setNegative(true);
+//    extract.filter(*no_ground_cloud);
+  }
+
+  return updated;
+}
+
 template <typename PointT> void
 open_ptrack::detection::GroundplaneEstimation<PointT>::pp_callback (const pcl::visualization::PointPickingEvent& event, void* args)
 {

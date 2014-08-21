@@ -203,15 +203,22 @@ main (int argc, char** argv)
     tf::Transform worldToCamTransform = ground_estimator.readTFFromFile (filename, camera_name);
 
     // Compute ground coeffs from world to camera transform:
-    Eigen::VectorXf ground_coeffs_calib = ground_estimator.computeFromTF(worldToCamTransform);
+    Eigen::VectorXf ground_coeffs_calib = ground_estimator.computeFromTF (worldToCamTransform);
 
     // If ground could not be well estimated from point cloud data, use calibration data:
     // (if error in ground plane estimation from point cloud OR if d coefficient estimated from point cloud
     // is too different from d coefficient obtained from calibration)
+    bool updated = false; // states if ground plane coefficients are updated according to the point cloud or not
     if ((ground_coeffs.sum() == 0.0) | (std::fabs(float(ground_coeffs_calib(3) - ground_coeffs(3))) > 0.2))
     {
+      updated = ground_estimator.refineGround (10, voxel_size, 300 * 0.06 / voxel_size / std::pow (static_cast<double> (sampling_factor), 2), ground_coeffs_calib);
+
       ground_coeffs = ground_coeffs_calib;
-      std::cout << "Chosen ground plane estimate obtained from calibration." << std::endl;
+
+      if (updated)
+        std::cout << "Chosen ground plane estimate obtained from calibration and refined with point cloud." << std::endl;
+      else
+        std::cout << "Chosen ground plane estimate obtained from calibration." << std::endl;
     }
   }
 
