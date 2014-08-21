@@ -150,14 +150,14 @@ detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
     }
 
     // If tracking in a network containing SwissRangers, convert SwissRanger people detection confidence from HOG-like to HaarDispAda-like:
-    if (!std::strcmp(msg->header.frame_id.substr(0, 2).c_str(), "SR"))
+    if (!std::strcmp(msg->header.frame_id.substr(0, 2).c_str(), "Sw"))
     {
       for(unsigned int i = 0; i < detections_vector.size(); i++)
       {
         double new_confidence = detections_vector[i].getConfidence();
         new_confidence = (new_confidence - min_confidence_detections_sr) / (min_confidence_sr - min_confidence_detections_sr) *
                          (min_confidence - min_confidence_detections) + min_confidence_detections;
-        detections_vector[i].setConfidence(new_confidence);
+        detections_vector[i].setConfidence(new_confidence+2);
       }
     }
 
