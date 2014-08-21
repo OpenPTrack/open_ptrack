@@ -218,6 +218,8 @@ main (int argc, char** argv)
 	nh.param("sr_conf_threshold", sr_conf_threshold, 200);
 	bool ground_from_extrinsic_calibration;
 	nh.param("ground_from_extrinsic_calibration", ground_from_extrinsic_calibration, false);
+	bool lock_ground; // if true, do not update the ground plane at every frame
+	nh.param("lock_ground", lock_ground, false);
 	bool sensor_tilt_compensation;
 	nh.param("sensor_tilt_compensation", sensor_tilt_compensation, false);
 	double valid_points_threshold;
@@ -362,7 +364,9 @@ main (int argc, char** argv)
 			people_detector.setGround(ground_coeffs);                    // set floor coefficients
       people_detector.compute(clusters);                           // perform people detection
 
-			ground_coeffs = people_detector.getGround();                 // get updated floor coefficients
+      // If not lock_ground, update ground coefficients:
+      if (not lock_ground)
+        ground_coeffs = people_detector.getGround();                 // get updated floor coefficients
 
 			if (sensor_tilt_compensation)
 			  people_detector.getTiltCompensationTransforms(transform, anti_transform);
