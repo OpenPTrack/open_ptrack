@@ -200,6 +200,8 @@ main (int argc, char** argv)
 	nh.param("minimum_person_height", min_height, 1.3);
 	double max_height;
 	nh.param("maximum_person_height", max_height, 2.3);
+	double max_distance;
+	nh.param("max_distance", max_distance, 50.0);
 	int sampling_factor;
 	nh.param("sampling_factor", sampling_factor, 1);
 	std::string pointcloud_topic;
@@ -341,6 +343,7 @@ main (int argc, char** argv)
 	// People detection app initialization:
 	open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT> people_detector;    // people detection object
 	people_detector.setVoxelSize(voxel_size);                        // set the voxel size
+	people_detector.setMaxDistance(max_distance);                    // set maximum distance of people from the sensor
 	people_detector.setIntrinsics(intrinsics_matrix);                // set RGB camera intrinsic parameters
 	people_detector.setClassifier(person_classifier);                // set person classifier
 	people_detector.setHeightLimits(min_height, max_height);         // set person classifier

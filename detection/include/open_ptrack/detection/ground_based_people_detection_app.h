@@ -115,6 +115,14 @@ namespace open_ptrack
         setVoxelSize (float voxel_size);
 
         /**
+         * \brief Set points maximum distance from the sensor.
+         *
+         * \param[in] max_distance Set points maximum distance from the sensor (default = 50m.).
+         */
+        void
+        setMaxDistance (float max_distance);
+
+        /**
          * \brief Set intrinsic parameters of the RGB camera.
          *
          * \param[in] intrinsics_matrix RGB camera intrinsic parameters matrix.
@@ -294,6 +302,9 @@ namespace open_ptrack
 
         /** \brief voxel size */
         float voxel_size_;
+
+        /** \brief max distance from the sensor */
+        float max_distance_;
 
         /** \brief ground plane coefficients */
         Eigen::VectorXf ground_coeffs_;

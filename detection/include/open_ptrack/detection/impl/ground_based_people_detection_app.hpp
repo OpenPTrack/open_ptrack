@@ -50,6 +50,7 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::GroundBasedPeople
   // set default values for optional parameters:
   sampling_factor_ = 1;
   voxel_size_ = 0.06;
+  max_distance_ = 50.0;
   vertical_ = false;
   head_centroid_ = true;
   min_height_ = 1.3;
@@ -90,6 +91,12 @@ template <typename PointT> void
 open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::setVoxelSize (float voxel_size)
 {
   voxel_size_ = voxel_size;
+}
+
+template <typename PointT> void
+open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::setMaxDistance (float max_distance)
+{
+  max_distance_ = max_distance;
 }
 
 template <typename PointT> void
@@ -367,6 +374,8 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
   pcl::VoxelGrid<PointT> voxel_grid_filter_object;
   voxel_grid_filter_object.setInputCloud(cloud_);
   voxel_grid_filter_object.setLeafSize (voxel_size_, voxel_size_, voxel_size_);
+  voxel_grid_filter_object.setFilterFieldName("z");
+  voxel_grid_filter_object.setFilterLimits(0.0, max_distance_);
   voxel_grid_filter_object.filter (*cloud_filtered);
 
   // Ground removal and update:
