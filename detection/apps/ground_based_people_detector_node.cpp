@@ -140,6 +140,8 @@ main (int argc, char** argv)
   nh.param("lock_ground", lock_ground, false);
   bool sensor_tilt_compensation;
   nh.param("sensor_tilt_compensation", sensor_tilt_compensation, false);
+  double valid_points_threshold;
+  nh.param("valid_points_threshold", valid_points_threshold, 0.2);
 
   // Fixed parameters:
   float voxel_size = 0.06;
@@ -174,7 +176,7 @@ main (int argc, char** argv)
   bool first_valid_frame = false;
   while (!first_valid_frame)
   {
-    if (!ground_estimator.tooManyNaN(cloud, 0.7))
+    if (!ground_estimator.tooManyNaN(cloud, 1 - valid_points_threshold))
     { // A point cloud is valid if the ratio #NaN / #valid points is lower than a threshold
       first_valid_frame = true;
       std::cout << "Valid frame found! Ground plane initialization starting..." << std::endl;
