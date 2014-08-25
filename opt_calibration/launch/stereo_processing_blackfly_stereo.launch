@@ -1,0 +1,18 @@
+<launch>
+
+  <arg name="stereo_namespace" default="blackfly_stereo" />
+  
+  <!-- Publish stereo camera info -->	
+  <node pkg="opt_calibration" type="stereo_publisher" name="stereo_publisher" output="screen">
+    <param name="stereo_namespace" value="$(arg stereo_namespace)" />
+    <rosparam command="load" file="$(find opt_calibration)/conf/stereo_calib_left.yml" ns="left" />
+    <rosparam command="load" file="$(find opt_calibration)/conf/stereo_calib_right.yml" ns="right" /> 
+  </node>
+  
+  <!--Stereo processing -->
+  <group ns="$(arg stereo_namespace)">
+    <node pkg="stereo_image_proc" type="stereo_image_proc" respawn="false" output="screen" name="stereo_image_proc" args="_approximate_sync:=True _queue_size:=5">
+    </node>
+  </group>
+
+</launch>
