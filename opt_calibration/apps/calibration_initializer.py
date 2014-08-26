@@ -70,9 +70,17 @@ class CalibrationInitializer :
     file.write('<!-- SESSION ID: ' + str(self.session_id) + ' -->\n')
     file.write('<launch>\n\n')
   
+    # Calibration parameters
+    file.write('  <!-- Calibration parameters -->\n')
+    file.write('  <arg name="lock_world_frame" default="false" />\n')
+    file.write('  <group if="$(arg lock_world_frame)">\n')
+    file.write('    <arg name="fixed_sensor_id" />\n')
+    file.write('    <rosparam command="load" file="$(find opt_calibration)/conf/camera_poses.yaml" />\n')
+    file.write('  </group>\n\n')
+  
     # Network parameters
     file.write('  <!-- Network parameters -->\n')
-    file.write('  <arg name="num_sensors" default="' + str(len(self.sensor_list)) + '" />\n\n')
+    file.write('  <arg name="num_sensors"   default="' + str(len(self.sensor_list)) + '" />\n\n')
     
     index = 0
     for sensor in self.sensor_list:
@@ -86,10 +94,10 @@ class CalibrationInitializer :
       index = index + 1
       
     # Checkerboard parameters
-    file.write('  <arg name="rows"        default="' + str(self.checkerboard['rows']) + '" />\n')
-    file.write('  <arg name="cols"        default="' + str(self.checkerboard['cols']) + '" />\n')
-    file.write('  <arg name="cell_width"  default="' + str(self.checkerboard['cell_width']) + '" />\n')
-    file.write('  <arg name="cell_height" default="' + str(self.checkerboard['cell_height']) + '" />\n\n')
+    file.write('  <arg name="rows"          default="' + str(self.checkerboard['rows']) + '" />\n')
+    file.write('  <arg name="cols"          default="' + str(self.checkerboard['cols']) + '" />\n')
+    file.write('  <arg name="cell_width"    default="' + str(self.checkerboard['cell_width']) + '" />\n')
+    file.write('  <arg name="cell_height"   default="' + str(self.checkerboard['cell_height']) + '" />\n\n')
   
     # Rviz and calibration node
     file.write('  <!-- Opening Rviz for visualization-->\n')
@@ -97,11 +105,16 @@ class CalibrationInitializer :
     
     file.write('  <!-- Launching calibration -->\n')
     file.write('  <node pkg="opt_calibration" type="opt_calibration" name="opt_calibration" output="screen">\n\n')
-    file.write('    <param name="num_sensors" value="$(arg num_sensors)" />\n\n')
-    file.write('    <param name="rows"        value="$(arg rows)" />\n')
-    file.write('    <param name="cols"        value="$(arg cols)" />\n')
-    file.write('    <param name="cell_width"  value="$(arg cell_width)" />\n')
-    file.write('    <param name="cell_height" value="$(arg cell_height)" />\n\n')
+    
+    file.write('    <param unless="$(arg lock_world_frame)" name="world_computation" value="last_checkerboard" />\n')
+    file.write('    <param     if="$(arg lock_world_frame)" name="world_computation" value="update" />\n')
+    file.write('    <param     if="$(arg lock_world_frame)" name="fixed_sensor/name" value="/$(arg fixed_sensor_id)" />\n\n')
+    
+    file.write('    <param name="num_sensors"           value="$(arg num_sensors)" />\n\n')
+    file.write('    <param name="rows"                  value="$(arg rows)" />\n')
+    file.write('    <param name="cols"                  value="$(arg cols)" />\n')
+    file.write('    <param name="cell_width"            value="$(arg cell_width)" />\n')
+    file.write('    <param name="cell_height"           value="$(arg cell_height)" />\n\n')
   
     #if (calibration_with_serials)??
     #  file.write('    <param name="calibration_with_serials" value="true" />\n\n')

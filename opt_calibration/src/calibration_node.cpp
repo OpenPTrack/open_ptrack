@@ -54,9 +54,49 @@ namespace opt_calibration
 
 OPTCalibrationNode::OPTCalibrationNode(const ros::NodeHandle & node_handle)
   : node_handle_(node_handle),
-    image_transport_(node_handle)
+    image_transport_(node_handle),
+    world_computation_(FIRST_SENSOR),
+    fixed_sensor_pose_(Pose::Identity())
 {
   action_sub_ = node_handle_.subscribe("action", 1, &OPTCalibrationNode::actionCallback, this);
+
+  std::string world_computation_s;
+  node_handle_.param("world_computation", world_computation_s, std::string("first_sensor"));
+  if (world_computation_s == "first_sensor")
+    world_computation_ = FIRST_SENSOR;
+  else if (world_computation_s == "last_checkerboard")
+    world_computation_ = LAST_CHECKERBOARD;
+  else if (world_computation_s == "update")
+    world_computation_ = UPDATE;
+  else
+    ROS_FATAL_STREAM("\"world_computation\" parameter value not valid. Please use \"first_sensor\", \"last_checkerboard\" or \"manual\".");
+
+  std::string fixed_sensor_frame_id;
+  if (world_computation_ == UPDATE)
+  {
+    if (not node_handle_.getParam("fixed_sensor/name", fixed_sensor_frame_id))
+      ROS_FATAL_STREAM("No \"fixed_sensor/name\" parameter found!!");
+
+    std::string pose_s = "/poses/" + fixed_sensor_frame_id;
+
+    if (not node_handle_.hasParam(pose_s))
+      ROS_FATAL_STREAM("No \"" << pose_s << "\" parameter found!! Has \"conf/camera_poses.yaml\" been loaded with \"rosparam load ...\"?");
+
+    Translation3 t;
+    node_handle_.getParam(pose_s + "/translation/x", t.x());
+    node_handle_.getParam(pose_s + "/translation/y", t.y());
+    node_handle_.getParam(pose_s + "/translation/z", t.z());
+
+    Quaternion q;
+    node_handle_.getParam(pose_s + "/rotation/x", q.x());
+    node_handle_.getParam(pose_s + "/rotation/y", q.y());
+    node_handle_.getParam(pose_s + "/rotation/z", q.z());
+    node_handle_.getParam(pose_s + "/rotation/w", q.w());
+
+    fixed_sensor_pose_.linear() = q.toRotationMatrix();
+    fixed_sensor_pose_.translation() = t.vector();
+
+  }
 
   node_handle_.param("num_sensors", num_sensors_, 0);
 
@@ -101,6 +141,13 @@ OPTCalibrationNode::OPTCalibrationNode(const ros::NodeHandle & node_handle)
     node_handle_.param(ss.str(), frame_id, frame_id);
     SensorROS::Ptr sensor = boost::make_shared<SensorROS>(frame_id, type);
 
+    if (world_computation_ == UPDATE)
+    {
+      ROS_INFO_STREAM(frame_id << " " << fixed_sensor_frame_id);
+      if (frame_id == fixed_sensor_frame_id)
+         fixed_sensor_ = sensor;
+    }
+
     ss.str("");
     ss << "sensor_" << i << "/image";
     sensor->setImageSubscriber(image_transport_.subscribe(ss.str(), 1, &SensorROS::imageCallback, sensor));
@@ -115,11 +162,13 @@ OPTCalibrationNode::OPTCalibrationNode(const ros::NodeHandle & node_handle)
     sensor_vec_.push_back(sensor);
   }
 
+  if (world_computation_ == UPDATE and not fixed_sensor_)
+    ROS_FATAL_STREAM("Wrong \"fixed_sensor/name\" parameter provided: " << fixed_sensor_frame_id);
+
 }
 
 bool OPTCalibrationNode::initialize()
 {
-
   bool all_messages_received = false;
   ros::Rate rate(1.0);
   while (ros::ok() and not all_messages_received)
@@ -228,8 +277,17 @@ bool OPTCalibrationNode::save()
     file << "# Auto generated file." << std::endl;
     file << "calibration_id: " << time.sec << std::endl << std::endl;
 
-    AngleAxis rotation(M_PI, Vector3(1.0, 1.0, 0.0).normalized());
-    Pose new_world_pose = calibration_->getLastCheckerboardPose().inverse();
+    Pose new_world_pose = Pose::Identity();
+
+    if (world_computation_ == LAST_CHECKERBOARD)
+    {
+      AngleAxis rotation(M_PI, Vector3(1.0, 1.0, 0.0).normalized());
+      new_world_pose = rotation * calibration_->getLastCheckerboardPose().inverse();
+    }
+    else if (world_computation_ == UPDATE)
+    {
+      new_world_pose = fixed_sensor_pose_ * fixed_sensor_->sensor()->pose().inverse();
+    }
 
     // Write TF transforms between cameras and world frame
     file << "# Poses w.r.t. the \"world\" reference frame" << std::endl;
@@ -239,7 +297,7 @@ bool OPTCalibrationNode::save()
       const SensorROS::Ptr & sensor_ros = sensor_vec_[i];
       const Sensor::Ptr & sensor = sensor_ros->sensor();
 
-      Pose pose = rotation * new_world_pose * sensor->pose();
+      Pose pose = new_world_pose * sensor->pose();
 
       file << "  " << sensor->frameId().substr(1) << ":" << std::endl;
 
@@ -264,7 +322,7 @@ bool OPTCalibrationNode::save()
       const SensorROS::Ptr & sensor_ros = sensor_vec_[i];
       const Sensor::Ptr & sensor = sensor_ros->sensor();
 
-      Pose pose = rotation * new_world_pose * sensor->pose();
+      Pose pose = new_world_pose * sensor->pose();
       pose = pose.inverse();
 
       file << "  " << sensor->frameId().substr(1) << ":" << std::endl;
@@ -305,13 +363,13 @@ int main(int argc,
   {
     open_ptrack::opt_calibration::OPTCalibrationNode calib_node(node_handle);
     if (not calib_node.initialize())
-      return 0;
+      return 1;
     calib_node.spin();
   }
   catch (std::runtime_error & error)
   {
     ROS_FATAL("Calibration error: %s", error.what());
-    return 1;
+    return 2;
   }
 
   return 0;

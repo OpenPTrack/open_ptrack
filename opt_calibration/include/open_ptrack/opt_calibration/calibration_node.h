@@ -205,11 +205,22 @@ public:
 
 private:
 
+  enum WorldComputation
+  {
+    FIRST_SENSOR,
+    LAST_CHECKERBOARD,
+    UPDATE
+  };
+
   ros::NodeHandle node_handle_;                             ///< @brief Handle to the ROS node.
   image_transport::ImageTransport image_transport_;         ///< @brief Handle to ImageTransport, which advertise and subscribe to image topics.
 
   ros::Subscriber action_sub_;                              ///< @brief Subscriber to topic where action commands are sent.
   Checkerboard::Ptr checkerboard_;                          ///< @brief Object representing a checkerboard.
+
+  WorldComputation world_computation_;
+  SensorROS::Ptr fixed_sensor_;
+  Pose fixed_sensor_pose_;
 
   std::vector<SensorROS::Ptr> sensor_vec_;
   int num_sensors_;                                         ///< @brief Number of sensors connected to the network.
