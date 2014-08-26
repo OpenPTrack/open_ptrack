@@ -130,6 +130,10 @@ class CalibrationInitializer :
         file.write('    <param name="sensor_' + str(index) + '/type"         value="pinhole_rgb" />\n')
         file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/$(arg sensor_' + str(index) + '_name)/rgb/image_rect_color" />\n')
         file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/$(arg sensor_' + str(index) + '_name)/rgb/camera_info" />\n\n')
+      elif sensor['type'] == 'stereo_pg':
+        file.write('    <param name="sensor_' + str(index) + '/type"         value="pinhole_rgb" />\n')
+        file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/$(arg sensor_' + str(index) + '_name)/left/image_rect_color" />\n')
+        file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/$(arg sensor_' + str(index) + '_name)/left/camera_info" />\n\n')
       else:
         rospy.logfatal('Sensor type "' + sensor['type'] + '" not supported yet!');
       index = index + 1
@@ -164,6 +168,10 @@ class CalibrationInitializer :
         elif sensor_item['type'] == 'sr4500':
           sensor_msg.type = OPTSensorRequest.TYPE_SR4500
           sensor_msg.ip = sensor_item['ip']
+        elif sensor_item['type'] == 'stereo_pg':
+          sensor_msg.type = OPTSensorRequest.TYPE_STEREO_PG
+          sensor_msg.serial_left = sensor_item['serial_left']
+          sensor_msg.serial_right = sensor_item['serial_right']
       
         # Invoke service
         try:

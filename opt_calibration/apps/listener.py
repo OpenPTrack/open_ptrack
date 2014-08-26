@@ -106,6 +106,22 @@ class Listener :
       file.write('  <!-- Publish a further transform -->\n')
       file.write('  <node pkg="tf" type="static_transform_publisher" name="$(arg sensor_id)_broadcaster" args="-0.045 0 0 1.57079 -1.57079 0 /$(arg sensor_id) /$(arg sensor_id)_link  100" />\n\n')
     
+    elif request.type == OPTSensorRequest.TYPE_STEREO_PG:
+      file.write('    <arg name="camera_serial_left" default="' + request.serial_left + '" />\n')
+      file.write('    <arg name="camera_serial_right" default="' + request.serial_right + '" />\n')
+      file.write('    <arg name="stereo_name" default="' + request.id + '" />\n')
+             
+      file.write('  <!-- Launch driver -->\n')
+      file.write('  <include file="$(find opt_calibration)/launch/stereo.launch">')
+      file.write('    <arg name="stereo_name" value="$(arg stereo_name)" />\n')
+      file.write('    <arg name="camera_serial_left" value="$(arg camera_serial_left)" />\n')
+      file.write('    <arg name="camera_serial_right" value="$(arg camera_serial_right)" />\n')
+      file.write('  </include>\n\n')
+      file.write('  <!-- Launch stereo processing -->\n')
+      file.write('  <include file="$(find opt_calibration)/launch/stereo_processing.launch">')
+      file.write('    <arg name="stereo_namespace" value="$(arg stereo_name)" />\n')
+      file.write('  </include>\n\n')      
+      
     file.write('</launch>\n')
     file.close();
     rospy.loginfo(file_name + ' created!');
@@ -147,6 +163,19 @@ class Listener :
       if request.serial != '':
         file.write('    <arg name="device_id"               value="$(arg device_id)" />\n')
       file.write('    <arg name="camera_name"             value="$(arg camera_name)" />\n')
+      file.write('    <arg name="ground_from_calibration" value="true" />\n')
+      file.write('  </include>\n\n')
+      
+    elif request.type == OPTSensorRequest.TYPE_STEREO_PG:
+      file.write('  <arg name="camera_serial_left" default="' + request.serial_left + '" />\n')
+      file.write('  <arg name="camera_serial_right" default="' + request.serial_right + '" />\n')
+      file.write('  <arg name="stereo_name" default="' + request.id + '" />\n')
+     
+      file.write('  <!-- Detection node -->\n')
+      file.write('  <include file="$(find detection)/launch/detector_stereo_pg.launch">\n')
+      file.write('    <arg name="stereo_name" value="$(arg stereo_name)" />\n')
+      file.write('    <arg name="camera_serial_left" value="$(arg camera_serial_left)" />\n')
+      file.write('    <arg name="camera_serial_right" value="$(arg camera_serial_right)" />\n')
       file.write('    <arg name="ground_from_calibration" value="true" />\n')
       file.write('  </include>\n\n')
 

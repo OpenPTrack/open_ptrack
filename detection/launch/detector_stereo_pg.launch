@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!-- Camera ID -->
+  <arg name="camera_serial_left"      default="13310958" />
+  <arg name="camera_serial_right"     default="13310959" />
+  <arg name="stereo_name"             default="blackfly_stereo" />
+  <arg name="intermediate_topic"      default="/ground_based_people_detector_$(arg camera_name)/detections" />
+  <arg name="ground_from_calibration" default="false" />
+  
+  <arg name="camera_name"             default="$(arg stereo_name)" />
+  
+  <!-- Camera driver -->
+  <include file="$(find opt_calibration)/launch/stereo.launch">
+    <arg name="stereo_name" value="$(arg stereo_name)" />
+    <arg name="camera_serial_left" value="$(arg camera_serial_left)" />
+    <arg name="camera_serial_right" value="$(arg camera_serial_right)" />
+  </include>
+  
+  <!-- Stereo processing -->
+  <include file="$(find opt_calibration)/launch/stereo_processing.launch">
+    <arg name="stereo_namespace" value="$(arg stereo_name)" />
+  </include>
+
+  <!-- Launch ground based people detection node -->
+  <node pkg="detection" type="ground_based_people_detector"
+        name="ground_based_people_detector_$(arg camera_name)" output="screen" respawn="true">
+        
+    <rosparam command="load"                        file="$(find detection)/conf/ground_based_people_detector.yaml" /> 
+    
+    <param name="classifier_file"                   value="$(find detection)/data/HogSvmPCL.yaml"/>
+    <param name="pointcloud_topic"                  value="/$(arg camera_name)/points2"/>
+    <param name="output_topic"                      value="$(arg intermediate_topic)"/>
+    <param name="camera_info_topic"                 value="/$(arg camera_name)/left/camera_info"/>
+    <param name="rate"                              value="60.0"/>  
+    <param name="ground_from_extrinsic_calibration" value="$(arg ground_from_calibration)"/>  
+    
+  </node>
+
+  <!-- Launch HaarDispAda Node-->
+  <node pkg="detection" type="HaarDispAda174" name="HaarDispAdaNode_$(arg camera_name)" output="screen" respawn="true">
+  	
+    <rosparam command="load"       file="$(find detection)/conf/haar_disp_ada_detector.yaml" /> 
+    
+    <remap from="Color_Image"      to="/$(arg camera_name)/left/image_color"/>	
+    <remap from="Disparity_Image"  to="/$(arg camera_name)/disparity"/>
+    <remap from="input_detections" to="$(arg intermediate_topic)"/>
+    
+    <param name="classifier_file"  value="$(find detection)/data/HaarDispAda.xml"/>
+    
+  </node>  
+
+</launch>

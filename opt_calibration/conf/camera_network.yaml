@@ -2,7 +2,7 @@
 # Supported sensor types: 
 #  * Kinect 1st version (type: kinect1)
 #  * SwissRanger 4500 (type: sr4500)
-#  * [Work-in-progress] Stereo cameras (type: stereo)
+#  * Custom stereo pair composed of PointGrey (e.g. BlackFly) cameras (type: stereo_pg)
 #
 #network:
 #  - pc: "Cassiopea"
@@ -19,6 +19,10 @@
 #      - type: sr4500
 #        id: "SwissRanger0"
 #        ip: "192.168.1.31"
+#      - type: stereo_pg
+#        id: "blackfly_stereo"
+#        serial_left: "13310958"
+#        serial_right: "13310959"
 
 network:
   - pc: "Cassiopea"

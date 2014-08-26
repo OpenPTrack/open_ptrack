@@ -1,7 +1,7 @@
 uint8 TYPE_NOT_SET=0
 uint8 TYPE_KINECT1=1
 uint8 TYPE_SR4500=2
-uint8 TYPE_STEREO=3
+uint8 TYPE_STEREO_PG=3
 
 uint64 session_id
 
@@ -13,6 +13,10 @@ string serial
 
 # if TYPE_SR4500
 string ip
+
+# if TYPE_STEREO_PG
+string serial_left
+string serial_right
 
 ---
 
