@@ -14,4 +14,5 @@ mkdir -p ~/workspace/ros/rosbuild
 rosws init ~/workspace/ros/rosbuild ~/workspace/ros/catkin/devel
 echo "source ~/workspace/ros/rosbuild/setup.bash" >> ~/.bashrc
 echo "export KINECT_DRIVER=openni" >> ~/.bashrc
+echo "export LC_ALL=C" >> ~/.bashrc
 
