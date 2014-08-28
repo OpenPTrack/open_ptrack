@@ -2,25 +2,29 @@
 <launch>
 
   <!-- Camera ID -->
-  <arg name="camera_serial_left"      default="13310958" />
-  <arg name="camera_serial_right"     default="13310959" />
-  <arg name="stereo_name"             default="blackfly_stereo" />
+  <arg name="camera_serial_left" />
+  <arg name="camera_serial_right" />
+  <arg name="conf_file_left"          default="$(find opt_calibration)/conf/pg_default.yaml" />
+  <arg name="conf_file_right"         default="$(find opt_calibration)/conf/pg_default.yaml" />
+  <arg name="stereo_name"             default="stereo_pg" />
   <arg name="ground_from_calibration" default="false" />
   
   <arg name="camera_name"             default="$(arg stereo_name)" />
   <arg name="intermediate_topic"      default="/ground_based_people_detector_$(arg camera_name)/detections" />
   
   <!-- Camera driver -->
-  <!--include file="$(find opt_calibration)/launch/stereo.launch">
-    <arg name="stereo_name" value="$(arg stereo_name)" />
-    <arg name="camera_serial_left" value="$(arg camera_serial_left)" />
+  <include file="$(find opt_calibration)/launch/stereo_pg.launch">
+    <arg name="stereo_name"         value="$(arg stereo_name)" />
+    <arg name="camera_serial_left"  value="$(arg camera_serial_left)" />
     <arg name="camera_serial_right" value="$(arg camera_serial_right)" />
-  </include-->
+    <arg name="conf_file_left"      value="$(arg conf_file_left)" />
+    <arg name="conf_file_right"     value="$(arg conf_file_right)" />
+  </include>
   
   <!-- Stereo processing -->
-  <!--include file="$(find opt_calibration)/launch/stereo_processing.launch">
+  <include file="$(find opt_calibration)/launch/stereo_processing.launch">
     <arg name="stereo_namespace" value="$(arg stereo_name)" />
-  </include-->
+  </include>
 
   <!-- Launch ground based people detection node -->
   <node pkg="detection" type="ground_based_people_detector"
