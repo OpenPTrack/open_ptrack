@@ -15,6 +15,7 @@
     <node pkg="stereo_image_proc" type="stereo_image_proc" respawn="false" output="screen" name="stereo_image_proc">
       <param name="approximate_sync" value="true" />
       <param name="queue_size"       value="5" />
+      <rosparam command="load"       file="$(find opt_calibration)/conf/stereo_proc.yaml" />
     </node>
   </group>
 

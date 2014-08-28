@@ -1,0 +1,9 @@
+prefilter_size: 13           #    5 to 255
+prefilter_cap: 31            #    1 to 63
+correlation_window_size: 15  #    5 to 255
+min_disparity: 0             # -128 to 128
+disparity_range: 64          #   32 to 128
+uniqueness_ratio: 15.0       #  0.0 to 100.0
+texture_threshold: 10        #    0 to 10000
+speckle_size: 100            #    0 to 1000
+speckle_range: 4             #    0 to 31
