@@ -4,6 +4,8 @@
   <!-- Camera ID -->
   <arg name="device_id"               default="#1" />
   <arg name="camera_name"             default="blackfly_stereo" />
+  <arg name="conf_file_left"          default="$(find opt_calibration)/conf/pg_default.yaml" />
+  <arg name="conf_file_right"         default="$(find opt_calibration)/conf/pg_default.yaml" />
   <arg name="intermediate_topic"      default="/ground_based_people_detector_$(arg camera_name)/detections" />
   <arg name="ground_from_calibration" default="false" />
   
@@ -17,7 +19,7 @@
   <node pkg="detection" type="ground_based_people_detector"
         name="ground_based_people_detector_$(arg camera_name)" output="screen" respawn="true">
         
-    <rosparam command="load"                        file="$(find detection)/conf/ground_based_people_detector.yaml" /> 
+    <rosparam command="load"                        file="$(find detection)/conf/ground_based_people_detector_stereo_pg.yaml" /> 
     
     <param name="classifier_file"                   value="$(find detection)/data/HogSvmPCL.yaml"/>
     <param name="pointcloud_topic"                  value="/$(arg camera_name)/points2"/>
@@ -31,7 +33,7 @@
   <!-- Launch HaarDispAda Node-->
   <node pkg="detection" type="HaarDispAda174" name="HaarDispAdaNode_$(arg camera_name)" output="screen" respawn="true">
   	
-    <rosparam command="load"       file="$(find detection)/conf/haar_disp_ada_detector.yaml" /> 
+    <rosparam command="load"       file="$(find detection)/conf/haar_disp_ada_detector_stereo_pg.yaml" /> 
     
     <remap from="Color_Image"      to="/$(arg camera_name)/left/image_color"/>	
     <remap from="Disparity_Image"  to="/$(arg camera_name)/disparity"/>

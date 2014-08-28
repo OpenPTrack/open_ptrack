@@ -8,6 +8,8 @@
     <arg name="stereo_name" value="$(arg stereo_name)" />
     <arg name="camera_serial_left" value="$(arg camera_serial_left)" />
     <arg name="camera_serial_right" value="$(arg camera_serial_right)" />
+    <arg name="conf_file_left"      value="$(arg conf_file_left)" />
+    <arg name="conf_file_right"     value="$(arg conf_file_right)" />
   </include>
 
 </launch>
