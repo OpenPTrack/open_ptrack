@@ -1,0 +1,19 @@
+# Ground estimation mode - 0:manual, 1:semi-auto, 2:auto with user validation, 3:fully automatic (default 0) 
+ground_estimation_mode: 3
+lock_ground: false
+
+# Ground based people detection parameters:
+ground_based_people_detection_min_confidence: -1.75
+minimum_person_height: 1.0
+maximum_person_height: 2.3
+max_distance: 15.0
+sampling_factor: 4
+minimum_luminance: 120
+use_rgb: true
+
+# Threshold on the ratio of valid points needed for ground estimation:
+valid_points_threshold: 0.05
+
+# If true, sensor tilt angle wrt ground plane is compensated to improve people detection:
+sensor_tilt_compensation: true  
+
