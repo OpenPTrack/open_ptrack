@@ -103,15 +103,28 @@ cv::Mat confidence_image, intensity_image;
 enum { COLS = 176, ROWS = 144 };
 
 void
-cloud_cb (const PointCloudConstPtr& callback_cloud)
+cloud_cb (const PointCloud2ConstPtr& callback_cloud)
 {
+  // Point Cloud Fields:
+  //  name: x  //  offset: 0  //  datatype: 7  //  count: 1
+  //  name: y  //  offset: 4  //  datatype: 7  //  count: 1
+  //  name: z  //  offset: 8  //  datatype: 7  //  count: 1
+  //  name: intensity  //  offset: 12  //  datatype: 7  //  count: 1
+  //  name: confidence //  offset: 16  //  datatype: 7  //  count: 1
+
   // Create intensity and confidence images:
+  int intensity_offset = 12;
+  int confidence_offset = 16;
+
+  float point_step = callback_cloud->point_step;
   for (unsigned int i = 0; i < ROWS; i++)
   {
     for (unsigned int j = 0; j < COLS; j++)
     {
-      intensity_image.at<unsigned char>(i,j) = (callback_cloud->channels[0].values[j + i*COLS])/255;
-      confidence_image.at<unsigned char>(i,j) = int((callback_cloud->channels[1].values[j + i*COLS])) >> 8;
+      float * intensity_ptr = (float*)&callback_cloud->data.at(intensity_offset + (j + i*COLS)*point_step);
+      float * confidence_ptr = (float*)&callback_cloud->data.at(confidence_offset + (j + i*COLS)*point_step);
+      intensity_image.at<unsigned char>(i,j) = (unsigned char)(intensity_ptr[0] / 255);
+      confidence_image.at<unsigned char>(i,j) = (unsigned char)(confidence_ptr[0] / 255);
     }
   }
 
@@ -122,12 +135,14 @@ cloud_cb (const PointCloudConstPtr& callback_cloud)
 
   // Create point cloud XYZRGB:
   cloud->header = pcl_conversions::toPCL(callback_cloud->header);
-  for (unsigned int i = 0; i < callback_cloud->points.size(); i++)
+  for (unsigned int i = 0; i < (callback_cloud->data.size() / point_step); i++)
   {
-    cloud->points[i].x = callback_cloud->points[i].x;
-    cloud->points[i].y = callback_cloud->points[i].y;
-    cloud->points[i].z = callback_cloud->points[i].z;
-    unsigned char intensity = ((callback_cloud->channels[0].values[i])/255 - minVal) * 255 / (maxVal - minVal);
+    float * current_point_ptr = (float*)&callback_cloud->data.at(i*point_step);
+    cloud->points[i].x = current_point_ptr[0];
+    cloud->points[i].y = current_point_ptr[1];
+    cloud->points[i].z = current_point_ptr[2];
+    float * intensity_ptr = (float*)&callback_cloud->data.at(intensity_offset + i*point_step);
+    unsigned char intensity = ((intensity_ptr[0])/255 - minVal) * 255 / (maxVal - minVal);
     cloud->points[i].r = intensity;
     cloud->points[i].g = intensity;
     cloud->points[i].b = intensity;
@@ -205,7 +220,7 @@ main (int argc, char** argv)
 	int sampling_factor;
 	nh.param("sampling_factor", sampling_factor, 1);
 	std::string pointcloud_topic;
-	nh.param("pointcloud_topic", pointcloud_topic, std::string("/camera/depth_registered/points"));
+	nh.param("pointcloud_topic", pointcloud_topic, std::string("/SwissRanger/pointcloud2_raw"));
 	std::string confidence_topic;
 	nh.param("confidence_topic", confidence_topic, std::string("/SwissRanger/confidence/image_raw"));
 	std::string intensity_topic;

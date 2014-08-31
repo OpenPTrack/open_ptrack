@@ -19,7 +19,7 @@
     <rosparam command="load" file="$(find detection)/conf/ground_based_people_detector_sr_multicamera.yaml" /> 
     
     <param name="classifier_file"                   value="$(find detection)/data/HogSvmPCL.yaml"/>
-    <param name="pointcloud_topic"                  value="/$(arg camera_id)/pointcloud_raw"/>
+    <param name="pointcloud_topic"                  value="/$(arg camera_id)/pointcloud2_raw"/>
     <param name="confidence_topic"                  value="/$(arg camera_id)/confidence/image_raw"/>
     <param name="output_topic"                      value="/detector/detections"/>
     <param name="camera_info_topic"                 value="/$(arg camera_id)/camera_info"/>

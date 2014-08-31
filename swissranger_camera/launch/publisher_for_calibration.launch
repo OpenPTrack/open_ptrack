@@ -2,12 +2,12 @@
 
   <arg name="camera_id" default="SwissRanger" />
   
-  <node pkg="swissranger_camera" type="image_publisher_sr" name="$(arg camera_id)_image_publisher">
+  <node pkg="swissranger_camera" type="image_publisher_sr" name="$(arg camera_id)_image_publisher" output="screen">
     <param name="scale_factor" value="4" />
     <param name="frame_id" value="/$(arg camera_id)"/>
     <param name="image_resized_topic" value="/$(arg camera_id)/intensity/image_resized"/>
     <param name="camera_info_topic" value="/$(arg camera_id)/intensity/camera_info"/>
-    <param name="pointcloud_topic" value="/$(arg camera_id)/pointcloud_raw"/>
+    <param name="pointcloud_topic" value="/$(arg camera_id)/pointcloud2_raw"/>
   </node>
   
 </launch>
