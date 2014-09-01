@@ -10,3 +10,6 @@ With the advent of commercially available consumer depth sensors, and continued 
 The project contains numerous state-of-the-art algorithms for RGB and/or depth tracking, and has been created on top of a modular node based architecture, to support the addition and removal of different sensor streams online.
 
 OpenPTrack is led by UCLA REMAP and Open Perception. Key collaborators include the University of Padova and Electroland. Code is available under a BSD license.  Portions of the work are supported by the National Science Foundation (IIS-1323767).
+
+If you use this code, please cite:
+M. Munaro, A. Horn, R. Illum, J. Burke and R. B. Rusu. OpenPTrack: People Tracking for Heterogeneous Networks of Color-Depth Cameras. In IAS-13 Workshop Proceedings: 1st Intl. Workshop on 3D Robot Perception with Point Cloud Library, pp. 235-247, Padova, Italy, 2014. 
