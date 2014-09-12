@@ -3,6 +3,8 @@
   <!-- Sensor parameters -->
   <arg name="camera_serial_left" default="13310958" />
   <arg name="camera_serial_right" default="13310959" />
+  <arg name="conf_file_left"  default="$(find opt_calibration)/conf/pg_default.yaml" />
+  <arg name="conf_file_right" default="$(find opt_calibration)/conf/pg_default.yaml" />
   <arg name="stereo_name" default="blackfly_stereo" />
 
   <include file="$(find opt_calibration)/launch/stereo_pg.launch">
