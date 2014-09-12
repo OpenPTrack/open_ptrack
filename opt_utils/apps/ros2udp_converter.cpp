@@ -94,7 +94,11 @@ trackingCallback(const opt_msgs::TrackArray::ConstPtr& tracking_msg)
 
   /// Copy string to message buffer:
   char buf[udp_buffer_length];
-  sprintf(buf, json_string.c_str());
+  for (unsigned int i = 0; i < udp_buffer_length; i++)
+  {
+    buf[i] = 0;
+  }
+  sprintf(buf, "%s", json_string.c_str());
   udp_data.pc_pck_ = buf;         // buffer where the message is written
 
   /// Send message:
