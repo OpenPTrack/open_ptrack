@@ -62,6 +62,7 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::GroundBasedPeople
   use_rgb_ = true;
   mean_luminance_ = 0.0;
   sensor_tilt_compensation_ = false;
+  background_subtraction_ = false;
 
   // set flag values for mandatory parameters:
   sqrt_ground_coeffs_ = std::numeric_limits<float>::quiet_NaN();
@@ -155,6 +156,17 @@ template <typename PointT> void
 open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::setUseRGB (bool use_rgb)
 {
   use_rgb_ = use_rgb;
+}
+
+template <typename PointT> void
+open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::setBackground (bool background_subtraction, float background_octree_resolution, PointCloudPtr& background_cloud)
+{
+  background_subtraction_ = background_subtraction;
+
+  background_octree_ = new pcl::octree::OctreePointCloud<PointT>(background_octree_resolution);
+  background_octree_->defineBoundingBox(-max_distance_/2, -max_distance_/2, 0.0, max_distance_/2, max_distance_/2, max_distance_);
+  background_octree_->setInputCloud (background_cloud);
+  background_octree_->addPointsFromInputCloud ();
 }
 
 template <typename PointT> void
@@ -393,89 +405,110 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
   else
     PCL_INFO ("No groundplane update!\n");
 
-  // Euclidean Clustering:
-  std::vector<pcl::PointIndices> cluster_indices;
-  typename pcl::search::KdTree<PointT>::Ptr tree (new pcl::search::KdTree<PointT>);
-  tree->setInputCloud(no_ground_cloud_);
-  pcl::EuclideanClusterExtraction<PointT> ec;
-  ec.setClusterTolerance(2 * 0.06);
-  ec.setMinClusterSize(min_points_);
-  ec.setMaxClusterSize(max_points_);
-  ec.setSearchMethod(tree);
-  ec.setInputCloud(no_ground_cloud_);
-  ec.extract(cluster_indices);
-
-  // Sensor tilt compensation to improve people detection:
-  PointCloudPtr no_ground_cloud_rotated(new PointCloud);
-  Eigen::VectorXf ground_coeffs_new;
-  if(sensor_tilt_compensation_)
+  // Background Subtraction (optional):
+  if (background_subtraction_)
   {
-    // We want to rotate the point cloud so that the ground plane is parallel to the xOz plane of the sensor:
-    Eigen::Vector3f input_plane, output_plane;
-    input_plane << ground_coeffs_(0), ground_coeffs_(1), ground_coeffs_(2);
-    output_plane << 0.0, -1.0, 0.0;
-
-    Eigen::Vector3f axis = input_plane.cross(output_plane);
-    float angle = acos( input_plane.dot(output_plane)/ ( input_plane.norm()/output_plane.norm() ) );
-    transform_ = Eigen::AngleAxisf(angle, axis);
-
-    // Setting also anti_transform for later
-    anti_transform_ = transform_.inverse();
-    no_ground_cloud_rotated = rotateCloud(no_ground_cloud_, transform_);
-    ground_coeffs_new.resize(4);
-    ground_coeffs_new = rotateGround(ground_coeffs_, transform_);
-  }
-  else
-  {
-    transform_ = transform_.Identity();
-    anti_transform_ = transform_.inverse();
-    no_ground_cloud_rotated = no_ground_cloud_;
-    ground_coeffs_new = ground_coeffs_;
-  }
-
-  // Head based sub-clustering //
-  pcl::people::HeadBasedSubclustering<PointT> subclustering;
-  subclustering.setInputCloud(no_ground_cloud_rotated);
-  subclustering.setGround(ground_coeffs_new);
-  subclustering.setInitialClusters(cluster_indices);
-  subclustering.setHeightLimits(min_height_, max_height_);
-  subclustering.setMinimumDistanceBetweenHeads(heads_minimum_distance_);
-  subclustering.setSensorPortraitOrientation(vertical_);
-  subclustering.subcluster(clusters);
-
-  for (unsigned int i = 0; i < rgb_image_->points.size(); i++)
-  {
-    if ((rgb_image_->points[i].r < 0) | (rgb_image_->points[i].r > 255) | isnan(rgb_image_->points[i].r))
+    PointCloudPtr foreground_cloud(new PointCloud);
+    for (unsigned int i = 0; i < no_ground_cloud_->points.size(); i++)
     {
-      std::cout << "ERROR!" << std::endl;
+      if (not (background_octree_->isVoxelOccupiedAtPoint(no_ground_cloud_->points[i].x, no_ground_cloud_->points[i].y, no_ground_cloud_->points[i].z)))
+      {
+        foreground_cloud->points.push_back(no_ground_cloud_->points[i]);
+      }
     }
+    no_ground_cloud_ = foreground_cloud;
   }
 
-  if (use_rgb_) // if RGB information can be used
+  if (no_ground_cloud_->points.size() > 0)
   {
-    // Person confidence evaluation with HOG+SVM:
-    if (vertical_)  // Rotate the image if the camera is vertical
-    {
-      swapDimensions(rgb_image_);
-    }
-    for(typename std::vector<pcl::people::PersonCluster<PointT> >::iterator it = clusters.begin(); it != clusters.end(); ++it)
-    {
-      //Evaluate confidence for the current PersonCluster:
-      Eigen::Vector3f centroid = intrinsics_matrix_ * (anti_transform_ * it->getTCenter());
-      centroid /= centroid(2);
-      Eigen::Vector3f top = intrinsics_matrix_ * (anti_transform_ * it->getTTop());
-      top /= top(2);
-      Eigen::Vector3f bottom = intrinsics_matrix_ * (anti_transform_ * it->getTBottom());
-      bottom /= bottom(2);
+    // Euclidean Clustering:
+    std::vector<pcl::PointIndices> cluster_indices;
+    typename pcl::search::KdTree<PointT>::Ptr tree (new pcl::search::KdTree<PointT>);
+    tree->setInputCloud(no_ground_cloud_);
+    pcl::EuclideanClusterExtraction<PointT> ec;
+    ec.setClusterTolerance(2 * 0.06);
+    ec.setMinClusterSize(min_points_);
+    ec.setMaxClusterSize(max_points_);
+    ec.setSearchMethod(tree);
+    ec.setInputCloud(no_ground_cloud_);
+    ec.extract(cluster_indices);
 
-      it->setPersonConfidence(person_classifier_.evaluate(rgb_image_, bottom, top, centroid, vertical_));
-    }
-  }
-  else
-  {
-    for(typename std::vector<pcl::people::PersonCluster<PointT> >::iterator it = clusters.begin(); it != clusters.end(); ++it)
+    // Sensor tilt compensation to improve people detection:
+    PointCloudPtr no_ground_cloud_rotated(new PointCloud);
+    Eigen::VectorXf ground_coeffs_new;
+    if(sensor_tilt_compensation_)
     {
-      it->setPersonConfidence(-100.0);
+      // We want to rotate the point cloud so that the ground plane is parallel to the xOz plane of the sensor:
+      Eigen::Vector3f input_plane, output_plane;
+      input_plane << ground_coeffs_(0), ground_coeffs_(1), ground_coeffs_(2);
+      output_plane << 0.0, -1.0, 0.0;
+
+      Eigen::Vector3f axis = input_plane.cross(output_plane);
+      float angle = acos( input_plane.dot(output_plane)/ ( input_plane.norm()/output_plane.norm() ) );
+      transform_ = Eigen::AngleAxisf(angle, axis);
+
+      // Setting also anti_transform for later
+      anti_transform_ = transform_.inverse();
+      no_ground_cloud_rotated = rotateCloud(no_ground_cloud_, transform_);
+      ground_coeffs_new.resize(4);
+      ground_coeffs_new = rotateGround(ground_coeffs_, transform_);
+    }
+    else
+    {
+      transform_ = transform_.Identity();
+      anti_transform_ = transform_.inverse();
+      no_ground_cloud_rotated = no_ground_cloud_;
+      ground_coeffs_new = ground_coeffs_;
+    }
+
+    // To avoid PCL warning:
+    if (cluster_indices.size() == 0)
+      cluster_indices.push_back(pcl::PointIndices());
+
+    // Head based sub-clustering //
+    pcl::people::HeadBasedSubclustering<PointT> subclustering;
+    subclustering.setInputCloud(no_ground_cloud_rotated);
+    subclustering.setGround(ground_coeffs_new);
+    subclustering.setInitialClusters(cluster_indices);
+    subclustering.setHeightLimits(min_height_, max_height_);
+    subclustering.setMinimumDistanceBetweenHeads(heads_minimum_distance_);
+    subclustering.setSensorPortraitOrientation(vertical_);
+    subclustering.subcluster(clusters);
+
+    for (unsigned int i = 0; i < rgb_image_->points.size(); i++)
+    {
+      if ((rgb_image_->points[i].r < 0) | (rgb_image_->points[i].r > 255) | isnan(rgb_image_->points[i].r))
+      {
+        std::cout << "ERROR!" << std::endl;
+      }
+    }
+
+    if (use_rgb_) // if RGB information can be used
+    {
+      // Person confidence evaluation with HOG+SVM:
+      if (vertical_)  // Rotate the image if the camera is vertical
+      {
+        swapDimensions(rgb_image_);
+      }
+      for(typename std::vector<pcl::people::PersonCluster<PointT> >::iterator it = clusters.begin(); it != clusters.end(); ++it)
+      {
+        //Evaluate confidence for the current PersonCluster:
+        Eigen::Vector3f centroid = intrinsics_matrix_ * (anti_transform_ * it->getTCenter());
+        centroid /= centroid(2);
+        Eigen::Vector3f top = intrinsics_matrix_ * (anti_transform_ * it->getTTop());
+        top /= top(2);
+        Eigen::Vector3f bottom = intrinsics_matrix_ * (anti_transform_ * it->getTBottom());
+        bottom /= bottom(2);
+
+        it->setPersonConfidence(person_classifier_.evaluate(rgb_image_, bottom, top, centroid, vertical_));
+      }
+    }
+    else
+    {
+      for(typename std::vector<pcl::people::PersonCluster<PointT> >::iterator it = clusters.begin(); it != clusters.end(); ++it)
+      {
+        it->setPersonConfidence(-100.0);
+      }
     }
   }
 

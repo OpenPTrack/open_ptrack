@@ -2,6 +2,11 @@
 ground_estimation_mode: 3
 lock_ground: false
 
+# Background subtraction:
+background_subtraction: false
+background_resolution: 0.3
+background_seconds: 3.0
+
 # Ground based people detection parameters:
 ground_based_people_detection_min_confidence: -1.75
 minimum_person_height: 1.0

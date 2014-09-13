@@ -50,6 +50,8 @@
 #include <pcl/people/person_cluster.h>
 #include <pcl/people/head_based_subcluster.h>
 #include <pcl/common/transforms.h>
+#include <pcl/octree/octree.h>
+#include <pcl/visualization/pcl_visualizer.h>
 
 #include <open_ptrack/detection/person_classifier.h>
 
@@ -195,6 +197,16 @@ namespace open_ptrack
          */
         void
         setSensorTiltCompensation ( bool sensor_tilt_compensation);
+
+        /**
+         * \brief Set background subtraction parameters
+         *
+         * \param[in] background_subtraction True: background subtraction is performed, false: background subtraction is not performed.
+         * \param[in] background_octree_resolution Resolution of the octree.
+         * \param[in] background_cloud Point cloud containing the background.
+         */
+        void
+        setBackground ( bool background_subtraction, float background_octree_resolution, PointCloudPtr& background_cloud);
 
         /**
          * \brief Get minimum and maximum allowed height for a person cluster.
@@ -366,6 +378,12 @@ namespace open_ptrack
 
         /** \brief transforms used for compensating sensor tilt with respect to the ground plane */
         Eigen::Affine3f transform_, anti_transform_;
+
+        /** \brief Flag stating if background subtraction should be applied or not */
+        bool background_subtraction_;
+
+        /** \brief Octree representing the background */
+        pcl::octree::OctreePointCloud<PointT> *background_octree_;
 
     };
   } /* namespace detection */

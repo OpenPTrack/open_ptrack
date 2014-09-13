@@ -55,6 +55,7 @@
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/sample_consensus/sac_model_plane.h>
 #include <pcl_conversions/pcl_conversions.h>
+#include <pcl/io/pcd_io.h>
 
 // Open PTrack includes:
 #include <open_ptrack/detection/ground_segmentation.h>
@@ -241,6 +242,12 @@ main (int argc, char** argv)
 	nh.param("sensor_tilt_compensation", sensor_tilt_compensation, false);
 	double valid_points_threshold;
 	nh.param("valid_points_threshold", valid_points_threshold, 0.3);
+	bool background_subtraction;
+	nh.param("background_subtraction", background_subtraction, false);
+	double background_octree_resolution;
+	nh.param("background_resolution", background_octree_resolution, 0.3);
+	double background_seconds;
+	nh.param("background_seconds", background_seconds, 3.0);
 
 	// Fixed parameters:
 	float voxel_size = 0.06;
@@ -307,19 +314,78 @@ main (int argc, char** argv)
 	  if (!ground_estimator.tooManyLowConfidencePoints(confidence_image, sr_conf_threshold, 1.0 - valid_points_threshold))
 	  { // A point cloud is valid if the ratio #NaN / #valid points is lower than a threshold
 	    first_valid_frame = true;
-	    std::cout << "Valid frame found! Ground plane initialization starting..." << std::endl;
+	    std::cout << "Valid frame found!" << std::endl;
 	  }
 	  else
 	  {
 	    std::cout << "No valid frame. Move the camera to a better position..." << std::endl;
 	  }
 	}
+	std::cout << std::endl;
+
+	// Initialization for background subtraction:
+	PointCloudT::Ptr cloud_to_process(new PointCloudT);
+	PointCloudT::Ptr background_cloud (new PointCloudT);
+	std::string frame_id = cloud->header.frame_id;
+	if (background_subtraction)
+	{
+	  std::cout << "Background subtraction enabled." << std::endl;
+
+	  // Try to load the background from file:
+	  if (pcl::io::loadPCDFile<PointT> ("/tmp/background_" + frame_id.substr(1, frame_id.length()-1) + ".pcd", *background_cloud) == -1)
+	  {
+	    // File not found, then background acquisition:
+	    std::cout << "Background acquisition..." << std::flush;
+
+	    // Create background cloud:
+	    int max_background_frames = int(background_seconds * rate_value);
+	    background_cloud->header = cloud->header;
+	    for (unsigned int i = 0; i < max_background_frames; i++)
+	    {
+	      *cloud_to_process = *cloud;
+
+	      // Remove low confidence points:
+	      removeLowConfidencePoints(confidence_image, sr_conf_threshold, cloud_to_process);
+
+	      // Voxel grid filtering:
+	      PointCloudT::Ptr cloud_filtered(new PointCloudT);
+	      pcl::VoxelGrid<PointT> voxel_grid_filter_object;
+	      voxel_grid_filter_object.setInputCloud(cloud_to_process);
+	      voxel_grid_filter_object.setLeafSize (voxel_size, voxel_size, voxel_size);
+	      voxel_grid_filter_object.filter (*cloud_filtered);
+
+	      *background_cloud += *cloud_filtered;
+	      ros::spinOnce();
+	      rate.sleep();
+	    }
+
+	    // Voxel grid filtering:
+	    PointCloudT::Ptr cloud_filtered(new PointCloudT);
+	    pcl::VoxelGrid<PointT> voxel_grid_filter_object;
+	    voxel_grid_filter_object.setInputCloud(background_cloud);
+	    voxel_grid_filter_object.setLeafSize (voxel_size, voxel_size, voxel_size);
+	    voxel_grid_filter_object.filter (*cloud_filtered);
+
+	    background_cloud = cloud_filtered;
+
+	    // Background saving:
+	    pcl::io::savePCDFileASCII ("/tmp/background_" + frame_id.substr(1, frame_id.length()-1) + ".pcd", *background_cloud);
+
+	    std::cout << "done." << std::endl << std::endl;
+	  }
+	  else
+	  {
+	    std::cout << "Background read from file." << std::endl << std::endl;
+	  }
+	}
 
 	// Remove low confidence points:
-	removeLowConfidencePoints(confidence_image, sr_conf_threshold, cloud);
+	*cloud_to_process = *cloud;
+	removeLowConfidencePoints(confidence_image, sr_conf_threshold, cloud_to_process);
 
 	// Ground estimation:
-	ground_estimator.setInputCloud(cloud);
+	std::cout << "Ground plane initialization starting..." << std::endl;
+  ground_estimator.setInputCloud(cloud_to_process);
 	Eigen::VectorXf ground_coeffs = ground_estimator.compute();
 
 	if (ground_from_extrinsic_calibration)
@@ -350,6 +416,7 @@ main (int argc, char** argv)
 	      std::cout << "Chosen ground plane estimate obtained from calibration." << std::endl;
 	  }
 	}
+	std::cout << std::endl;
 
 	// Create classifier for people detection:
 	open_ptrack::detection::PersonClassifier<pcl::RGB> person_classifier;
@@ -365,6 +432,8 @@ main (int argc, char** argv)
 	people_detector.setSamplingFactor(sampling_factor);              // set sampling factor
 	people_detector.setUseRGB(use_rgb);                                // set if RGB should be used or not
 	people_detector.setSensorTiltCompensation(sensor_tilt_compensation);             // enable point cloud rotation correction
+	if (background_subtraction)
+	  people_detector.setBackground(background_subtraction, background_octree_resolution, background_cloud);
 
 //	// Initialize new viewer:
 //	pcl::visualization::PCLVisualizer viewer("PCL Viewer");          // viewer initialization
@@ -377,15 +446,17 @@ main (int argc, char** argv)
 		{
 			new_cloud_available_flag = false;
 
+			*cloud_to_process = *cloud;
+
 			// Convert PCL cloud header to ROS header:
-			std_msgs::Header cloud_header = pcl_conversions::fromPCL(cloud->header);
+			std_msgs::Header cloud_header = pcl_conversions::fromPCL(cloud_to_process->header);
 
 			// Remove low confidence points:
-			removeLowConfidencePoints(confidence_image, sr_conf_threshold, cloud);
+			removeLowConfidencePoints(confidence_image, sr_conf_threshold, cloud_to_process);
 
 			// Perform people detection on the new cloud:
 			std::vector<pcl::people::PersonCluster<PointT> > clusters;   // vector containing persons clusters
-			people_detector.setInputCloud(cloud);
+			people_detector.setInputCloud(cloud_to_process);
 			people_detector.setGround(ground_coeffs);                    // set floor coefficients
       people_detector.compute(clusters);                           // perform people detection
 
@@ -482,6 +553,14 @@ main (int argc, char** argv)
 		ros::spinOnce();
 		rate.sleep();
 	}
+
+	// Delete background file from disk:
+	if (background_subtraction)
+	{
+	  std::string filename = "/tmp/background_" + frame_id.substr(1, frame_id.length()-1) + ".pcd";
+	  remove( filename.c_str() );
+	}
+
 	return 0;
 }
 
