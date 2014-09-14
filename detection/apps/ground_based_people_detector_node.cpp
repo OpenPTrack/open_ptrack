@@ -80,6 +80,7 @@ bool new_cloud_available_flag = false;
 PointCloudT::Ptr cloud(new PointCloudT);
 bool intrinsics_already_set = false;
 Eigen::Matrix3f intrinsics_matrix;
+bool update_background = false;
 
 void
 cloud_cb (const PointCloudT::ConstPtr& callback_cloud)
@@ -98,6 +99,52 @@ cameraInfoCallback (const sensor_msgs::CameraInfo::ConstPtr & msg)
         msg->K.elems[6], msg->K.elems[7], msg->K.elems[8];
     intrinsics_already_set = true;
   }
+}
+
+void
+updateBackgroundCallback (const std_msgs::String::ConstPtr & msg)
+{
+  if (msg->data == "update")
+  {
+    update_background = true;
+  }
+}
+
+void
+computeBackgroundCloud (int frames, float voxel_size, std::string frame_id, ros::Rate rate, PointCloudT::Ptr& background_cloud)
+{
+  std::cout << "Background acquisition..." << std::flush;
+
+  // Create background cloud:
+  background_cloud->header = cloud->header;
+  background_cloud->points.clear();
+  for (unsigned int i = 0; i < frames; i++)
+  {
+    // Voxel grid filtering:
+    PointCloudT::Ptr cloud_filtered(new PointCloudT);
+    pcl::VoxelGrid<PointT> voxel_grid_filter_object;
+    voxel_grid_filter_object.setInputCloud(cloud);
+    voxel_grid_filter_object.setLeafSize (voxel_size, voxel_size, voxel_size);
+    voxel_grid_filter_object.filter (*cloud_filtered);
+
+    *background_cloud += *cloud_filtered;
+    ros::spinOnce();
+    rate.sleep();
+  }
+
+  // Voxel grid filtering:
+  PointCloudT::Ptr cloud_filtered(new PointCloudT);
+  pcl::VoxelGrid<PointT> voxel_grid_filter_object;
+  voxel_grid_filter_object.setInputCloud(background_cloud);
+  voxel_grid_filter_object.setLeafSize (voxel_size, voxel_size, voxel_size);
+  voxel_grid_filter_object.filter (*cloud_filtered);
+
+  background_cloud = cloud_filtered;
+
+  // Background saving:
+  pcl::io::savePCDFileASCII ("/tmp/background_" + frame_id.substr(1, frame_id.length()-1) + ".pcd", *background_cloud);
+
+  std::cout << "done." << std::endl << std::endl;
 }
 
 int
@@ -143,12 +190,14 @@ main (int argc, char** argv)
   nh.param("sensor_tilt_compensation", sensor_tilt_compensation, false);
   double valid_points_threshold;
   nh.param("valid_points_threshold", valid_points_threshold, 0.2);
-  bool background_subtraction;
+  bool background_subtraction;  // if true, background subtraction is performed
   nh.param("background_subtraction", background_subtraction, false);
-  double background_octree_resolution;
+  double background_octree_resolution;  // Voxel resolution of the octree used to represent the background
   nh.param("background_resolution", background_octree_resolution, 0.3);
-  double background_seconds;
+  double background_seconds; // Number of seconds used to acquire the background
   nh.param("background_seconds", background_seconds, 3.0);
+  std::string update_background_topic;  // Topic where the background update message is published/read
+  nh.param("update_background_topic", update_background_topic, std::string("/background_update"));
 
   // Fixed parameters:
   float voxel_size = 0.06;
@@ -163,6 +212,7 @@ main (int argc, char** argv)
   // Subscribers:
   ros::Subscriber sub = nh.subscribe(pointcloud_topic, 1, cloud_cb);
   ros::Subscriber camera_info_sub = nh.subscribe(camera_info_topic, 1, cameraInfoCallback);
+  ros::Subscriber update_background_sub = nh.subscribe(update_background_topic, 1, updateBackgroundCallback);
 
   // Publishers:
   ros::Publisher detection_pub;
@@ -202,6 +252,7 @@ main (int argc, char** argv)
   // Initialization for background subtraction:
   PointCloudT::Ptr background_cloud (new PointCloudT);
   std::string frame_id = cloud->header.frame_id;
+  int max_background_frames = int(background_seconds * rate_value);
   if (background_subtraction)
   {
     std::cout << "Background subtraction enabled." << std::endl;
@@ -210,38 +261,7 @@ main (int argc, char** argv)
     if (pcl::io::loadPCDFile<PointT> ("/tmp/background_" + frame_id.substr(1, frame_id.length()-1) + ".pcd", *background_cloud) == -1)
     {
       // File not found, then background acquisition:
-      std::cout << "Background acquisition..." << std::flush;
-
-      // Create background cloud:
-      int max_background_frames = int(background_seconds * rate_value);
-      background_cloud->header = cloud->header;
-      for (unsigned int i = 0; i < max_background_frames; i++)
-      {
-        // Voxel grid filtering:
-        PointCloudT::Ptr cloud_filtered(new PointCloudT);
-        pcl::VoxelGrid<PointT> voxel_grid_filter_object;
-        voxel_grid_filter_object.setInputCloud(cloud);
-        voxel_grid_filter_object.setLeafSize (voxel_size, voxel_size, voxel_size);
-        voxel_grid_filter_object.filter (*cloud_filtered);
-
-        *background_cloud += *cloud_filtered;
-        ros::spinOnce();
-        rate.sleep();
-      }
-
-      // Voxel grid filtering:
-      PointCloudT::Ptr cloud_filtered(new PointCloudT);
-      pcl::VoxelGrid<PointT> voxel_grid_filter_object;
-      voxel_grid_filter_object.setInputCloud(background_cloud);
-      voxel_grid_filter_object.setLeafSize (voxel_size, voxel_size, voxel_size);
-      voxel_grid_filter_object.filter (*cloud_filtered);
-
-      background_cloud = cloud_filtered;
-
-      // Background saving:
-      pcl::io::savePCDFileASCII ("/tmp/background_" + frame_id.substr(1, frame_id.length()-1) + ".pcd", *background_cloud);
-
-      std::cout << "done." << std::endl << std::endl;
+      computeBackgroundCloud (max_background_frames, voxel_size, frame_id, rate, background_cloud);
     }
     else
     {
@@ -312,6 +332,20 @@ main (int argc, char** argv)
 
       // Convert PCL cloud header to ROS header:
       std_msgs::Header cloud_header = pcl_conversions::fromPCL(cloud->header);
+
+      // If requested, update background:
+      if (update_background)
+      {
+        if (not background_subtraction)
+        {
+          std::cout << "Background subtraction enabled." << std::endl;
+          background_subtraction = true;
+        }
+        computeBackgroundCloud (max_background_frames, voxel_size, frame_id, rate, background_cloud);
+        people_detector.setBackground (background_subtraction, background_octree_resolution, background_cloud);
+
+        update_background = false;
+      }
 
       // Perform people detection on the new cloud:
       std::vector<pcl::people::PersonCluster<PointT> > clusters;   // vector containing persons clusters

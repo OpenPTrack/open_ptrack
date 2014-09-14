@@ -98,6 +98,7 @@ PointCloudT::Ptr cloud(new PointCloudT);
 bool intrinsics_already_set = false;
 Eigen::Matrix3f intrinsics_matrix;
 bool debug;
+bool update_background = false;
 
 cv::Mat confidence_image, intensity_image;
 
@@ -197,6 +198,57 @@ void removeLowConfidencePoints(cv::Mat& confidence_image, int threshold, PointCl
   cloud->is_dense = false;
 }
 
+void
+updateBackgroundCallback (const std_msgs::String::ConstPtr & msg)
+{
+  if (msg->data == "update")
+  {
+    update_background = true;
+  }
+}
+
+void
+computeBackgroundCloud (int frames, float voxel_size, int sr_conf_threshold, std::string frame_id, ros::Rate rate, PointCloudT::Ptr& background_cloud)
+{
+  std::cout << "Background acquisition..." << std::flush;
+
+  // Create background cloud:
+  PointCloudT::Ptr cloud_to_process(new PointCloudT);
+  background_cloud->header = cloud->header;
+  for (unsigned int i = 0; i < frames; i++)
+  {
+    *cloud_to_process = *cloud;
+
+    // Remove low confidence points:
+    removeLowConfidencePoints(confidence_image, sr_conf_threshold, cloud_to_process);
+
+    // Voxel grid filtering:
+    PointCloudT::Ptr cloud_filtered(new PointCloudT);
+    pcl::VoxelGrid<PointT> voxel_grid_filter_object;
+    voxel_grid_filter_object.setInputCloud(cloud_to_process);
+    voxel_grid_filter_object.setLeafSize (voxel_size, voxel_size, voxel_size);
+    voxel_grid_filter_object.filter (*cloud_filtered);
+
+    *background_cloud += *cloud_filtered;
+    ros::spinOnce();
+    rate.sleep();
+  }
+
+  // Voxel grid filtering:
+  PointCloudT::Ptr cloud_filtered(new PointCloudT);
+  pcl::VoxelGrid<PointT> voxel_grid_filter_object;
+  voxel_grid_filter_object.setInputCloud(background_cloud);
+  voxel_grid_filter_object.setLeafSize (voxel_size, voxel_size, voxel_size);
+  voxel_grid_filter_object.filter (*cloud_filtered);
+
+  background_cloud = cloud_filtered;
+
+  // Background saving:
+  pcl::io::savePCDFileASCII ("/tmp/background_" + frame_id.substr(1, frame_id.length()-1) + ".pcd", *background_cloud);
+
+  std::cout << "done." << std::endl << std::endl;
+}
+
 int
 main (int argc, char** argv)
 {
@@ -248,6 +300,8 @@ main (int argc, char** argv)
 	nh.param("background_resolution", background_octree_resolution, 0.3);
 	double background_seconds;
 	nh.param("background_seconds", background_seconds, 3.0);
+	std::string update_background_topic;  // Topic where the background update message is published/read
+	nh.param("update_background_topic", update_background_topic, std::string("/background_update"));
 
 	// Fixed parameters:
 	float voxel_size = 0.06;
@@ -264,6 +318,7 @@ main (int argc, char** argv)
 
 	// Subscribers:
 	ros::Subscriber sub = nh.subscribe(pointcloud_topic, 1, cloud_cb);
+	ros::Subscriber update_background_sub = nh.subscribe(update_background_topic, 1, updateBackgroundCallback);
 
 	// Publishers:
 	ros::Publisher detection_pub;
@@ -324,9 +379,9 @@ main (int argc, char** argv)
 	std::cout << std::endl;
 
 	// Initialization for background subtraction:
-	PointCloudT::Ptr cloud_to_process(new PointCloudT);
 	PointCloudT::Ptr background_cloud (new PointCloudT);
 	std::string frame_id = cloud->header.frame_id;
+	int max_background_frames = int(background_seconds * rate_value);
 	if (background_subtraction)
 	{
 	  std::cout << "Background subtraction enabled." << std::endl;
@@ -335,43 +390,7 @@ main (int argc, char** argv)
 	  if (pcl::io::loadPCDFile<PointT> ("/tmp/background_" + frame_id.substr(1, frame_id.length()-1) + ".pcd", *background_cloud) == -1)
 	  {
 	    // File not found, then background acquisition:
-	    std::cout << "Background acquisition..." << std::flush;
-
-	    // Create background cloud:
-	    int max_background_frames = int(background_seconds * rate_value);
-	    background_cloud->header = cloud->header;
-	    for (unsigned int i = 0; i < max_background_frames; i++)
-	    {
-	      *cloud_to_process = *cloud;
-
-	      // Remove low confidence points:
-	      removeLowConfidencePoints(confidence_image, sr_conf_threshold, cloud_to_process);
-
-	      // Voxel grid filtering:
-	      PointCloudT::Ptr cloud_filtered(new PointCloudT);
-	      pcl::VoxelGrid<PointT> voxel_grid_filter_object;
-	      voxel_grid_filter_object.setInputCloud(cloud_to_process);
-	      voxel_grid_filter_object.setLeafSize (voxel_size, voxel_size, voxel_size);
-	      voxel_grid_filter_object.filter (*cloud_filtered);
-
-	      *background_cloud += *cloud_filtered;
-	      ros::spinOnce();
-	      rate.sleep();
-	    }
-
-	    // Voxel grid filtering:
-	    PointCloudT::Ptr cloud_filtered(new PointCloudT);
-	    pcl::VoxelGrid<PointT> voxel_grid_filter_object;
-	    voxel_grid_filter_object.setInputCloud(background_cloud);
-	    voxel_grid_filter_object.setLeafSize (voxel_size, voxel_size, voxel_size);
-	    voxel_grid_filter_object.filter (*cloud_filtered);
-
-	    background_cloud = cloud_filtered;
-
-	    // Background saving:
-	    pcl::io::savePCDFileASCII ("/tmp/background_" + frame_id.substr(1, frame_id.length()-1) + ".pcd", *background_cloud);
-
-	    std::cout << "done." << std::endl << std::endl;
+	    computeBackgroundCloud (max_background_frames, voxel_size, sr_conf_threshold, frame_id, rate, background_cloud);
 	  }
 	  else
 	  {
@@ -380,6 +399,7 @@ main (int argc, char** argv)
 	}
 
 	// Remove low confidence points:
+	PointCloudT::Ptr cloud_to_process(new PointCloudT);
 	*cloud_to_process = *cloud;
 	removeLowConfidencePoints(confidence_image, sr_conf_threshold, cloud_to_process);
 
@@ -446,10 +466,25 @@ main (int argc, char** argv)
 		{
 			new_cloud_available_flag = false;
 
-			*cloud_to_process = *cloud;
-
 			// Convert PCL cloud header to ROS header:
 			std_msgs::Header cloud_header = pcl_conversions::fromPCL(cloud_to_process->header);
+
+			// If requested, update background:
+			if (update_background)
+			{
+			  if (not background_subtraction)
+			  {
+			    std::cout << "Background subtraction enabled." << std::endl;
+			    background_subtraction = true;
+			  }
+			  computeBackgroundCloud (max_background_frames, voxel_size, sr_conf_threshold, frame_id, rate, background_cloud);
+			  people_detector.setBackground (background_subtraction, background_octree_resolution, background_cloud);
+
+			  update_background = false;
+			}
+
+			// Current cloud to process:
+			*cloud_to_process = *cloud;
 
 			// Remove low confidence points:
 			removeLowConfidencePoints(confidence_image, sr_conf_threshold, cloud_to_process);

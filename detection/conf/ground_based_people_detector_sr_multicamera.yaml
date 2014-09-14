@@ -1,28 +1,39 @@
+#######################
+## Ground estimation ##
+#######################
 # Ground estimation mode - 0:manual, 1:semi-auto, 2:auto with user validation, 3:fully automatic (default 0) 
 ground_estimation_mode: 3
+# Flag that locks the ground plane update:
 lock_ground: false
-
-# Background subtraction:
-background_subtraction: false
-background_resolution: 0.3
-background_seconds: 3.0
-
-# Ground based people detection parameters:
-ground_based_people_detection_min_confidence: -1.75
-minimum_person_height: 0.8
-maximum_person_height: 2.3
-max_distance: 15.0
-sampling_factor: 1
-use_rgb: true 
-
 # Threshold on the ratio of valid points needed for ground estimation:
 valid_points_threshold: 0.0
 
+############################
+## Background subtraction ##
+############################
+# Flag enabling/disabling background subtraction:
+background_subtraction: false
+# Resolution of the octree representing the background:
+background_resolution: 0.3
+# Seconds to use to learn the background:
+background_seconds: 3.0
+
+##############################################
+## Ground based people detection parameters ##
+##############################################
+# Minimum detection confidence:
+ground_based_people_detection_min_confidence: -1.75
+# Minimum person height:
+minimum_person_height: 0.8
+# Maximum person height:
+maximum_person_height: 2.3
+# Threshold on distance from the sensor:
+max_distance: 15.0
+# Point cloud downsampling factor:
+sampling_factor: 1
+# Flag stating if classifiers based on RGB image should be used or not:
+use_rgb: true 
 # If true, sensor tilt angle wrt ground plane is compensated to improve people detection:
 sensor_tilt_compensation: true 
-
-# For auto-exposure (13 fps)
+# Threshold on SwissRanger depth confidence:
 sr_conf_threshold: 180
-
-# For integration_time: 40 (30 fps)
-#sr_conf_threshold: 85

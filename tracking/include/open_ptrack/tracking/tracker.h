@@ -81,7 +81,7 @@ namespace open_ptrack
         /** \brief Minimum confidence of detections sent to tracking */
         const double min_confidence_detections_;
 
-        /** \brief Minimum number of detection<->track association needed for validating a track */
+        /** \brief Minimum number of detection<->track associations needed for validating a track */
         const int detections_to_validate_;
 
         /** \brief Time after which a not visible track becomes old */
