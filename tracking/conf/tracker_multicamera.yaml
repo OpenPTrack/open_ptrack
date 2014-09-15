@@ -61,13 +61,16 @@ target:
 debug:
   active: true
 output:
-  # Flag stating if a point cloud containing tracks trajectories (visible in RViz) should be created:
+  # Flag stating if a point cloud containing track trajectories (visible in RViz) should be created:
   history_pointcloud: true
-  # Dimension of the point cloud containing tracks trajectories:
+  # Dimension of the point cloud containing track trajectories:
   history_size: 500
   # Flag stating if a spheric marker (with number) for every track (visible in RViz) should be created:
   markers: true
   # Flag stating if tracking results should be sent over the network:
   tracking_results: true
-
+  # Flag stating if markers and a point cloud containing detection trajectories (visible in RViz) should be created:
+  detection_debug: true
+  # Dimension of the point cloud containing detection trajectories:
+  detection_history_size: 500
 

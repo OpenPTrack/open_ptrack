@@ -67,26 +67,68 @@ tf::TransformListener* tf_listener;
 std::string world_frame_id;
 bool output_history_pointcloud;
 int output_history_size;
+int detection_history_size;
 bool output_markers;
 bool output_image_rgb;
 bool output_tracking_results;
+bool output_detection_results;  // Enables/disables the publishing of detection positions to be visualized in RViz
 bool vertical;
 ros::Publisher results_pub;
 ros::Publisher marker_pub_tmp;
 ros::Publisher marker_pub;
 ros::Publisher pointcloud_pub;
+ros::Publisher detection_marker_pub;
+ros::Publisher detection_trajectory_pub;
 size_t starting_index;
+size_t detection_insert_index;
 tf::Transform camera_frame_to_world_transform;
 tf::Transform world_to_camera_frame_transform;
 bool extrinsic_calibration;
 double period;
 open_ptrack::tracking::Tracker* tracker;
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr history_pointcloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+pcl::PointCloud<pcl::PointXYZRGB>::Ptr detection_history_pointcloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 bool swissranger;
 double min_confidence;
 double min_confidence_sr;
 double min_confidence_detections;
 double min_confidence_detections_sr;
+std::vector<cv::Vec3f> camera_colors;     // vector containing colors to use to identify cameras in the network
+std::map<std::string, int> color_map;     // map between camera frame_id and color
+
+/**
+ * \brief Create marker to be visualized in RViz
+ *
+ * \param[in] id The marker ID.
+ * \param[in] frame_id The marker reference frame.
+ * \param[in] position The marker position.
+ * \param[in] color The marker color.
+ */
+visualization_msgs::Marker
+createMarker (int id, std::string frame_id, ros::Time stamp, Eigen::Vector3d position, cv::Vec3f color)
+{
+  visualization_msgs::Marker marker;
+
+  marker.header.frame_id = world_frame_id;
+  marker.header.stamp = stamp;
+  marker.ns = frame_id.substr(1, frame_id.length()-1);
+  marker.id = id;
+  marker.type = visualization_msgs::Marker::SPHERE;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.pose.position.x = position(0);
+  marker.pose.position.y = position(1);
+  marker.pose.position.z = position(2);
+  marker.scale.x = 0.1;
+  marker.scale.y = 0.1;
+  marker.scale.z = 0.1;
+  marker.color.r = color(0);
+  marker.color.g = color(1);
+  marker.color.b = color(2);
+  marker.color.a = 1.0;
+  marker.lifetime = ros::Duration(0.2);
+
+  return marker;
+}
 
 /**
  * \brief Read the DetectionArray message and use the detections for creating/updating/deleting tracks
@@ -220,6 +262,49 @@ detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
             output_history_size);
         pointcloud_pub.publish(history_pointcloud);
       }
+
+      // Create message for showing detection positions in RViz:
+      if (output_detection_results)
+      {
+        visualization_msgs::MarkerArray::Ptr marker_msg(new visualization_msgs::MarkerArray);
+        detection_history_pointcloud->header.stamp = frame_time.toNSec() / 1e3;  // Convert from ns to us
+        detection_history_pointcloud->header.frame_id = world_frame_id;
+        for(unsigned int i = 0; i < detections_vector.size(); i++)
+        {
+          std::string frame_id = detections_vector[i].getSource()->getFrameId();
+          Eigen::Vector3d centroid = detections_vector[i].getWorldCentroid();
+
+          // Define color:
+          int color_index;
+          std::map<std::string, int>::iterator colormap_iterator = color_map.find(frame_id);
+          if (colormap_iterator != color_map.end())
+          { // camera already present
+            color_index = colormap_iterator->second;
+          }
+          else
+          { // camera not present
+            color_index = color_map.size();
+            color_map.insert(std::pair<std::string, int> (frame_id, color_map.size()));
+          }
+
+          // Create marker and add it to message:
+          visualization_msgs::Marker marker = createMarker (i, frame_id, frame_time, centroid, camera_colors[color_index]);
+          marker_msg->markers.push_back(marker);
+
+          // Point cloud:
+          pcl::PointXYZRGB point;
+          point.x = marker.pose.position.x;
+          point.y = marker.pose.position.y;
+          point.z = marker.pose.position.z;
+          point.r = marker.color.r * 255.0f;
+          point.g = marker.color.g * 255.0f;
+          point.b = marker.color.b * 255.0f;
+          detection_insert_index = (detection_insert_index + 1) % detection_history_size;
+          detection_history_pointcloud->points[detection_insert_index] = point;
+        }
+        detection_marker_pub.publish(marker_msg); // publish marker message
+        detection_trajectory_pub.publish(detection_history_pointcloud); // publish trajectory message
+      }
     }
     else // if no detections have been received
     {
@@ -239,6 +324,18 @@ detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
   catch(tf::TransformException& ex)
   {
     ROS_ERROR("transform exception: %s", ex.what());
+  }
+}
+
+void
+generateColors(int colors_number, std::vector<cv::Vec3f>& colors)
+{
+  for (unsigned int i = 0; i < colors_number; i++)
+  {
+    colors.push_back(cv::Vec3f(
+        float(rand() % 256) / 255,
+        float(rand() % 256) / 255,
+        float(rand() % 256) / 255));
   }
 }
 
@@ -288,6 +385,8 @@ main(int argc, char** argv)
   marker_pub = nh.advertise<visualization_msgs::MarkerArray>("/tracker/markers_array", 1);
   pointcloud_pub = nh.advertise<pcl::PointCloud<pcl::PointXYZRGBA> >("/tracker/history", 1);
   results_pub = nh.advertise<opt_msgs::TrackArray>("/tracker/tracks", 1);
+  detection_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("/detector/markers_array", 1);
+  detection_trajectory_pub = nh.advertise<pcl::PointCloud<pcl::PointXYZRGBA> >("/detector/history", 1);
 
   tf_listener = new tf::TransformListener();
 
@@ -349,10 +448,13 @@ main(int argc, char** argv)
   nh.param("min_confidence_initialization_sr", min_confidence_sr, -1.1);
 
   nh.param("output/history_pointcloud", output_history_pointcloud, false);
-  nh.param("output/history_size", output_history_size, 0);
+  nh.param("output/history_size", output_history_size, 1000);
   nh.param("output/markers", output_markers, true);
   nh.param("output/image_rgb", output_image_rgb, true);
   nh.param("output/tracking_results", output_tracking_results, true);
+
+  nh.param("output/detection_debug", output_detection_results, true);
+  nh.param("output/detection_history_size", detection_history_size, 1000);
 
   bool debug_mode;
   nh.param("debug/active", debug_mode, false);
@@ -377,6 +479,16 @@ main(int argc, char** argv)
   std::vector<double> likelihood_weights;
   likelihood_weights.push_back(detector_weight*chi_map[0.999]/18.467);
   likelihood_weights.push_back(motion_weight);
+
+  // Generate colors used to identify different cameras:
+  generateColors(num_cameras, camera_colors);
+
+  // Initialize point cloud containing detections trajectory:
+  pcl::PointXYZRGB nan_point;
+  nan_point.x = std::numeric_limits<float>::quiet_NaN();
+  nan_point.y = std::numeric_limits<float>::quiet_NaN();
+  nan_point.z = std::numeric_limits<float>::quiet_NaN();
+  detection_history_pointcloud->points.resize(detection_history_size, nan_point);
 
   ros::Rate hz(num_cameras*rate);
 
