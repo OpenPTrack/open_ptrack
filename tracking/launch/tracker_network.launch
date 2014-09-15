@@ -13,7 +13,7 @@
   <node pkg="tracking" type="tracker_filter" name="tracker_filter_node" output="screen">
     <remap from="~input" to="/tracker/tracks" />
     <remap from="~output" to="/tracker/tracks_smoothed" />
-    <!--rosparam command="load" file="$(find tracking)/conf/tracker_filter.yaml" /--> 
+    <rosparam command="load" file="$(find tracking)/conf/tracker_filter.yaml" /> 
   </node>
 
 </launch>
