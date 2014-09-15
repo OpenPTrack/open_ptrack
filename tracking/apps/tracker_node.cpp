@@ -111,7 +111,7 @@ createMarker (int id, std::string frame_id, ros::Time stamp, Eigen::Vector3d pos
 
   marker.header.frame_id = world_frame_id;
   marker.header.stamp = stamp;
-  marker.ns = frame_id.substr(1, frame_id.length()-1);
+  marker.ns = frame_id;
   marker.id = id;
   marker.type = visualization_msgs::Marker::SPHERE;
   marker.action = visualization_msgs::Marker::ADD;
@@ -269,25 +269,24 @@ detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
         visualization_msgs::MarkerArray::Ptr marker_msg(new visualization_msgs::MarkerArray);
         detection_history_pointcloud->header.stamp = frame_time.toNSec() / 1e3;  // Convert from ns to us
         detection_history_pointcloud->header.frame_id = world_frame_id;
-        for(unsigned int i = 0; i < detections_vector.size(); i++)
+        std::string frame_id = detections_vector[0].getSource()->getFrameId();
+
+        // Define color:
+        int color_index;
+        std::map<std::string, int>::iterator colormap_iterator = color_map.find(frame_id);
+        if (colormap_iterator != color_map.end())
+        { // camera already present
+          color_index = colormap_iterator->second;
+        }
+        else
+        { // camera not present
+          color_index = color_map.size();
+          color_map.insert(std::pair<std::string, int> (frame_id, color_index));
+        }
+        for (unsigned int i = 0; i < detections_vector.size(); i++)
         {
-          std::string frame_id = detections_vector[i].getSource()->getFrameId();
-          Eigen::Vector3d centroid = detections_vector[i].getWorldCentroid();
-
-          // Define color:
-          int color_index;
-          std::map<std::string, int>::iterator colormap_iterator = color_map.find(frame_id);
-          if (colormap_iterator != color_map.end())
-          { // camera already present
-            color_index = colormap_iterator->second;
-          }
-          else
-          { // camera not present
-            color_index = color_map.size();
-            color_map.insert(std::pair<std::string, int> (frame_id, color_map.size()));
-          }
-
           // Create marker and add it to message:
+          Eigen::Vector3d centroid = detections_vector[i].getWorldCentroid();
           visualization_msgs::Marker marker = createMarker (i, frame_id, frame_time, centroid, camera_colors[color_index]);
           marker_msg->markers.push_back(marker);
 
@@ -402,9 +401,6 @@ main(int argc, char** argv)
   double rate;
   nh.param("rate", rate, 30.0);
 
-  int num_cameras;
-  nh.param("num_cameras", num_cameras, 1);
-
 //  double min_confidence;
   nh.param("min_confidence_initialization", min_confidence, -2.5); //0.0);
 
@@ -458,6 +454,16 @@ main(int argc, char** argv)
 
   bool debug_mode;
   nh.param("debug/active", debug_mode, false);
+
+  // Read number of sensors in the network:
+  int num_cameras = 0;
+  XmlRpc::XmlRpcValue network;
+  nh.getParam("network", network);
+  std::map<std::string, XmlRpc::XmlRpcValue>::iterator i;
+  for (unsigned i = 0; i < network.size(); i++)
+  {
+    num_cameras += network[i]["sensors"].size();
+  }
 
   // Set min_confidence_detections variable based on sensor type:
   if (swissranger)

@@ -7,7 +7,6 @@ Panels:
         - /Global Options1
         - /Status1
         - /PointCloud21
-        - /Marker1
         - /MarkerArray1
       Splitter Ratio: 0.526846
     Tree Height: 775
@@ -80,15 +79,6 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
-    - Class: rviz/Marker
-      Enabled: true
-      Marker Topic: /tracker/markers
-      Name: Marker
-      Namespaces:
-        numbers: true
-        people: true
-      Queue Size: 100
-      Value: true
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /tracker/markers_array
@@ -102,31 +92,21 @@ Visualization Manager:
       Enabled: true
       Frame Timeout: 15
       Frames:
-        A00364907959051A:
-          Value: true
-        A00364907959051A_depth_frame:
-          Value: true
-        A00364907959051A_depth_optical_frame:
-          Value: true
-        A00364907959051A_link:
-          Value: true
-        A00364907959051A_rgb_frame:
-          Value: true
-        A00364907959051A_rgb_optical_frame:
-          Value: true
-        A00367A01433047A:
-          Value: true
-        A00367A01433047A_depth_frame:
-          Value: true
-        A00367A01433047A_depth_optical_frame:
-          Value: true
-        A00367A01433047A_link:
-          Value: true
-        A00367A01433047A_rgb_frame:
-          Value: true
-        A00367A01433047A_rgb_optical_frame:
-          Value: true
         All Enabled: false
+        Kinect:
+          Value: true
+        Kinect_depth_frame:
+          Value: true
+        Kinect_depth_optical_frame:
+          Value: true
+        Kinect_link:
+          Value: true
+        Kinect_rgb_frame:
+          Value: true
+        Kinect_rgb_optical_frame:
+          Value: true
+        SwissRanger:
+          Value: true
         world:
           Value: true
       Marker Scale: 1
@@ -136,22 +116,16 @@ Visualization Manager:
       Show Names: true
       Tree:
         world:
-          A00367A01433047A:
-            A00364907959051A:
-              A00364907959051A_link:
-                A00364907959051A_depth_frame:
-                  A00364907959051A_depth_optical_frame:
-                    {}
-                A00364907959051A_rgb_frame:
-                  A00364907959051A_rgb_optical_frame:
-                    {}
-            A00367A01433047A_link:
-              A00367A01433047A_depth_frame:
-                A00367A01433047A_depth_optical_frame:
+          Kinect:
+            Kinect_link:
+              Kinect_depth_frame:
+                Kinect_depth_optical_frame:
                   {}
-              A00367A01433047A_rgb_frame:
-                A00367A01433047A_rgb_optical_frame:
+              Kinect_rgb_frame:
+                Kinect_rgb_optical_frame:
                   {}
+          SwissRanger:
+            {}
       Update Interval: 0
       Value: true
   Enabled: true

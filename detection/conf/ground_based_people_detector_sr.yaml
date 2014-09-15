@@ -6,7 +6,7 @@ ground_estimation_mode: 0
 # Flag that locks the ground plane update:
 lock_ground: false
 # Threshold on the ratio of valid points needed for ground estimation:
-valid_points_threshold: 0.2
+valid_points_threshold: 0.3
 
 ############################
 ## Background subtraction ##
