@@ -22,3 +22,6 @@ target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 add_executable(tracker apps/tracker_node.cpp)
 target_link_libraries(tracker ${PROJECT_NAME} ${catkin_LIBRARIES})
 
+add_executable(tracker_filter apps/tracker_filter_node.cpp)
+target_link_libraries(tracker_filter ${PROJECT_NAME} ${catkin_LIBRARIES})
+

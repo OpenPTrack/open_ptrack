@@ -9,5 +9,11 @@
     <rosparam command="load" file="$(find detection)/conf/haar_disp_ada_detector.yaml" />
     <rosparam command="load" file="$(find opt_calibration)/conf/camera_network.yaml" /> 
   </node>
+  
+  <node pkg="tracking" type="tracker_filter" name="tracker_filter_node" output="screen">
+    <remap from="~input" to="/tracker/tracks" />
+    <remap from="~output" to="/tracker/tracks_smoothed" />
+    <rosparam command="load" file="$(find tracking)/conf/tracker_filter.yaml" /> 
+  </node>
 
 </launch>
