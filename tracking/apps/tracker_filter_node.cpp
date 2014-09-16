@@ -1,7 +1,7 @@
 /*
  * Software License Agreement (BSD License)
  *
- * Copyright (c) 2013-, Open Perception, Inc.
+ * Copyright (c) 2014-, Open Perception, Inc.
  *
  * All rights reserved.
  *
@@ -68,7 +68,7 @@ int createMsg(opt_msgs::TrackArray & msg)
   for (std::map<int, opt_msgs::TrackArray>::iterator it = last_msg_map.begin(); it != last_msg_map.end(); ++it)
   {
     opt_msgs::TrackArray & saved_msg = it->second;
-    if (saved_msg.header.stamp - now < time_alive)
+    if ((now - saved_msg.header.stamp) < time_alive)
     {
       msg.tracks.push_back(saved_msg.tracks[0]);
       msg.header.frame_id = saved_msg.header.frame_id;
@@ -90,19 +90,22 @@ main(int argc, char **argv)
   ros::init(argc, argv, "tracking_filter");
   ros::NodeHandle nh("~");
 
-  double rate_d, time_alive_d;
+  double rate_d, track_lifetime_with_no_detections, heartbeat_time;
   bool publish_empty;
-  nh.param("rate", rate_d, 10.0);
-  nh.param("time_alive", time_alive_d, 1.0);
+  nh.param("rate", rate_d, 30.0);
+  nh.param("track_lifetime_with_no_detections", track_lifetime_with_no_detections, 1.0);
   nh.param("publish_empty", publish_empty, true);
+  nh.param("heartbeat_time", heartbeat_time, 5.0);
 
-  time_alive = ros::Duration(time_alive_d);
+  time_alive = ros::Duration(track_lifetime_with_no_detections);
+  ros::Duration heartbeat_time_duration = ros::Duration(heartbeat_time);
 
   // ROS subscriber:
   ros::Subscriber tracking_sub = nh.subscribe<opt_msgs::TrackArray>("input", 1, trackingCallback);
   ros::Publisher tracking_pub = nh.advertise<opt_msgs::TrackArray>("output", 1);
 
   ros::Rate rate(rate_d);
+  ros::Time last_heartbeat_time = ros::Time::now();
   
   while (ros::ok())
   {
@@ -113,6 +116,19 @@ main(int argc, char **argv)
     if (publish_empty or n > 0)
       tracking_pub.publish(msg);
     
+    if (not publish_empty)
+    { // Publish a heartbeat message every 'heartbeat_time' seconds:
+      ros::Time current_time = ros::Time::now();
+      if ((current_time - last_heartbeat_time) > heartbeat_time_duration)
+      {
+        opt_msgs::TrackArray msg;
+        msg.header.stamp = current_time;
+        msg.header.frame_id = "heartbeat";
+        tracking_pub.publish(msg);
+        last_heartbeat_time = current_time;
+      }
+    }
+
     rate.sleep();
   }
 
