@@ -59,7 +59,7 @@ trackingCallback(const opt_msgs::TrackArray::ConstPtr & tracking_msg)
     msg.header = tracking_msg->header;
     msg.tracks.push_back(track);
     std::map<int, LastData>::iterator it = last_data_map.find(track.id);
-    if (it != last_data_map.end())
+    if (it != last_data_map.end()) // Track exists
     {
       it->second.last_msg = msg;
       if (track.visibility != opt_msgs::Track::NOT_VISIBLE)
@@ -82,6 +82,7 @@ int createMsg(opt_msgs::TrackArray & msg)
   ros::Time now = ros::Time::now();
 
   msg.header.stamp = now;
+  std::vector<int> to_remove;
 
   for (std::map<int, LastData>::iterator it = last_data_map.begin(); it != last_data_map.end(); ++it)
   {
@@ -95,10 +96,15 @@ int createMsg(opt_msgs::TrackArray & msg)
     }
     else
     {
-      last_data_map.erase(it);
+      //last_data_map.erase(it);
+      to_remove.push_back(saved_msg.tracks[0].id);
     }
 
   }
+
+  for (size_t i = 0; i < to_remove.size(); ++i)
+    last_data_map.erase(to_remove[i]);
+
   return added;
 }
 
@@ -132,13 +138,15 @@ main(int argc, char **argv)
     
     opt_msgs::TrackArray msg;
     int n = createMsg(msg);
+    ros::Time current_time = ros::Time::now();
     if (publish_empty or n > 0)
     {
       tracking_pub.publish(msg);
+      last_heartbeat_time = current_time;
     }
     else if (not publish_empty)
-    { // Publish a heartbeat message every 'heartbeat_time' seconds
-      ros::Time current_time = ros::Time::now();
+    {
+      // Publish a heartbeat message every 'heartbeat_time' seconds
       if ((current_time - last_heartbeat_time) > heartbeat_time_duration)
       {
         opt_msgs::TrackArray msg;
