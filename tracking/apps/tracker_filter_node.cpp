@@ -264,6 +264,7 @@ main(int argc, char **argv)
     if (publish_empty or n > 0)
     {
       tracking_pub.publish(msg);
+      marker_array_pub.publish(marker_msg);
       last_heartbeat_time = current_time;
     }
     else if (not publish_empty)
@@ -275,7 +276,6 @@ main(int argc, char **argv)
         msg.header.stamp = current_time;
         msg.header.frame_id = "heartbeat";
         tracking_pub.publish(msg);
-        marker_array_pub.publish(marker_msg);
         last_heartbeat_time = current_time;
       }
     }

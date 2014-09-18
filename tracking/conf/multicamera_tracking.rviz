@@ -75,13 +75,13 @@ Visualization Manager:
       Size (Pixels): 5
       Size (m): 0.01
       Style: Points
-      Topic: /tracker_smoothed/history
+      Topic: /tracker_filter_node/history
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /tracker_smoothed/markers_array
+      Marker Topic: /tracker_filter_node/markers_array
       Name: MarkerArray
       Namespaces:
         numbers: true
@@ -105,8 +105,6 @@ Visualization Manager:
           Value: true
         Kinect_rgb_optical_frame:
           Value: true
-        SwissRanger:
-          Value: true
         world:
           Value: true
       Marker Scale: 1
@@ -124,8 +122,6 @@ Visualization Manager:
               Kinect_rgb_frame:
                 Kinect_rgb_optical_frame:
                   {}
-          SwissRanger:
-            {}
       Update Interval: 0
       Value: true
   Enabled: true

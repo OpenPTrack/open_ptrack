@@ -456,13 +456,17 @@ main(int argc, char** argv)
   nh.param("debug/active", debug_mode, false);
 
   // Read number of sensors in the network:
-  int num_cameras = 0;
-  XmlRpc::XmlRpcValue network;
-  nh.getParam("network", network);
-  std::map<std::string, XmlRpc::XmlRpcValue>::iterator i;
-  for (unsigned i = 0; i < network.size(); i++)
+  int num_cameras = 1;
+  if (extrinsic_calibration)
   {
-    num_cameras += network[i]["sensors"].size();
+	num_cameras = 0;
+    XmlRpc::XmlRpcValue network;
+    nh.getParam("network", network);
+    std::map<std::string, XmlRpc::XmlRpcValue>::iterator i;
+    for (unsigned i = 0; i < network.size(); i++)
+    {
+      num_cameras += network[i]["sensors"].size();
+    }
   }
 
   // Set min_confidence_detections variable based on sensor type:
