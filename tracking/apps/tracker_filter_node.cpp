@@ -39,6 +39,13 @@
 
 #include <ros/ros.h>
 #include <opt_msgs/TrackArray.h>
+#include <visualization_msgs/MarkerArray.h>
+#include <Eigen/Dense>
+#include <pcl/point_cloud.h>
+
+#include <open_ptrack/tracking/track.h>
+
+using open_ptrack::tracking::Track;
 
 struct LastData
 {
@@ -48,6 +55,107 @@ struct LastData
 
 std::map<int, LastData> last_data_map;
 ros::Duration time_alive;
+std::map<int, Eigen::Vector3f> color_map;
+
+void
+createMarker(visualization_msgs::MarkerArray & msg,
+             const LastData & data)
+{
+  const opt_msgs::Track & track = data.last_msg.tracks[0];
+
+  if(track.visibility == Track::NOT_VISIBLE)
+    return;
+
+  visualization_msgs::Marker marker;
+
+  marker.header.frame_id = data.last_msg.header.frame_id;
+  marker.header.stamp = data.last_msg.header.stamp;
+
+  marker.ns = "people";
+  marker.id = track.id;
+
+  marker.type = visualization_msgs::Marker::SPHERE;
+  marker.action = visualization_msgs::Marker::ADD;
+
+  marker.pose.position.x = track.x;
+  marker.pose.position.y = track.y;
+  marker.pose.position.z = track.height / 2;
+  marker.pose.orientation.x = 0.0;
+  marker.pose.orientation.y = 0.0;
+  marker.pose.orientation.z = 0.0;
+  marker.pose.orientation.w = 1.0;
+
+  marker.scale.x = 0.1;
+  marker.scale.y = 0.1;
+  marker.scale.z = 0.1;
+
+  marker.color.r = color_map[track.id](2);
+  marker.color.g = color_map[track.id](1);
+  marker.color.b = color_map[track.id](0);
+  marker.color.a = 1.0;
+
+  marker.lifetime = ros::Duration(0.2);
+
+  msg.markers.push_back(marker);
+
+  ///////////////////////////////////
+
+  visualization_msgs::Marker text_marker;
+
+  text_marker.header.frame_id = data.last_msg.header.frame_id;
+  text_marker.header.stamp = data.last_msg.header.stamp;
+
+  text_marker.ns = "numbers";
+  text_marker.id = track.id;
+
+  text_marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+  text_marker.action = visualization_msgs::Marker::ADD;
+
+  std::stringstream ss;
+  ss << track.id;
+  text_marker.text = ss.str();
+
+  text_marker.pose.position.x = track.x;
+  text_marker.pose.position.y = track.y;
+  text_marker.pose.position.z = track.height + 0.1;
+  text_marker.pose.orientation.x = 0.0;
+  text_marker.pose.orientation.y = 0.0;
+  text_marker.pose.orientation.z = 0.0;
+  text_marker.pose.orientation.w = 1.0;
+
+  text_marker.scale.x = 0.2;
+  text_marker.scale.y = 0.2;
+  text_marker.scale.z = 0.2;
+
+  text_marker.color.r = color_map[track.id](2);
+  text_marker.color.g = color_map[track.id](1);
+  text_marker.color.b = color_map[track.id](0);
+  text_marker.color.a = 1.0;
+
+  text_marker.lifetime = ros::Duration(0.2);
+
+  msg.markers.push_back(text_marker);
+
+}
+
+void
+getPointXYZRGB(pcl::PointXYZRGB & p,
+               const LastData & data)
+{
+  const opt_msgs::Track & track = data.last_msg.tracks[0];
+
+  if(track.visibility == Track::NOT_VISIBLE)
+    return;
+
+  p.x = float(track.x);
+  p.y = float(track.y);
+  p.z = float(track.height / 2);
+  uchar * rgb_ptr = reinterpret_cast<uchar *>(&p.rgb);
+  *rgb_ptr++ = uchar(color_map[track.id](0) * 255.0f);
+  *rgb_ptr++ = uchar(color_map[track.id](1) * 255.0f);
+  *rgb_ptr++ = uchar(color_map[track.id](2) * 255.0f);
+
+}
 
 void
 trackingCallback(const opt_msgs::TrackArray::ConstPtr & tracking_msg)
@@ -59,6 +167,13 @@ trackingCallback(const opt_msgs::TrackArray::ConstPtr & tracking_msg)
     msg.header = tracking_msg->header;
     msg.tracks.push_back(track);
     std::map<int, LastData>::iterator it = last_data_map.find(track.id);
+    if (color_map.find(track.id) == color_map.end())
+    {
+      color_map[track.id] = Eigen::Vector3f(
+                              float(rand() % 256) / 255,
+                              float(rand() % 256) / 255,
+                              float(rand() % 256) / 255);
+    }
     if (it != last_data_map.end()) // Track exists
     {
       it->second.last_msg = msg;
@@ -76,7 +191,8 @@ trackingCallback(const opt_msgs::TrackArray::ConstPtr & tracking_msg)
 
 }
 
-int createMsg(opt_msgs::TrackArray & msg)
+int createMsg(opt_msgs::TrackArray & msg,
+              visualization_msgs::MarkerArray & marker_msg)
 {
   int added = 0;
   ros::Time now = ros::Time::now();
@@ -92,6 +208,7 @@ int createMsg(opt_msgs::TrackArray & msg)
     {
       msg.tracks.push_back(saved_msg.tracks[0]);
       msg.header.frame_id = saved_msg.header.frame_id;
+      createMarker(marker_msg, it->second);
       ++added;
     }
     else
@@ -128,6 +245,8 @@ main(int argc, char **argv)
   // ROS subscriber:
   ros::Subscriber tracking_sub = nh.subscribe<opt_msgs::TrackArray>("input", 1, trackingCallback);
   ros::Publisher tracking_pub = nh.advertise<opt_msgs::TrackArray>("output", 1);
+  ros::Publisher marker_array_pub = nh.advertise<visualization_msgs::MarkerArray>("markers_array", 1);
+  ros::Publisher history_pub = nh.advertise<pcl::PointCloud<pcl::PointXYZRGBA> >("history", 1);
 
   ros::Rate rate(rate_d);
   ros::Time last_heartbeat_time = ros::Time::now();
@@ -137,8 +256,11 @@ main(int argc, char **argv)
     ros::spinOnce();
     
     opt_msgs::TrackArray msg;
-    int n = createMsg(msg);
+    visualization_msgs::MarkerArray marker_msg;
+
+    int n = createMsg(msg, marker_msg);
     ros::Time current_time = ros::Time::now();
+
     if (publish_empty or n > 0)
     {
       tracking_pub.publish(msg);
@@ -153,6 +275,7 @@ main(int argc, char **argv)
         msg.header.stamp = current_time;
         msg.header.frame_id = "heartbeat";
         tracking_pub.publish(msg);
+        marker_array_pub.publish(marker_msg);
         last_heartbeat_time = current_time;
       }
     }
