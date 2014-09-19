@@ -55,7 +55,23 @@ struct LastData
 
 std::map<int, LastData> last_data_map;
 ros::Duration time_alive;
-std::map<int, Eigen::Vector3f> color_map;
+std::vector<Eigen::Vector3f> color_set;
+
+pcl::PointCloud<pcl::PointXYZRGB>::Ptr history_cloud;
+int max_history_size;
+size_t history_cloud_index;
+
+void
+generateColors()
+{
+  for (size_t i = 0; i <= 4; ++i)
+    for (size_t j = 0; j <= 4; ++j)
+      for (size_t k = 0; k <= 4; ++k)
+        color_set.push_back(Eigen::Vector3f(i * 0.25f, j * 0.25f, k * 0.25f));
+
+  std::random_shuffle(color_set.begin(), color_set.end());
+
+}
 
 void
 createMarker(visualization_msgs::MarkerArray & msg,
@@ -89,9 +105,9 @@ createMarker(visualization_msgs::MarkerArray & msg,
   marker.scale.y = 0.1;
   marker.scale.z = 0.1;
 
-  marker.color.r = color_map[track.id](2);
-  marker.color.g = color_map[track.id](1);
-  marker.color.b = color_map[track.id](0);
+  marker.color.r = color_set[track.id % color_set.size()](2);
+  marker.color.g = color_set[track.id % color_set.size()](1);
+  marker.color.b = color_set[track.id % color_set.size()](0);
   marker.color.a = 1.0;
 
   marker.lifetime = ros::Duration(0.2);
@@ -127,9 +143,9 @@ createMarker(visualization_msgs::MarkerArray & msg,
   text_marker.scale.y = 0.2;
   text_marker.scale.z = 0.2;
 
-  text_marker.color.r = color_map[track.id](2);
-  text_marker.color.g = color_map[track.id](1);
-  text_marker.color.b = color_map[track.id](0);
+  text_marker.color.r = color_set[track.id % color_set.size()](2);
+  text_marker.color.g = color_set[track.id % color_set.size()](1);
+  text_marker.color.b = color_set[track.id % color_set.size()](0);
   text_marker.color.a = 1.0;
 
   text_marker.lifetime = ros::Duration(0.2);
@@ -139,8 +155,8 @@ createMarker(visualization_msgs::MarkerArray & msg,
 }
 
 void
-getPointXYZRGB(pcl::PointXYZRGB & p,
-               const LastData & data)
+toPointXYZRGB(pcl::PointXYZRGB & p,
+              const LastData & data)
 {
   const opt_msgs::Track & track = data.last_msg.tracks[0];
 
@@ -151,9 +167,9 @@ getPointXYZRGB(pcl::PointXYZRGB & p,
   p.y = float(track.y);
   p.z = float(track.height / 2);
   uchar * rgb_ptr = reinterpret_cast<uchar *>(&p.rgb);
-  *rgb_ptr++ = uchar(color_map[track.id](0) * 255.0f);
-  *rgb_ptr++ = uchar(color_map[track.id](1) * 255.0f);
-  *rgb_ptr++ = uchar(color_map[track.id](2) * 255.0f);
+  *rgb_ptr++ = uchar(color_set[track.id % color_set.size()](0) * 255.0f);
+  *rgb_ptr++ = uchar(color_set[track.id % color_set.size()](1) * 255.0f);
+  *rgb_ptr++ = uchar(color_set[track.id % color_set.size()](2) * 255.0f);
 
 }
 
@@ -167,13 +183,7 @@ trackingCallback(const opt_msgs::TrackArray::ConstPtr & tracking_msg)
     msg.header = tracking_msg->header;
     msg.tracks.push_back(track);
     std::map<int, LastData>::iterator it = last_data_map.find(track.id);
-    if (color_map.find(track.id) == color_map.end())
-    {
-      color_map[track.id] = Eigen::Vector3f(
-                              float(rand() % 256) / 255,
-                              float(rand() % 256) / 255,
-                              float(rand() % 256) / 255);
-    }
+
     if (it != last_data_map.end()) // Track exists
     {
       it->second.last_msg = msg;
@@ -191,13 +201,27 @@ trackingCallback(const opt_msgs::TrackArray::ConstPtr & tracking_msg)
 
 }
 
-int createMsg(opt_msgs::TrackArray & msg,
+void
+appendToHistory(const LastData & data)
+{
+  if (history_cloud->size() < max_history_size)
+  {
+    pcl::PointXYZRGB point;
+    history_cloud->push_back(point);
+  }
+
+  toPointXYZRGB(history_cloud->points[history_cloud_index], data);
+  history_cloud_index = (history_cloud_index + 1) % max_history_size;
+
+}
+
+int createMsg(opt_msgs::TrackArray & track_msg,
               visualization_msgs::MarkerArray & marker_msg)
 {
   int added = 0;
   ros::Time now = ros::Time::now();
 
-  msg.header.stamp = now;
+  track_msg.header.stamp = now;
   std::vector<int> to_remove;
 
   for (std::map<int, LastData>::iterator it = last_data_map.begin(); it != last_data_map.end(); ++it)
@@ -206,9 +230,10 @@ int createMsg(opt_msgs::TrackArray & msg,
     const ros::Time & time = it->second.last_visible_time;
     if ((now - time) < time_alive)
     {
-      msg.tracks.push_back(saved_msg.tracks[0]);
-      msg.header.frame_id = saved_msg.header.frame_id;
+      track_msg.tracks.push_back(saved_msg.tracks[0]);
+      track_msg.header.frame_id = saved_msg.header.frame_id;
       createMarker(marker_msg, it->second);
+      appendToHistory(it->second);
       ++added;
     }
     else
@@ -238,6 +263,11 @@ main(int argc, char **argv)
   nh.param("track_lifetime_with_no_detections", track_lifetime_with_no_detections, 1.0);
   nh.param("publish_empty", publish_empty, true);
   nh.param("heartbeat_time", heartbeat_time, 5.0);
+  nh.param("max_history_size", max_history_size, 1000);
+
+  generateColors();
+  history_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGB> >();
+  history_cloud_index = 0;
 
   time_alive = ros::Duration(track_lifetime_with_no_detections);
   ros::Duration heartbeat_time_duration = ros::Duration(heartbeat_time);
@@ -246,7 +276,7 @@ main(int argc, char **argv)
   ros::Subscriber tracking_sub = nh.subscribe<opt_msgs::TrackArray>("input", 1, trackingCallback);
   ros::Publisher tracking_pub = nh.advertise<opt_msgs::TrackArray>("output", 1);
   ros::Publisher marker_array_pub = nh.advertise<visualization_msgs::MarkerArray>("markers_array", 1);
-  ros::Publisher history_pub = nh.advertise<pcl::PointCloud<pcl::PointXYZRGBA> >("history", 1);
+  ros::Publisher history_pub = nh.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("history", 1);
 
   ros::Rate rate(rate_d);
   ros::Time last_heartbeat_time = ros::Time::now();
@@ -255,16 +285,17 @@ main(int argc, char **argv)
   {
     ros::spinOnce();
     
-    opt_msgs::TrackArray msg;
+    opt_msgs::TrackArray track_msg;
     visualization_msgs::MarkerArray marker_msg;
 
-    int n = createMsg(msg, marker_msg);
+    int n = createMsg(track_msg, marker_msg);
     ros::Time current_time = ros::Time::now();
 
     if (publish_empty or n > 0)
     {
-      tracking_pub.publish(msg);
+      tracking_pub.publish(track_msg);
       marker_array_pub.publish(marker_msg);
+      history_pub.publish(history_cloud);
       last_heartbeat_time = current_time;
     }
     else if (not publish_empty)
@@ -272,10 +303,12 @@ main(int argc, char **argv)
       // Publish a heartbeat message every 'heartbeat_time' seconds
       if ((current_time - last_heartbeat_time) > heartbeat_time_duration)
       {
-        opt_msgs::TrackArray msg;
-        msg.header.stamp = current_time;
-        msg.header.frame_id = "heartbeat";
-        tracking_pub.publish(msg);
+        opt_msgs::TrackArray heartbeat_msg;
+        heartbeat_msg.header.stamp = current_time;
+        heartbeat_msg.header.frame_id = "heartbeat";
+        tracking_pub.publish(heartbeat_msg);
+        marker_array_pub.publish(marker_msg);
+        history_pub.publish(history_cloud);
         last_heartbeat_time = current_time;
       }
     }
