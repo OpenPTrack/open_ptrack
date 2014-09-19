@@ -1,5 +1,8 @@
 video_mode: format7_mode0 #format7_mode1
-format7_color_coding: raw8 #mono8
+format7_color_coding: raw8 
+
+auto_packet_size: false
+packet_size: 1400
 
 frame_rate: 30.0
 
