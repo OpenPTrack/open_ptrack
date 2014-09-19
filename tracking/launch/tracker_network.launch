@@ -10,6 +10,7 @@
     <rosparam command="load" file="$(find opt_calibration)/conf/camera_network.yaml" /> 
   </node>
   
+  <!-- Re-publishing at fixed rate / smoothing node -->
   <node pkg="tracking" type="tracker_filter" name="tracker_filter_node" output="screen">
     <remap from="~input" to="/tracker/tracks" />
     <remap from="~output" to="/tracker/tracks_smoothed" />

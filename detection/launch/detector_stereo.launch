@@ -9,11 +9,14 @@
   <arg name="intermediate_topic"      default="/ground_based_people_detector_$(arg camera_name)/detections" />
   <arg name="ground_from_calibration" default="false" />
   
-  <!-- Camera driver TODO -->
-  <!--include file="$(find detection)/launch/$(env KINECT_DRIVER).launch"> 
-    <arg name="device_id" value="$(arg device_id)" />
-    <arg name="camera"    value="$(arg camera_name)" />
-  </include-->
+  <!-- Camera driver -->
+  <include file="$(find opt_calibration)/launch/stereo_pg.launch">
+    <arg name="stereo_name"         value="$(arg stereo_name)" />
+    <arg name="camera_serial_left"  value="$(arg camera_serial_left)" />
+    <arg name="camera_serial_right" value="$(arg camera_serial_right)" />
+    <arg name="conf_file_left"      value="$(arg conf_file_left)" />
+    <arg name="conf_file_right"     value="$(arg conf_file_right)" />
+  </include>
 
   <!-- Launch ground based people detection node -->
   <node pkg="detection" type="ground_based_people_detector"
