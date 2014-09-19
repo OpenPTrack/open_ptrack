@@ -222,6 +222,7 @@ int createMsg(opt_msgs::TrackArray & track_msg,
   ros::Time now = ros::Time::now();
 
   track_msg.header.stamp = now;
+  history_cloud->header.stamp = now.toNSec() / 1000;
   std::vector<int> to_remove;
 
   for (std::map<int, LastData>::iterator it = last_data_map.begin(); it != last_data_map.end(); ++it)
@@ -232,6 +233,7 @@ int createMsg(opt_msgs::TrackArray & track_msg,
     {
       track_msg.tracks.push_back(saved_msg.tracks[0]);
       track_msg.header.frame_id = saved_msg.header.frame_id;
+      history_cloud->header.frame_id = saved_msg.header.frame_id;
       createMarker(marker_msg, it->second);
       appendToHistory(it->second);
       ++added;
