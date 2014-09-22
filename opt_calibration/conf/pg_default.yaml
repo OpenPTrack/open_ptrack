@@ -3,6 +3,7 @@ format7_color_coding: raw8
 
 auto_packet_size: false
 packet_size: 1400
+packet_delay: 4000
 
 frame_rate: 30.0
 
