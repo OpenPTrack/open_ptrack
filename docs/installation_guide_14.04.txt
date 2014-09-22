@@ -28,6 +28,13 @@ source /opt/ros/indigo/setup.bash
 chmod +x openptrack_install.sh
 ./openptrack_install.sh
 
+OPTIONAL:
+If you want to use stereo pairs composed of PointGrey cameras with OpenPTrack, you need to install and build from source the ROS wrapper for PointGrey cameras from 'OpenPTrack/pointgrey_camera_driver' repository:
+cd ~/workspace/ros/catkin/src
+git clone https://github.com/OpenPTrack/pointgrey_camera_driver.git
+cd ~/workspace/ros/catkin
+catkin_make --force-cmake
+
 
 
 
