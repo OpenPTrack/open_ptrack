@@ -9,7 +9,7 @@
   <group unless="$(arg with_serial)" >
     <arg name="camera_id" />
     
-    <arg name="old_camera_name" default="rgb_000000000000000" />
+    <arg name="old_camera_name" default="rgb_0000000000000000" />
     <arg name="new_camera_name" value="rgb_$(arg camera_id)" />
   
     <node pkg="opt_calibration" type="save_camera_info_no_serial.sh" name="save_camera_info" output="screen"
