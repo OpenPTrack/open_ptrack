@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<launch>
+  
+  <arg name="with_serial" />
+  
+  <arg name="old_camera_info_path" default="$(env HOME)/.ros/camera_info/" />
+  <arg name="new_camera_info_path" default="$(find opt_calibration)/camera_info/" />
+  
+  <group unless="$(arg with_serial)" >
+    <arg name="camera_id" />
+    
+    <arg name="old_camera_name" default="rgb_000000000000000" />
+    <arg name="new_camera_name" value="rgb_$(arg camera_id)" />
+  
+    <node pkg="opt_calibration" type="save_camera_info_no_serial.sh" name="save_camera_info" output="screen"
+          args="$(arg old_camera_name) $(arg new_camera_name) $(arg old_camera_info_path) $(arg new_camera_info_path)" />
+  </group>
+    
+  <group if="$(arg with_serial)" >
+    <arg name="serial"/>
+    <arg name="camera_name" value="rgb_$(arg serial)" />
+  
+    <node pkg="opt_calibration" type="move_camera_info.sh" name="move_camera_info" output="screen"
+          args="$(arg camera_name) $(arg old_camera_info_path) $(arg new_camera_info_path)" />
+  </group>
+
+</launch>
+
