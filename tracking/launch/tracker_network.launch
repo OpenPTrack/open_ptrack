@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <launch>
   
   <arg name="input_topic" value="/detector/detections" />
@@ -12,8 +13,11 @@
   
   <!-- Re-publishing at fixed rate / smoothing node -->
   <node pkg="tracking" type="tracker_filter" name="tracker_filter_node" output="screen">
-    <remap from="~input" to="/tracker/tracks" />
-    <remap from="~output" to="/tracker/tracks_smoothed" />
+    <remap from="~input"         to="/tracker/tracks" />
+    <remap from="~output"        to="/tracker/tracks_smoothed" />
+    <remap from="~markers_array" to="/tracker/markers_array_smoothed" />
+    <remap from="~history"       to="/tracker/history_smoothed" />
+    
     <rosparam command="load" file="$(find tracking)/conf/tracker_filter.yaml" /> 
   </node>
 

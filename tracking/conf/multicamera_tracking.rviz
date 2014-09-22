@@ -75,13 +75,13 @@ Visualization Manager:
       Size (Pixels): 5
       Size (m): 0.01
       Style: Points
-      Topic: /tracker_filter_node/history
+      Topic: /tracker/history_smoothed
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /tracker_filter_node/markers_array
+      Marker Topic: /tracker/markers_array_smoothed
       Name: MarkerArray
       Namespaces:
         numbers: true
