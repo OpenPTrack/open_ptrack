@@ -20,6 +20,11 @@
     <arg name="conf_file_left"      value="$(arg conf_file_left)" />
     <arg name="conf_file_right"     value="$(arg conf_file_right)" />
   </include>
+  
+  <!-- Stereo processing -->
+  <include file="$(find opt_calibration)/launch/stereo_processing.launch">
+    <arg name="stereo_namespace" value="$(arg stereo_name)" />
+  </include>
 
   <!-- Launch ground based people detection node -->
   <node pkg="detection" type="ground_based_people_detector"
