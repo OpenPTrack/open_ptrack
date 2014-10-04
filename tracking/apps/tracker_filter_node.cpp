@@ -60,6 +60,12 @@ std::vector<Eigen::Vector3f> color_set;
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr history_cloud;
 int max_history_size;
 size_t history_cloud_index;
+bool publish_empty;
+ros::Publisher tracking_pub;
+ros::Publisher marker_array_pub;
+ros::Publisher history_pub;
+ros::Time last_heartbeat_time;
+ros::Duration heartbeat_time_duration;
 
 void
 generateColors()
@@ -252,6 +258,38 @@ int createMsg(opt_msgs::TrackArray & track_msg,
   return added;
 }
 
+void
+publish_callback (const ros::TimerEvent& event)
+{
+  opt_msgs::TrackArray track_msg;
+  visualization_msgs::MarkerArray marker_msg;
+
+  int n = createMsg(track_msg, marker_msg);
+  ros::Time current_time = ros::Time::now();
+
+  if (publish_empty or n > 0)
+  {
+    tracking_pub.publish(track_msg);
+    marker_array_pub.publish(marker_msg);
+    history_pub.publish(history_cloud);
+    last_heartbeat_time = current_time;
+  }
+  else if (not publish_empty)
+  {
+    // Publish a heartbeat message every 'heartbeat_time' seconds
+    if ((current_time - last_heartbeat_time) > heartbeat_time_duration)
+    {
+      opt_msgs::TrackArray heartbeat_msg;
+      heartbeat_msg.header.stamp = current_time;
+      heartbeat_msg.header.frame_id = "heartbeat";
+      tracking_pub.publish(heartbeat_msg);
+      marker_array_pub.publish(marker_msg);
+      history_pub.publish(history_cloud);
+      last_heartbeat_time = current_time;
+    }
+  }
+}
+
 int
 main(int argc, char **argv)
 {
@@ -259,63 +297,45 @@ main(int argc, char **argv)
   ros::init(argc, argv, "tracking_filter");
   ros::NodeHandle nh("~");
 
-  double rate_d, track_lifetime_with_no_detections, heartbeat_time;
-  bool publish_empty;
-  nh.param("rate", rate_d, 30.0);
+  double publish_rate, read_rate, track_lifetime_with_no_detections, heartbeat_time;
+  nh.param("rate", publish_rate, 30.0);
   nh.param("track_lifetime_with_no_detections", track_lifetime_with_no_detections, 1.0);
   nh.param("publish_empty", publish_empty, true);
   nh.param("heartbeat_time", heartbeat_time, 5.0);
   nh.param("max_history_size", max_history_size, 1000);
+
+  // Read number of sensors in the network:
+  int num_cameras = 0;
+  XmlRpc::XmlRpcValue network;
+  nh.getParam("network", network);
+  std::map<std::string, XmlRpc::XmlRpcValue>::iterator i;
+  for (unsigned i = 0; i < network.size(); i++)
+  {
+    num_cameras += network[i]["sensors"].size();
+  }
+  read_rate = 30 * num_cameras;
 
   generateColors();
   history_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGB> >();
   history_cloud_index = 0;
 
   time_alive = ros::Duration(track_lifetime_with_no_detections);
-  ros::Duration heartbeat_time_duration = ros::Duration(heartbeat_time);
+  heartbeat_time_duration = ros::Duration(heartbeat_time);
 
   // ROS subscriber:
-  ros::Subscriber tracking_sub = nh.subscribe<opt_msgs::TrackArray>("input", 20, trackingCallback);
-  ros::Publisher tracking_pub = nh.advertise<opt_msgs::TrackArray>("output", 1);
-  ros::Publisher marker_array_pub = nh.advertise<visualization_msgs::MarkerArray>("markers_array", 1);
-  ros::Publisher history_pub = nh.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("history", 1);
+  ros::Subscriber tracking_sub = nh.subscribe<opt_msgs::TrackArray>("input", 5, trackingCallback);
+  tracking_pub = nh.advertise<opt_msgs::TrackArray>("output", 1);
+  marker_array_pub = nh.advertise<visualization_msgs::MarkerArray>("markers_array", 1);
+  history_pub = nh.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("history", 1);
 
-  ros::Rate rate(rate_d);
-  ros::Time last_heartbeat_time = ros::Time::now();
+  ros::Rate rate(read_rate);
+  last_heartbeat_time = ros::Time::now();
+
+  ros::Timer timer = nh.createTimer(ros::Duration(1.0/publish_rate), publish_callback);
   
   while (ros::ok())
   {
-	
     ros::spinOnce();
-    
-    opt_msgs::TrackArray track_msg;
-    visualization_msgs::MarkerArray marker_msg;
-
-    int n = createMsg(track_msg, marker_msg);
-    ros::Time current_time = ros::Time::now();
-
-    if (publish_empty or n > 0)
-    {
-      tracking_pub.publish(track_msg);
-      marker_array_pub.publish(marker_msg);
-      history_pub.publish(history_cloud);
-      last_heartbeat_time = current_time;
-    }
-    else if (not publish_empty)
-    {
-      // Publish a heartbeat message every 'heartbeat_time' seconds
-      if ((current_time - last_heartbeat_time) > heartbeat_time_duration)
-      {
-        opt_msgs::TrackArray heartbeat_msg;
-        heartbeat_msg.header.stamp = current_time;
-        heartbeat_msg.header.frame_id = "heartbeat";
-        tracking_pub.publish(heartbeat_msg);
-        marker_array_pub.publish(marker_msg);
-        history_pub.publish(history_cloud);
-        last_heartbeat_time = current_time;
-      }
-    }
-
     rate.sleep();
   }
 
