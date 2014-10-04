@@ -275,7 +275,7 @@ main(int argc, char **argv)
   ros::Duration heartbeat_time_duration = ros::Duration(heartbeat_time);
 
   // ROS subscriber:
-  ros::Subscriber tracking_sub = nh.subscribe<opt_msgs::TrackArray>("input", 1, trackingCallback);
+  ros::Subscriber tracking_sub = nh.subscribe<opt_msgs::TrackArray>("input", 20, trackingCallback);
   ros::Publisher tracking_pub = nh.advertise<opt_msgs::TrackArray>("output", 1);
   ros::Publisher marker_array_pub = nh.advertise<visualization_msgs::MarkerArray>("markers_array", 1);
   ros::Publisher history_pub = nh.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("history", 1);
@@ -285,6 +285,7 @@ main(int argc, char **argv)
   
   while (ros::ok())
   {
+	
     ros::spinOnce();
     
     opt_msgs::TrackArray track_msg;
