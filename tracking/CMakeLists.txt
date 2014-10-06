@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(tracking)
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
-find_package(catkin REQUIRED COMPONENTS cmake_modules roscpp rosconsole image_transport tf tf_conversions bayes pcl_ros detection opt_msgs opt_utils)
+find_package(catkin REQUIRED COMPONENTS cmake_modules roscpp rosconsole image_transport tf tf_conversions bayes pcl_ros detection opt_msgs opt_utils dynamic_reconfigure)
 
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
@@ -9,6 +9,11 @@ link_directories(${OpenCV_LIB_DIR})
 
 find_package(Eigen REQUIRED)
 include_directories(${Eigen_INCLUDE_DIRS} include ${catkin_INCLUDE_DIRS})
+
+# Dynamic reconfigure support
+generate_dynamic_reconfigure_options(cfg/Tracker.cfg)
+
+include_directories(cfg/cpp)
 
 catkin_package(
    INCLUDE_DIRS 

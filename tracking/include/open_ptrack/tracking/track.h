@@ -362,6 +362,32 @@ namespace open_ptrack
          */
         open_ptrack::detection::DetectionSource*
         getDetectionSource();
+
+        /**
+         * \brief Set flag stating if people velocity should be used in motion term for data association
+         *
+         * \param[in] velocity_in_motion_term If true, people velocity is also used in motion term for data association
+         * \param[in] acceleration_variance Acceleration variance (for Kalman Filter)
+         * \param[in] position_variance Position variance (for Kalman Filter)
+         */
+        void
+        setVelocityInMotionTerm (bool velocity_in_motion_term, double acceleration_variance, double position_variance);
+
+        /**
+         * \brief Set acceleration variance (for Kalman Filter)
+         *
+         * \param[in] acceleration_variance Acceleration variance (for Kalman Filter)
+         */
+        void
+        setAccelerationVariance (double acceleration_variance);
+
+        /**
+         * \brief Set position variance (for Kalman Filter)
+         *
+         * \param[in] position_variance Position variance (for Kalman Filter)
+         */
+        void
+        setPositionVariance (double position_variance);
     };
 
   } /* namespace tracking */

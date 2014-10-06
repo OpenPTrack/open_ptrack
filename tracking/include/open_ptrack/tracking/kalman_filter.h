@@ -70,7 +70,7 @@ namespace open_ptrack
     {
       protected:
         /** \brief Position variance. */
-        const double position_variance_;
+        double position_variance_;
 
       public:
         /** \brief Constructor. */
@@ -134,11 +134,11 @@ namespace open_ptrack
         /** \brief Time interval.*/
         double dt_;
 
-        /** \brief Position variance.*/
-        double position_variance_;
-
         /** \brief Scale factor for computing depth noise variance.*/
         double depth_multiplier_;
+
+        /** \brief Position variance. */
+        double position_variance_;
 
         /** \brief Acceleration variance.*/
         double acceleration_variance_;
@@ -293,6 +293,22 @@ namespace open_ptrack
          */
         Bayesian_filter::FM::SymMatrix
         getInnovationCovariance();
+
+        /**
+         * \brief Set prediction model.
+         *
+         * \param[in] acceleration_variance Acceleration variance.
+         */
+        void
+        setPredictModel (double acceleration_variance);
+
+        /**
+         * \brief Set observation model.
+         *
+         * \param[in] position_variance Position variance.
+         */
+        void
+        setObserveModel (double position_variance);
 
     };
 

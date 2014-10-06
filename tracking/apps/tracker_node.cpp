@@ -61,6 +61,13 @@
 #include <opt_msgs/TrackArray.h>
 //#include <open_ptrack/opt_utils/ImageConverter.h>
 
+// Dynamic reconfigure:
+#include <dynamic_reconfigure/server.h>
+#include <tracking/TrackerConfig.h>
+
+typedef tracking::TrackerConfig Config;
+typedef dynamic_reconfigure::Server<Config> ReconfigureServer;
+
 // Global variables:
 std::map<std::string, open_ptrack::detection::DetectionSource*> detection_sources_map;
 tf::TransformListener* tf_listener;
@@ -95,6 +102,13 @@ double min_confidence_detections;
 double min_confidence_detections_sr;
 std::vector<cv::Vec3f> camera_colors;     // vector containing colors to use to identify cameras in the network
 std::map<std::string, int> color_map;     // map between camera frame_id and color
+// Chi square distribution
+std::map<double, double> chi_map;
+bool velocity_in_motion_term;
+double acceleration_variance;
+double position_variance_weight;
+double voxel_size;
+double gate_distance;
 
 /**
  * \brief Create marker to be visualized in RViz
@@ -369,11 +383,46 @@ fillChiMap(std::map<double, double>& chi_map, bool velocity_in_motion_term)
   }
 }
 
+void
+configCb(Config &config, uint32_t level)
+{
+  tracker->setMinConfidenceForTrackInitialization (config.min_confidence_initialization);
+  tracker->setSecBeforeOld (config.sec_before_old);
+  tracker->setSecBeforeFake (config.sec_before_fake);
+  tracker->setSecRemainNew (config.sec_remain_new);
+  tracker->setDetectionsToValidate (config.detections_to_validate);
+  tracker->setDetectorLikelihood (config.detector_likelihood);
+  tracker->setLikelihoodWeights (config.detector_weight*chi_map[0.999]/18.467, config.motion_weight);
+
+//  if (config.velocity_in_motion_term != velocity_in_motion_term)
+//  {
+//    // Take chi square values with regards to the state dimension:
+//    fillChiMap(chi_map, config.velocity_in_motion_term);
+//
+//    double position_variance = config.position_variance_weight*std::pow(2 * voxel_size, 2) / 12.0;
+//    tracker->setVelocityInMotionTerm (config.velocity_in_motion_term, config.acceleration_variance, position_variance);
+//  }
+//  else
+//  {
+    if (config.acceleration_variance != acceleration_variance)
+    {
+      tracker->setAccelerationVariance (config.acceleration_variance);
+    }
+
+    if (config.position_variance_weight != position_variance_weight)
+    {
+      double position_variance = config.position_variance_weight*std::pow(2 * voxel_size, 2) / 12.0;
+      tracker->setPositionVariance (position_variance);
+    }
+//  }
+
+  gate_distance = chi_map.find(config.gate_distance_probability) != chi_map.end() ? chi_map[config.gate_distance_probability] : chi_map[0.999];
+  tracker->setGateDistance (config.gate_distance_probability);
+}
+
 int
 main(int argc, char** argv)
 {
-  //Chi square distribution
-  std::map<double, double> chi_map;
 
   ros::init(argc, argv, "tracker");
   ros::NodeHandle nh("~");
@@ -387,6 +436,10 @@ main(int argc, char** argv)
   detection_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("/detector/markers_array", 1);
   detection_trajectory_pub = nh.advertise<pcl::PointCloud<pcl::PointXYZRGBA> >("/detector/history", 1);
 
+  // Dynamic reconfigure
+  boost::recursive_mutex config_mutex_;
+  boost::shared_ptr<ReconfigureServer> reconfigure_server_;
+
   tf_listener = new tf::TransformListener();
 
   // Read tracking parameters:
@@ -395,8 +448,7 @@ main(int argc, char** argv)
   nh.param("orientation/vertical", vertical, false);
   nh.param("extrinsic_calibration", extrinsic_calibration, false);
 
-  double voxel_size;
-  nh.param("voxel_size", voxel_size, 0.075);
+  nh.param("voxel_size", voxel_size, 0.06);
 
   double rate;
   nh.param("rate", rate, 30.0);
@@ -405,34 +457,34 @@ main(int argc, char** argv)
   nh.param("min_confidence_initialization", min_confidence, -2.5); //0.0);
 
   double chi_value;
-  nh.param("kalman/gate_distance_probability", chi_value, 0.9);
+  nh.param("gate_distance_probability", chi_value, 0.9);
 
-  double acceleration_variance;
-  nh.param("kalman/acceleration_variance", acceleration_variance, 1.0);
+  nh.param("acceleration_variance", acceleration_variance, 1.0);
+
+  nh.param("position_variance_weight", position_variance_weight, 1.0);
 
   bool detector_likelihood;
-  nh.param("jointLikelihood/detector_likelihood", detector_likelihood, false);
+  nh.param("detector_likelihood", detector_likelihood, false);
 
-  bool velocity_in_motion_term;
-  nh.param("jointLikelihood/velocity_in_motion_term", velocity_in_motion_term, false);
+  nh.param("velocity_in_motion_term", velocity_in_motion_term, false);
 
   double detector_weight;
-  nh.param("jointLikelihood/detector_weight", detector_weight, -1.0);
+  nh.param("detector_weight", detector_weight, -1.0);
 
   double motion_weight;
-  nh.param("jointLikelihood/motion_weight", motion_weight, 0.5);
+  nh.param("motion_weight", motion_weight, 0.5);
 
   double sec_before_old;
-  nh.param("target/sec_before_old", sec_before_old, 3.6);
+  nh.param("sec_before_old", sec_before_old, 3.6);
 
   double sec_before_fake;
-  nh.param("target/sec_before_fake", sec_before_fake, 2.4);
+  nh.param("sec_before_fake", sec_before_fake, 2.4);
 
   double sec_remain_new;
-  nh.param("target/sec_remain_new", sec_remain_new, 1.2);
+  nh.param("sec_remain_new", sec_remain_new, 1.2);
 
   int detections_to_validate;
-  nh.param("target/detections_to_validate", detections_to_validate, 5);
+  nh.param("detections_to_validate", detections_to_validate, 5);
 
   double haar_disp_ada_min_confidence, ground_based_people_detection_min_confidence;
   nh.param("haar_disp_ada_min_confidence", haar_disp_ada_min_confidence, -2.5); //0.0);
@@ -443,17 +495,17 @@ main(int argc, char** argv)
   nh.param("ground_based_people_detection_min_confidence_sr", min_confidence_detections_sr, -1.5);
   nh.param("min_confidence_initialization_sr", min_confidence_sr, -1.1);
 
-  nh.param("output/history_pointcloud", output_history_pointcloud, false);
-  nh.param("output/history_size", output_history_size, 1000);
-  nh.param("output/markers", output_markers, true);
-  nh.param("output/image_rgb", output_image_rgb, true);
-  nh.param("output/tracking_results", output_tracking_results, true);
+  nh.param("history_pointcloud", output_history_pointcloud, false);
+  nh.param("history_size", output_history_size, 1000);
+  nh.param("markers", output_markers, true);
+  nh.param("image_rgb", output_image_rgb, true);
+  nh.param("tracking_results", output_tracking_results, true);
 
-  nh.param("output/detection_debug", output_detection_results, true);
-  nh.param("output/detection_history_size", detection_history_size, 1000);
+  nh.param("detection_debug", output_detection_results, true);
+  nh.param("detection_history_size", detection_history_size, 1000);
 
   bool debug_mode;
-  nh.param("debug/active", debug_mode, false);
+  nh.param("debug_active", debug_mode, false);
 
   // Read number of sensors in the network:
   int num_cameras = 1;
@@ -480,12 +532,11 @@ main(int argc, char** argv)
 
   // Compute additional parameters:
   period = 1.0 / rate;
-  double gate_distance;
   gate_distance = chi_map.find(chi_value) != chi_map.end() ? chi_map[chi_value] : chi_map[0.999];
 
   double position_variance;
 //  position_variance = 3*std::pow(2 * voxel_size, 2) / 12.0; // DEFAULT
-  position_variance = 30*std::pow(2 * voxel_size, 2) / 12.0;
+  position_variance = position_variance_weight*std::pow(2 * voxel_size, 2) / 12.0;
   std::vector<double> likelihood_weights;
   likelihood_weights.push_back(detector_weight*chi_map[0.999]/18.467);
   likelihood_weights.push_back(motion_weight);
@@ -524,6 +575,11 @@ main(int argc, char** argv)
       vertical);
 
   starting_index = 0;
+
+  // Set up dynamic reconfiguration
+  ReconfigureServer::CallbackType f = boost::bind(&configCb, _1, _2);
+  reconfigure_server_.reset(new ReconfigureServer(config_mutex_, nh));
+  reconfigure_server_->setCallback(f);
 
   // If extrinsic calibration is not available:
   if (!extrinsic_calibration)

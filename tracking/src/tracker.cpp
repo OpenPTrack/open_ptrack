@@ -457,5 +457,95 @@ namespace open_ptrack
         createNewTrack(*dit);
       }
     }
+
+    void
+    Tracker::setMinConfidenceForTrackInitialization (double min_confidence)
+    {
+      min_confidence_ = min_confidence;
+    }
+
+    void
+    Tracker::setSecBeforeOld (double sec_before_old)
+    {
+      sec_before_old_ = sec_before_old;
+    }
+
+    void
+    Tracker::setSecBeforeFake (double sec_before_fake)
+    {
+      sec_before_fake_ = sec_before_fake;
+    }
+
+    void
+    Tracker::setSecRemainNew (double sec_remain_new)
+    {
+      sec_remain_new_ = sec_remain_new;
+    }
+
+    void
+    Tracker::setDetectionsToValidate (int detections_to_validate)
+    {
+      detections_to_validate_ = detections_to_validate;
+    }
+
+    void
+    Tracker::setDetectorLikelihood (bool detector_likelihood)
+    {
+      detector_likelihood_ = detector_likelihood;
+    }
+
+    void
+    Tracker::setLikelihoodWeights (double detector_weight, double motion_weight)
+    {
+      likelihood_weights_[0] = detector_weight;
+      likelihood_weights_[1] = motion_weight;
+    }
+
+    void
+    Tracker::setVelocityInMotionTerm (bool velocity_in_motion_term, double acceleration_variance, double position_variance)
+    {
+      velocity_in_motion_term_ = velocity_in_motion_term;
+      acceleration_variance_ = acceleration_variance;
+      position_variance_ = position_variance;
+
+      // Update all existing tracks:
+      for(std::list<open_ptrack::tracking::Track*>::iterator it = tracks_.begin(); it != tracks_.end(); it++)
+      {
+        open_ptrack::tracking::Track* t = *it;
+        t->setVelocityInMotionTerm (velocity_in_motion_term_, acceleration_variance_, position_variance_);
+      }
+    }
+
+    void
+    Tracker::setAccelerationVariance (double acceleration_variance)
+    {
+      acceleration_variance_ = acceleration_variance;
+
+      // Update all existing tracks:
+      for(std::list<open_ptrack::tracking::Track*>::iterator it = tracks_.begin(); it != tracks_.end(); it++)
+      {
+        open_ptrack::tracking::Track* t = *it;
+        t->setAccelerationVariance (acceleration_variance_);
+      }
+    }
+
+    void
+    Tracker::setPositionVariance (double position_variance)
+    {
+      position_variance_ = position_variance;
+
+      // Update all existing tracks:
+      for(std::list<open_ptrack::tracking::Track*>::iterator it = tracks_.begin(); it != tracks_.end(); it++)
+      {
+        open_ptrack::tracking::Track* t = *it;
+        t->setPositionVariance (position_variance_);
+      }
+    }
+
+    void
+    Tracker::setGateDistance (double gate_distance)
+    {
+      gate_distance_ = gate_distance;
+    }
   } /* namespace tracking */
 } /* namespace open_ptrack */

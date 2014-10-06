@@ -346,5 +346,19 @@ namespace open_ptrack
       x = filter_->x[0];
       y = filter_->x[1];
     }
+
+    void
+    KalmanFilter::setPredictModel (double acceleration_variance)
+    {
+      acceleration_variance_ = acceleration_variance;
+      predict_model_ = new PredictModel(dt_, acceleration_variance_);
+    }
+
+    void
+    KalmanFilter::setObserveModel (double position_variance)
+    {
+      position_variance_ = position_variance;
+      observe_model_ = new ObserveModel(position_variance_, output_dimension_);
+    }
   } /* namespace tracking */
 } /* namespace open_ptrack */

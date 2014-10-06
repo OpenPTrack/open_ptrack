@@ -76,43 +76,43 @@ namespace open_ptrack
         std::string world_frame_id_;
 
         /** \brief Minimum confidence for track initialization */
-        const double min_confidence_;
+        double min_confidence_;
 
         /** \brief Minimum confidence of detections sent to tracking */
         const double min_confidence_detections_;
 
         /** \brief Minimum number of detection<->track associations needed for validating a track */
-        const int detections_to_validate_;
+        int detections_to_validate_;
 
         /** \brief Time after which a not visible track becomes old */
-        const double sec_before_old_;
+        double sec_before_old_;
 
         /** \brief Time after which a visible track obtain NORMAL status */
-        const double sec_remain_new_;
+        double sec_remain_new_;
 
         /** \brief Time within which a track should be validated (otherwise it is discarded) */
-        const double sec_before_fake_;
+        double sec_before_fake_;
 
         /** \brief Gate distance for joint likelihood in data association */
-        const double gate_distance_;
+        double gate_distance_;
 
         /** \brief Flag stating if people detection confidence should be used in data association (true) or not (false) */
-        const bool detector_likelihood_;
+        bool detector_likelihood_;
 
         /** \brief Weights for the single terms of the joint likelihood */
-        const std::vector<double> likelihood_weights_;
+        std::vector<double> likelihood_weights_;
 
         /** \brief If true, people velocity is also used in motion term for data association */
-        const bool velocity_in_motion_term_;
+        bool velocity_in_motion_term_;
 
         /** \brief Minimum time period between two detections messages */
         const double period_;
 
         /** \brief Position variance (for Kalman Filter) */
-        const double position_variance_;
+        double position_variance_;
 
         /** \brief Acceleration variance (for Kalman Filter) */
-        const double acceleration_variance_;
+        double acceleration_variance_;
 
         /** \brief Flag enabling debug mode */
         const bool debug_mode_;
@@ -224,6 +224,97 @@ namespace open_ptrack
         size_t
         appendToPointCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pointcloud,
             size_t starting_index, size_t max_size);
+
+        /**
+         * \brief Set minimum confidence for track initialization
+         *
+         * \param[in] min_confidence Minimum confidence for track initialization
+         */
+        void
+        setMinConfidenceForTrackInitialization (double min_confidence);
+
+        /**
+         * \brief Set time after which a not visible track becomes old
+         *
+         * \param[in] sec_before_old Time after which a not visible track becomes old
+         */
+        void
+        setSecBeforeOld (double sec_before_old);
+
+        /**
+         * \brief Set time within which a track should be validated (otherwise it is discarded)
+         *
+         * \param[in] sec_before_fake Time within which a track should be validated (otherwise it is discarded)
+         */
+        void
+        setSecBeforeFake (double sec_before_fake);
+
+        /**
+         * \brief Set time after which a visible track obtain NORMAL status
+         *
+         * \param[in] sec_remain_new Time after which a visible track obtain NORMAL status
+         */
+        void
+        setSecRemainNew (double sec_remain_new);
+
+        /**
+         * \brief Set minimum number of detection<->track associations needed for validating a track
+         *
+         * \param[in] detections_to_validate Minimum number of detection<->track associations needed for validating a track
+         */
+        void
+        setDetectionsToValidate (int detections_to_validate);
+
+        /**
+         * \brief Set flag stating if people detection confidence should be used in data association (true) or not (false)
+         *
+         * \param[in] detector_likelihood Flag stating if people detection confidence should be used in data association (true) or not (false)
+         */
+        void
+        setDetectorLikelihood (bool detector_likelihood);
+
+        /**
+         * \brief Set likelihood weights for data association
+         *
+         * \param[in] detector_weight Weight for detector likelihood
+         * \param[in] motion_weight Weight for motion likelihood
+         */
+        void
+        setLikelihoodWeights (double detector_weight, double motion_weight);
+
+        /**
+         * \brief Set flag stating if people velocity should be used in motion term for data association
+         *
+         * \param[in] velocity_in_motion_term If true, people velocity is also used in motion term for data association
+         * \param[in] acceleration_variance Acceleration variance (for Kalman Filter)
+         * \param[in] position_variance Position variance (for Kalman Filter)
+         */
+        void
+        setVelocityInMotionTerm (bool velocity_in_motion_term, double acceleration_variance, double position_variance);
+
+        /**
+         * \brief Set acceleration variance (for Kalman Filter)
+         *
+         * \param[in] acceleration_variance Acceleration variance (for Kalman Filter)
+         */
+        void
+        setAccelerationVariance (double acceleration_variance);
+
+        /**
+         * \brief Set position variance (for Kalman Filter)
+         *
+         * \param[in] position_variance Position variance (for Kalman Filter)
+         */
+        void
+        setPositionVariance (double position_variance);
+
+        /**
+         * \brief Set gate distance for joint likelihood in data association
+         *
+         * \param[in] gate_distance Gate distance for joint likelihood in data association.
+         */
+        void
+        setGateDistance (double gate_distance);
     };
 
   } /* namespace tracking */

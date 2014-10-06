@@ -585,5 +585,34 @@ namespace open_ptrack
     {
       return detection_source_;
     }
+
+    void
+    Track::setVelocityInMotionTerm (bool velocity_in_motion_term, double acceleration_variance, double position_variance)
+    {
+      velocity_in_motion_term_ = velocity_in_motion_term;
+
+      // Re-initialize Kalman filter
+      filter_->setPredictModel (acceleration_variance);
+      filter_->setObserveModel (position_variance);
+      double x, y;
+      filter_->getState(x, y);
+      filter_->init(x, y, distance_, velocity_in_motion_term_);
+
+      *tmp_filter_ = *filter_;
+    }
+
+    void
+    Track::setAccelerationVariance (double acceleration_variance)
+    {
+      filter_->setPredictModel (acceleration_variance);
+      tmp_filter_->setPredictModel (acceleration_variance);
+    }
+
+    void
+    Track::setPositionVariance (double position_variance)
+    {
+      filter_->setObserveModel (position_variance);
+      tmp_filter_->setObserveModel (position_variance);
+    }
   } /* namespace tracking */
 } /* namespace open_ptrack */
