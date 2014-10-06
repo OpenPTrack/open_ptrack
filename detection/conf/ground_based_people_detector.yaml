@@ -24,7 +24,7 @@ background_seconds: 3.0
 # Minimum detection confidence:
 ground_based_people_detection_min_confidence: -1.75
 # Minimum person height:
-minimum_person_height: 0.5 #1.0
+minimum_person_height: 1.0
 # Maximum person height:
 maximum_person_height: 2.3
 # Threshold on distance from the sensor:
