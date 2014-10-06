@@ -28,13 +28,17 @@ generate_dynamic_reconfigure_options(cfg/SwissRanger.cfg)
 include_directories(include ${catkin_INCLUDE_DIRS} cfg/cpp)
 
 catkin_package(
-   INCLUDE_DIRS 
-   LIBRARIES ${PROJECT_NAME}
+   INCLUDE_DIRS include
+   LIBRARIES swissranger_utility
    CATKIN_DEPENDS roscpp tf camera_info_manager image_transport dynamic_reconfigure driver_base
 )
 
-add_executable(${PROJECT_NAME} src/sr.cpp src/dev_sr.cpp)
+add_executable(${PROJECT_NAME} src/sr.cpp src/dev_sr.cpp include/sr.h)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} mesasr)
 
+add_library(swissranger_utility src/swissranger_camera/utility.cpp include/swissranger_camera/utility.h)
+target_link_libraries(swissranger_utility ${catkin_LIBRARIES})
+
 add_executable(image_publisher_sr apps/main_image_publisher_sr.cpp)
-target_link_libraries(image_publisher_sr ${catkin_LIBRARIES})
+target_link_libraries(image_publisher_sr swissranger_utility ${catkin_LIBRARIES})
+
