@@ -203,11 +203,11 @@ public:
   ~SRNode()
   {
     if (dev_)
-      {
-	dev_->close();
-	delete dev_;
-	dev_ = NULL;
-      }
+    {
+      dev_->close();
+      delete dev_;
+      dev_ = NULL;
+    }
 
     delete cinfo_;
   }
@@ -223,8 +223,7 @@ public:
     nh_.param("camera_name",  camera_name_, std::string("swissranger"));
 
     nh_.param("use_filter", use_filter_, static_cast<bool>(USE_FILTER));
-    dynamic_reconfigure::Server<swissranger_camera::SwissRangerConfig >::CallbackType f
-      = boost::bind(&SRNode::reconfig, this, _1, _2);
+    dynamic_reconfigure::Server<swissranger_camera::SwissRangerConfig >::CallbackType f = boost::bind(&SRNode::reconfig, this, _1, _2);
     dynsrv.setCallback(f);
   }
 
@@ -282,57 +281,57 @@ public:
     // resolve frame ID using tf_prefix parameter
     if (newconfig.frame_id == "")
       newconfig.frame_id = camera_name_;
-    if( config_.frame_id != newconfig.frame_id )
-      {
-	std::string tf_prefix = tf::getPrefixParam(nh_);
-	ROS_DEBUG_STREAM("tf_prefix: " << tf_prefix);
-	newconfig.frame_id = tf::resolve(tf_prefix, newconfig.frame_id);
-	config_.frame_id = newconfig.frame_id;
-      }
+    if (config_.frame_id != newconfig.frame_id)
+    {
+      std::string tf_prefix = tf::getPrefixParam(nh_);
+      ROS_DEBUG_STREAM("tf_prefix: " << tf_prefix);
+      newconfig.frame_id = tf::resolve(tf_prefix, newconfig.frame_id);
+      config_.frame_id = newconfig.frame_id;
+    }
 
     if (config_.camera_info_url != newconfig.camera_info_url)
+    {
+      // set the new URL and load CameraInfo (if any) from it
+      if (cinfo_->validateURL(newconfig.camera_info_url))
       {
-        // set the new URL and load CameraInfo (if any) from it
-        if (cinfo_->validateURL(newconfig.camera_info_url))
-          {
-            cinfo_->loadCameraInfo(newconfig.camera_info_url);
-          }
-        else
-          {
-            // new URL not valid, use the old one
-            newconfig.camera_info_url = config_.camera_info_url;
-          }
+        cinfo_->loadCameraInfo(newconfig.camera_info_url);
       }
+      else
+      {
+        // new URL not valid, use the old one
+        newconfig.camera_info_url = config_.camera_info_url;
+      }
+    }
 
     if ((config_.auto_exposure != newconfig.auto_exposure) && device_open_)
+    {
+      if( newconfig.auto_exposure == 1)
       {
-	if( newconfig.auto_exposure == 1)
-	  {
-	    SRNode::dev_->setAutoExposure(true);
-	  }
-	else
-	  {
-	    SRNode::dev_->setAutoExposure(false);
-	  }
+        SRNode::dev_->setAutoExposure(true);
       }
+      else
+      {
+        SRNode::dev_->setAutoExposure(false);
+      }
+    }
     if ((config_.integration_time != newconfig.integration_time) && device_open_)
+    {
+      if( newconfig.auto_exposure != 1 )
       {
-	if( newconfig.auto_exposure != 1 )
-	  {
-	    SRNode::dev_->setIntegrationTime(newconfig.integration_time);
-	  }
+        SRNode::dev_->setIntegrationTime(newconfig.integration_time);
       }
+    }
     if ((config_.amp_threshold != newconfig.amp_threshold) && device_open_)
+    {
+      if( newconfig.amp_threshold >= 0 )
       {
-	if( newconfig.amp_threshold >= 0 )
-	  {
-	    SRNode::dev_->setAmplitudeThreshold(newconfig.amp_threshold);
-	  }
-	else
-	  {
-	    SRNode::dev_->setAmplitudeThreshold(0);
-	  }
+        SRNode::dev_->setAmplitudeThreshold(newconfig.amp_threshold);
       }
+      else
+      {
+        SRNode::dev_->setAmplitudeThreshold(0);
+      }
+    }
 
     config_ = newconfig;                // save new parameters
 
@@ -345,84 +344,82 @@ public:
   bool spin()
   {
     while (nh_.ok())
+    {
+      getParameters();                // check reconfigurable parameters
+
+      // get current CameraInfo data
+      cam_info_ = cinfo_->getCameraInfo();
+      cloud2_.header.frame_id = cloud_.header.frame_id =
+          image_d_.header.frame_id = image_i_.header.frame_id =
+          image_c_.header.frame_id = image_d16_.header.frame_id =
+          cam_info_.header.frame_id = camera_name_;//config_.frame_id;
+
+      if(!device_open_)
       {
-        getParameters();                // check reconfigurable parameters
-
-        // get current CameraInfo data
-        cam_info_ = cinfo_->getCameraInfo();
-        cloud2_.header.frame_id = cloud_.header.frame_id = 
-	  image_d_.header.frame_id = image_i_.header.frame_id = 
-	  image_c_.header.frame_id = image_d16_.header.frame_id = 
-	  cam_info_.header.frame_id = camera_name_;//config_.frame_id;
-
-        if(!device_open_)
+        try
+        {
+          if (dev_->open(config_.auto_exposure, config_.integration_time,
+                         modulation_freq_, config_.amp_threshold, ether_addr_) == 0)
           {
-            try
-              {
-		if (dev_->open(config_.auto_exposure, config_.integration_time,
-			       modulation_freq_, config_.amp_threshold, ether_addr_) == 0)
-                  {
-                    ROS_INFO_STREAM("[" << camera_name_ << "] Connected to device with ID: "
-                                    << dev_->device_id_);
-                    ROS_INFO_STREAM("[" << camera_name_ << "] libmesasr version: " << dev_->lib_version_);
-                    device_open_ = true; 
-                  }
-                else
-                  {
-                    ros::Duration(3.0).sleep();
-                  }
-              }
-            catch (sr::Exception& e)
-              {
-                ROS_ERROR_STREAM("Exception thrown while connecting to the camera: "
-                                 << e.what ());
-                ros::Duration(3.0).sleep();
-              }
+            ROS_INFO_STREAM("[" << camera_name_ << "] Connected to device with ID: " << dev_->device_id_);
+            ROS_INFO_STREAM("[" << camera_name_ << "] libmesasr version: " << dev_->lib_version_);
+            device_open_ = true;
           }
-        else
+          else
           {
-            try
-              {
-                // Read data from the Camera
-                dev_->readData(cloud_,cloud2_,image_d_, image_i_, image_c_, image_d16_);
- 
-                cam_info_.header.stamp = image_d_.header.stamp;
-                cam_info_.height = image_d_.height;
-                cam_info_.width = image_d_.width;
-
-                // Publish it via image_transport
-                if (info_pub_.getNumSubscribers() > 0)
-                  info_pub_.publish(cam_info_);
-                if (image_pub_d_.getNumSubscribers() > 0)
-                  image_pub_d_.publish(image_d_);
-                if (image_pub_i_.getNumSubscribers() > 0)
-                  image_pub_i_.publish(image_i_);
-                if (image_pub_c_.getNumSubscribers() > 0)
-                  image_pub_c_.publish(image_c_);
-                if (image_pub_d16_.getNumSubscribers() > 0)
-                  image_pub_d16_.publish(image_d16_);
-                if (cloud_pub_.getNumSubscribers() > 0)
-                  cloud_pub_.publish (cloud_);
-                if (cloud_pub2_.getNumSubscribers() > 0)
-                  cloud_pub2_.publish (cloud2_);
-              }
-            catch (sr::Exception& e) {
-              ROS_WARN("Exception thrown trying to read data: %s",
-                       e.what());
-              dev_->close();
-              device_open_ = false;
-              ros::Duration(3.0).sleep();
-              }
+            ros::Duration(3.0).sleep();
           }
-        ros::spinOnce();
+        }
+        catch (sr::Exception& e)
+        {
+          ROS_ERROR_STREAM("Exception thrown while connecting to the camera: " << e.what());
+          ros::Duration(3.0).sleep();
+        }
       }
+      else
+      {
+        try
+        {
+          // Read data from the Camera
+          dev_->readData(cloud_,cloud2_,image_d_, image_i_, image_c_, image_d16_);
+
+          cam_info_.header.stamp = image_d_.header.stamp;
+          cam_info_.height = image_d_.height;
+          cam_info_.width = image_d_.width;
+
+          // Publish it via image_transport
+          if (info_pub_.getNumSubscribers() > 0)
+            info_pub_.publish(cam_info_);
+          if (image_pub_d_.getNumSubscribers() > 0)
+            image_pub_d_.publish(image_d_);
+          if (image_pub_i_.getNumSubscribers() > 0)
+            image_pub_i_.publish(image_i_);
+          if (image_pub_c_.getNumSubscribers() > 0)
+            image_pub_c_.publish(image_c_);
+          if (image_pub_d16_.getNumSubscribers() > 0)
+            image_pub_d16_.publish(image_d16_);
+          if (cloud_pub_.getNumSubscribers() > 0)
+            cloud_pub_.publish (cloud_);
+          if (cloud_pub2_.getNumSubscribers() > 0)
+            cloud_pub2_.publish (cloud2_);
+        }
+        catch (sr::Exception & e)
+        {
+          ROS_WARN_STREAM("Exception thrown trying to read data: " << e.what());
+          dev_->close();
+          device_open_ = false;
+          ros::Duration(3.0).sleep();
+        }
+      }
+      ros::spinOnce();
+    }
 
     return true;
   }
 };
 
 // TODO: figure out a clean way to do this inside SRNode:
-sr::SR* SRNode::dev_ = NULL;
+sr::SR * SRNode::dev_ = NULL;
 bool SRNode::device_open_ = false;
 
 /** Segfault signal handler */
@@ -431,9 +428,9 @@ void sigsegv_handler(int sig)
   signal(SIGSEGV, SIG_DFL);
   fprintf(stderr, "Segmentation fault, stopping camera driver.\n");
   if (SRNode::dev_)
-    {
-      SRNode::dev_->close();
-    }
+  {
+    SRNode::dev_->close();
+  }
 }
 
 /** Main entry point */

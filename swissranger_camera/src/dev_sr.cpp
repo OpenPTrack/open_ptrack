@@ -60,9 +60,11 @@
 
 extern int SR_ROS_FuncCB(SRCAM srCam, unsigned int msg, unsigned int param, void *data);
 int SR_ROS_FuncCB(SRCAM srCam, unsigned int msg, unsigned int param, void *data) {
-  switch( msg ) {
+  switch (msg)
+  {
   case CM_MSG_DISPLAY:
-    if (param & 0x04FF) {
+    if (param & 0x04FF)
+    {
       ROS_WARN("MSG_DISPLAY : %X : %s", param, (char *)data);
     }
     break;
@@ -75,35 +77,32 @@ using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor
-SR::SR(bool use_filter) : srCam_(NULL), imgEntryArray_(NULL), buffer_(NULL), use_filter_(use_filter)
-{}
+SR::SR(bool use_filter) : srCam_(NULL), imgEntryArray_(NULL), buffer_(NULL), use_filter_(use_filter) {}
 
 SR::~SR() 
 {
   SafeCleanup();
 }
 
-
-int SR::open(int auto_exposure, int integration_time, 
-               int modulation_freq, int amp_threshold, std::string &ether_addr) {
-
+int SR::open(int auto_exposure, int integration_time, int modulation_freq, int amp_threshold, std::string &ether_addr)
+{
   // ---[ Open the camera ]---
   int res = 0;
   if(ether_addr != "")
-    {
-      // ---[ set callback function ] ---
-      SR_SetCallback((SR_FuncCB *)SR_ROS_FuncCB);
-      res = SR_OpenETH (&srCam_, ether_addr.c_str());
-    }
+  {
+    // ---[ set callback function ] ---
+    SR_SetCallback((SR_FuncCB *)SR_ROS_FuncCB);
+    res = SR_OpenETH (&srCam_, ether_addr.c_str());
+  }
   else
     res = SR_OpenUSB (&srCam_, 0); //returns the device ID used in
-			
+
   if (res <= 0)
-    {
-      SafeCleanup();
-      SR_EXCEPT(sr::Exception, "Failed to open device!");
-      return (-1);
-    }
+  {
+    SafeCleanup();
+    SR_EXCEPT(sr::Exception, "Failed to open device!");
+    return (-1);
+  }
   
   device_id_   = getDeviceString ();
   lib_version_ = getLibraryVersion ();
@@ -118,17 +117,15 @@ int SR::open(int auto_exposure, int integration_time,
 
   ROS_INFO ("[SwissRanger device::open] Number of images available: %d", inr_);
 
-  if ( (cols_ != SR_COLS) || (rows_ != SR_ROWS) || 
-       (inr_ < SR_IMAGES) || (imgEntryArray_ == 0) )
-    {
-      SafeCleanup();
-      SR_EXCEPT_ARGS(sr::Exception, 
-		     "Invalid data images: %d %dx%d images received from camera!\n Expected %d %dx%d images.", 
-		     inr_, cols_, rows_, SR_IMAGES, SR_COLS, SR_ROWS);
-      return (-1);
-    }
+  if ( (cols_ != SR_COLS) || (rows_ != SR_ROWS) || (inr_ < SR_IMAGES) || (imgEntryArray_ == 0) )
+  {
+    SafeCleanup();
+    SR_EXCEPT_ARGS(sr::Exception,
+                   "Invalid data images: %d %dx%d images received from camera!\n Expected %d %dx%d images.",
+                   inr_, cols_, rows_, SR_IMAGES, SR_COLS, SR_ROWS);
+    return (-1);
+  }
   
-
   if (auto_exposure >= 0)
     setAutoExposure(auto_exposure);
 
@@ -140,7 +137,6 @@ int SR::open(int auto_exposure, int integration_time,
 
   if (amp_threshold >=0 && amp_threshold != getAmplitudeThreshold())
     setAmplitudeThreshold(amp_threshold);
- 
 
   // Points array
   size_t buffer_size = rows_ * cols_ * 3 * sizeof (float);
@@ -152,29 +148,27 @@ int SR::open(int auto_exposure, int integration_time,
   zp_ = &yp_[rows_*cols_];
 
   return 0;
-  
-  
 }
 
-////////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////////
 // Safe Cleanup
-void SR::SafeCleanup() {
+void SR::SafeCleanup()
+{
   if (srCam_)
-    {
-      SR_Close (srCam_);
-    }
-
+  {
+    SR_Close (srCam_);
+  }
   if (buffer_)
     free(buffer_);
 
   srCam_ = NULL;
   buffer_ = NULL;
-
 }
 
 
 
-int SR::close() {
+int SR::close()
+{
   if (srCam_)
     if (SR_Close (srCam_))
       ROS_WARN("unable to stop sr");
@@ -185,18 +179,14 @@ int SR::close() {
   return 0;
 }
 
-
-
-
-
 // ////////////////////////////////////////////////////////////////////////////////
 // // Store an image frame into the 'frame' buffer
 void SR::readData(sensor_msgs::PointCloud &cloud,
-		  sensor_msgs::PointCloud2 &cloud2,
-		  sensor_msgs::Image &image_d,
-		  sensor_msgs::Image &image_i,
-		  sensor_msgs::Image &image_c,
-		  sensor_msgs::Image &image_d16) {
+                  sensor_msgs::PointCloud2 &cloud2,
+                  sensor_msgs::Image &image_d,
+                  sensor_msgs::Image &image_i,
+                  sensor_msgs::Image &image_c,
+                  sensor_msgs::Image &image_d16) {
   
   if (srCam_ == NULL) {
     SR_EXCEPT(sr::Exception, "Read attempted on NULL SwissRanger port!");
@@ -210,14 +200,14 @@ void SR::readData(sensor_msgs::PointCloud &cloud,
   res = SR_Acquire (srCam_);
   double time2 = ros::Time::now().toSec();
   if (res < 0)
-    {
-      SR_EXCEPT(sr::Exception, "Unable to capture data");
-      return;
-    }
+  {
+    SR_EXCEPT(sr::Exception, "Unable to capture data");
+    return;
+  }
 
   double timestamp=(time1+time2)/2;
   cloud.header.stamp=cloud2.header.stamp=image_d.header.stamp=image_d16.header.stamp=
-    image_i.header.stamp=image_c.header.stamp=ros::Time(timestamp);
+      image_i.header.stamp=image_c.header.stamp=ros::Time(timestamp);
 
 
   size_t image_size = imgEntryArray_->width * imgEntryArray_->height ;
@@ -228,8 +218,8 @@ void SR::readData(sensor_msgs::PointCloud &cloud,
   uint8_t *confidence_image = (unsigned char*)SR_GetImage (srCam_, 2);
   
   // Points array
-  res = SR_CoordTrfFlt (srCam_, xp_, yp_, zp_, sizeof (float), 
-			sizeof (float), sizeof (float));  
+  res = SR_CoordTrfFlt (srCam_, xp_, yp_, zp_, sizeof (float),
+                        sizeof (float), sizeof (float));
 
   cloud.points.resize(image_size);
   cloud.channels.resize (2);
@@ -295,50 +285,52 @@ void SR::readData(sensor_msgs::PointCloud &cloud,
   uint count=0;
 
   for (uint i = 0; i < image_size; i++)
+  {
+    //check if images contain data, mostly needed because SR3K does
+    //not provide a confidence image
+    if (distance_image != 0x0)
     {
-      //check if images contain data, mostly needed because SR3K does
-      //not provide a confidence image
-      if (distance_image != 0x0)
-        {
-          image_d.data[i] = ((distance_image[i * 2 + 0] << 0) + (distance_image[i * 2 + 1] << 8)) * (255 / 65535.0);
-          image_d16.data[i * 2 + 0] = distance_image[i * 2 + 0];
-          image_d16.data[i * 2 + 1] = distance_image[i * 2 + 1];
-        }
-
-      if (intensity_image != 0x0) 
-	image_i.data[i] = ((intensity_image[i * 2 + 0] << 0) + (intensity_image[i * 2 + 1] << 8)) * (255 / 65535.0);
-
-      if (confidence_image != 0x0) 
-	image_c.data[i] = ((confidence_image[i * 2 + 0] << 0) + (confidence_image[i * 2 + 1] << 8)) * (255 / 65535.0);
-
-      if (!use_filter_ || zp_[i] > 0.15) {
-	pt.x=-xp_[i];
-	pt.y=-yp_[i];
-	pt.z=zp_[i];
-	cloud.points[count]=pt;
-	cloud.channels[0].values[count]= ((intensity_image[i * 2 + 0] << 0) + (intensity_image[i * 2 + 1] << 8));
-	cloud.channels[1].values[count]= ((confidence_image[i * 2 + 0] << 0) + (confidence_image[i * 2 + 1] << 8));
-	count++;
-
-        memcpy (&cloud2.data[i * cloud2.point_step + 0], &pt.x, sizeof (float));
-        memcpy (&cloud2.data[i * cloud2.point_step + 4], &pt.y, sizeof (float));
-        memcpy (&cloud2.data[i * cloud2.point_step + 8], &pt.z, sizeof (float));
-	float intensity = ((intensity_image[i * 2 + 0] << 0) + (intensity_image[i * 2 + 1] << 8));
-        memcpy (&cloud2.data[i * cloud2.point_step + 12], &intensity, sizeof (float));
-	float confidence = ((confidence_image[i * 2 + 0] << 0) + (confidence_image[i * 2 + 1] << 8));
-        memcpy (&cloud2.data[i * cloud2.point_step + 16], &confidence, sizeof (float));
-      }
-      else {
-	float bad_point = std::numeric_limits<float>::quiet_NaN ();
-        memcpy (&cloud2.data[i * cloud2.point_step + 0], &bad_point, sizeof (float));
-        memcpy (&cloud2.data[i * cloud2.point_step + 4], &bad_point, sizeof (float));
-        memcpy (&cloud2.data[i * cloud2.point_step + 8], &bad_point, sizeof (float));
-	memcpy (&cloud2.data[i * cloud2.point_step + 12], &bad_point, sizeof (float));
-	memcpy (&cloud2.data[i * cloud2.point_step + 16], &bad_point, sizeof (float));	
-      }
-      
-
+      image_d.data[i] = ((distance_image[i * 2 + 0] << 0) + (distance_image[i * 2 + 1] << 8)) * (255 / 65535.0);
+      image_d16.data[i * 2 + 0] = distance_image[i * 2 + 0];
+      image_d16.data[i * 2 + 1] = distance_image[i * 2 + 1];
     }
+
+    if (intensity_image != 0x0)
+      image_i.data[i] = ((intensity_image[i * 2 + 0] << 0) + (intensity_image[i * 2 + 1] << 8)) * (255 / 65535.0);
+
+    if (confidence_image != 0x0)
+      image_c.data[i] = ((confidence_image[i * 2 + 0] << 0) + (confidence_image[i * 2 + 1] << 8)) * (255 / 65535.0);
+
+    if (!use_filter_ || zp_[i] > 0.15)
+    {
+      pt.x=-xp_[i];
+      pt.y=-yp_[i];
+      pt.z=zp_[i];
+
+      cloud.points[count]=pt;
+      cloud.channels[0].values[count]= ((intensity_image[i * 2 + 0] << 0) + (intensity_image[i * 2 + 1] << 8));
+      cloud.channels[1].values[count]= ((confidence_image[i * 2 + 0] << 0) + (confidence_image[i * 2 + 1] << 8));
+      count++;
+
+      memcpy (&cloud2.data[i * cloud2.point_step + 0], &pt.x, sizeof (float));
+      memcpy (&cloud2.data[i * cloud2.point_step + 4], &pt.y, sizeof (float));
+      memcpy (&cloud2.data[i * cloud2.point_step + 8], &pt.z, sizeof (float));
+      float intensity = ((intensity_image[i * 2 + 0] << 0) + (intensity_image[i * 2 + 1] << 8));
+      memcpy (&cloud2.data[i * cloud2.point_step + 12], &intensity, sizeof (float));
+      float confidence = ((confidence_image[i * 2 + 0] << 0) + (confidence_image[i * 2 + 1] << 8));
+      memcpy (&cloud2.data[i * cloud2.point_step + 16], &confidence, sizeof (float));
+    }
+    else
+    {
+      float bad_point = std::numeric_limits<float>::quiet_NaN ();
+      memcpy (&cloud2.data[i * cloud2.point_step + 0], &bad_point, sizeof (float));
+      memcpy (&cloud2.data[i * cloud2.point_step + 4], &bad_point, sizeof (float));
+      memcpy (&cloud2.data[i * cloud2.point_step + 8], &bad_point, sizeof (float));
+      memcpy (&cloud2.data[i * cloud2.point_step + 12], &bad_point, sizeof (float));
+      memcpy (&cloud2.data[i * cloud2.point_step + 16], &bad_point, sizeof (float));
+    }
+
+  }
 
   cloud.points.resize(count);
   cloud.channels[0].values.resize(count);
@@ -357,7 +349,7 @@ SR::setAutoExposure (bool on)
 #ifdef USE_SR4K
     res = SR_SetAutoExposure (srCam_, 1, 150, 5, 70);
 #else
-  res = SR_SetAutoExposure (srCam_, 2, 255, 10, 45);
+    res = SR_SetAutoExposure (srCam_, 2, 255, 10, 45);
 #endif
   else
     res = SR_SetAutoExposure (srCam_, 255, 0, 0, 0);
@@ -425,12 +417,12 @@ SR::getDeviceString ()
   std::string sensor (buf);
   std::string::size_type loc = sensor.find ("Product:", 0);
   if (loc != std::string::npos)
-    {
-      sensor = sensor.substr (loc + 9, *buflen);
-      loc = sensor.find ("'", 0);
-      if (loc != std::string::npos)
-	sensor = sensor.substr (0, loc);
-    }
+  {
+    sensor = sensor.substr (loc + 9, *buflen);
+    loc = sensor.find ("'", 0);
+    if (loc != std::string::npos)
+      sensor = sensor.substr (0, loc);
+  }
   else
     sensor = "";
 
