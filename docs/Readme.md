@@ -2,5 +2,3 @@
 
 it's nearly complete... when it is, we will export & have an offline HTML version in /doc for reference. 
 
-
-.....
