@@ -37,5 +37,10 @@ use_rgb: true
 minimum_luminance: 120
 # If true, sensor tilt angle wrt ground plane is compensated to improve people detection:
 sensor_tilt_compensation: true  
+# Minimum distance between two persons:
+heads_minimum_distance: 0.3
+# Voxel size used to downsample the point cloud (lower: detection slower but more precise; higher: detection faster but less precise):
+voxel_size: 0.06
+
 
 

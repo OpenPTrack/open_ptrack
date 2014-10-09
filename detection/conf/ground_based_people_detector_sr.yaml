@@ -37,3 +37,8 @@ use_rgb: true
 sensor_tilt_compensation: true 
 # Threshold on SwissRanger depth confidence:
 sr_conf_threshold: 180
+# Minimum distance between two persons:
+heads_minimum_distance: 0.3
+# Voxel size used to downsample the point cloud (lower: detection slower but more precise; higher: detection faster but less precise):
+voxel_size: 0.06
+

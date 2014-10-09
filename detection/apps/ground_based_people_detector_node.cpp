@@ -198,9 +198,11 @@ main (int argc, char** argv)
   nh.param("background_seconds", background_seconds, 3.0);
   std::string update_background_topic;  // Topic where the background update message is published/read
   nh.param("update_background_topic", update_background_topic, std::string("/background_update"));
+  double heads_minimum_distance; // Minimum distance between two persons' head
+  nh.param("heads_minimum_distance", heads_minimum_distance, 0.3);
+  double voxel_size;             // Voxel size for downsampling the cloud
+  nh.param("voxel_size", voxel_size, 0.06);
 
-  // Fixed parameters:
-  float voxel_size = 0.06;
   //	Eigen::Matrix3f intrinsics_matrix;
   intrinsics_matrix << 525, 0.0, 319.5, 0.0, 525, 239.5, 0.0, 0.0, 1.0; // Kinect RGB camera intrinsics
 
@@ -319,7 +321,8 @@ main (int argc, char** argv)
   people_detector.setHeightLimits(min_height, max_height);         // set person classifier
   people_detector.setSamplingFactor(sampling_factor);              // set sampling factor
   people_detector.setUseRGB(use_rgb);                              // set if RGB should be used or not
-  people_detector.setSensorTiltCompensation(sensor_tilt_compensation);						 // enable point cloud rotation correction
+  people_detector.setSensorTiltCompensation(sensor_tilt_compensation);		  // enable point cloud rotation correction
+  people_detector.setMinimumDistanceBetweenHeads (heads_minimum_distance);  // set minimum distance between persons' head
   if (background_subtraction)
     people_detector.setBackground(background_subtraction, background_octree_resolution, background_cloud);
 
