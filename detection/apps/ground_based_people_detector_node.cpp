@@ -328,7 +328,7 @@ main (int argc, char** argv)
   {
     if (new_cloud_available_flag)
     {
-      new_cloud_available_flag = false;
+	  new_cloud_available_flag = false;
 
       // Convert PCL cloud header to ROS header:
       std_msgs::Header cloud_header = pcl_conversions::fromPCL(cloud->header);
@@ -367,6 +367,8 @@ main (int argc, char** argv)
       for(int i = 0; i < 3; i++)
         for(int j = 0; j < 3; j++)
           detection_array_msg->intrinsic_matrix.push_back(intrinsics_matrix(i, j));
+      detection_array_msg->confidence_type = std::string("hog+svm");
+      detection_array_msg->image_type = std::string("rgb");
 
       // Add all valid detections:
       for(std::vector<pcl::people::PersonCluster<PointT> >::iterator it = clusters.begin(); it != clusters.end(); ++it)

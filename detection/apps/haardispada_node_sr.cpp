@@ -217,6 +217,8 @@ class HaarDispAdaNode
       output_msg->detections.clear();
       output_msg->header = input_msg->header;
       output_msg->intrinsic_matrix = input_msg->intrinsic_matrix;
+      output_msg->confidence_type = std::string("haar+ada");
+      output_msg->image_type = std::string("disparity");
 
       // Add all valid detections:
       int k = 0;

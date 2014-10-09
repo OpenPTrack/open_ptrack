@@ -518,6 +518,8 @@ main (int argc, char** argv)
 				for(int j = 0; j < 3; j++)
 					detection_array_msg->intrinsic_matrix.push_back(intrinsics_matrix(i, j));
 			detection_array_msg->header.frame_id = cloud_header.frame_id;
+			detection_array_msg->confidence_type = std::string("hog+svm");
+			detection_array_msg->image_type = std::string("ir");
 			// Add all valid detections:
 			unsigned int k = 0;
 			for(std::vector<pcl::people::PersonCluster<PointT> >::iterator it = clusters.begin(); it != clusters.end(); ++it)

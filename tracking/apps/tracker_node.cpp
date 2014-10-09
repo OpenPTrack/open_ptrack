@@ -205,8 +205,8 @@ detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
       detections_vector.push_back(open_ptrack::detection::Detection(*it, source));
     }
 
-    // If tracking in a network containing SwissRangers, convert SwissRanger people detection confidence from HOG-like to HaarDispAda-like:
-    if (!std::strcmp(msg->header.frame_id.substr(0, 2).c_str(), "Sw"))
+    // Convert HOG+SVM confidences to HAAR+ADABOOST-like people detection confidences:
+    if (not std::strcmp(msg->confidence_type.c_str(), "hog+svm"))
     {
       for(unsigned int i = 0; i < detections_vector.size(); i++)
       {
