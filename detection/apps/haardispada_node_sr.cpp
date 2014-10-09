@@ -111,6 +111,9 @@ class HaarDispAdaNode
     int num_TP_class0;
     int num_FP_class0;
 
+    // Flag stating if classifiers based on disparity image should be used or not:
+    bool use_disparity;
+
     // Minimum classifier confidence for people detection:
     double min_confidence;
 
@@ -136,6 +139,10 @@ class HaarDispAdaNode
       int qs;
       if(!node_.getParam(nn + "/Q_Size",qs)){
         qs=3;
+      }
+
+      if(!node_.getParam(nn + "/use_disparity", use_disparity)){
+        use_disparity = true;
       }
 
       if(!node_.getParam(nn + "/haar_disp_ada_min_confidence", min_confidence)){
@@ -224,7 +231,7 @@ class HaarDispAdaNode
       int k = 0;
       for(unsigned int i = 0; i < input_msg->detections.size(); i++)
       {
-        if(confidences[i] > min_confidence)            // keep only people with confidence above a threshold
+        if((!use_disparity) | (confidences[i] > min_confidence))            // keep only people with confidence above a threshold
         {
           output_msg->detections.push_back(input_msg->detections[i]);
           output_msg->detections[k].confidence = confidences[i];

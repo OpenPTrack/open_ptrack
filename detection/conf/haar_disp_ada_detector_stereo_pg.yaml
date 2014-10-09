@@ -1,8 +1,12 @@
 ##############################################
 ## HaarDispAda people detection parameters: ##
 ##############################################
+# Flag stating if classifiers based on disparity image should be used or not:
+use_disparity: true
 # Minimum detection confidence:
 haar_disp_ada_min_confidence: 2.0
+
+# Other parameters:
 mode: "load"
 Q_Size: 20
 num_Training_Samples: 350
