@@ -210,10 +210,16 @@ detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
     {
       for(unsigned int i = 0; i < detections_vector.size(); i++)
       {
+//        double new_confidence = detections_vector[i].getConfidence();
+//        new_confidence = (new_confidence - min_confidence_detections_sr) / (min_confidence_sr - min_confidence_detections_sr) *
+//                         (min_confidence - min_confidence_detections) + min_confidence_detections;
+//        detections_vector[i].setConfidence(new_confidence+2);
+
         double new_confidence = detections_vector[i].getConfidence();
-        new_confidence = (new_confidence - min_confidence_detections_sr) / (min_confidence_sr - min_confidence_detections_sr) *
-                         (min_confidence - min_confidence_detections) + min_confidence_detections;
-        detections_vector[i].setConfidence(new_confidence+2);
+        new_confidence = (new_confidence - (-3)) / 3 * 4 + 2;
+        detections_vector[i].setConfidence(new_confidence);
+
+        //std::cout << detections_vector[i].getConfidence() << std::endl;
       }
     }
 
