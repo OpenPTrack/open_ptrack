@@ -85,12 +85,18 @@
 #include <message_filters/sync_policies/exact_time.h>
 #include <message_filters/sync_policies/approximate_time.h>
 
+// Dynamic reconfigure:
+#include <dynamic_reconfigure/server.h>
+#include <detection/GroundBasedPeopleDetectorConfig.h>
+
 using namespace opt_msgs;
 using namespace sensor_msgs;
 using namespace message_filters::sync_policies;
 
 typedef pcl::PointXYZRGB PointT;
 typedef pcl::PointCloud<PointT> PointCloudT;
+typedef detection::GroundBasedPeopleDetectorConfig Config;
+typedef dynamic_reconfigure::Server<Config> ReconfigureServer;
 
 bool new_cloud_available_flag = false;
 PointCloudT::Ptr cloud(new PointCloudT);
@@ -101,6 +107,33 @@ bool debug;
 bool update_background = false;
 
 cv::Mat confidence_image, intensity_image;
+
+// Min confidence for people detection:
+double min_confidence;
+// People detection object
+open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT> people_detector;
+// Flag stating if classifiers based on RGB image should be used or not
+bool use_rgb;
+// Threshold on image luminance. If luminance is over this threshold, classifiers on RGB image are also used
+int minimum_luminance;
+// If true, sensor tilt angle wrt ground plane is compensated to improve people detection
+bool sensor_tilt_compensation;
+// Voxel size for downsampling the cloud
+double voxel_size;
+// If true, do not update the ground plane at every frame
+bool lock_ground;
+// Frames to use for updating the background
+int max_background_frames;
+// Main loop rate:
+double rate_value;
+// Voxel resolution of the octree used to represent the background
+double background_octree_resolution;
+// Background cloud
+PointCloudT::Ptr background_cloud;
+// If true, background subtraction is performed
+bool background_subtraction;
+// Threshold on SwissRanger depth confidence
+int sr_conf_threshold;
 
 enum { COLS = 176, ROWS = 144 };
 
@@ -249,20 +282,80 @@ computeBackgroundCloud (int frames, float voxel_size, int sr_conf_threshold, std
   std::cout << "done." << std::endl << std::endl;
 }
 
+void
+configCb(Config &config, uint32_t level)
+{
+  min_confidence = config.ground_based_people_detection_min_confidence;
+
+  people_detector.setHeightLimits (config.minimum_person_height, config.maximum_person_height);
+
+  people_detector.setMaxDistance (config.max_distance);
+
+  people_detector.setSamplingFactor (config.sampling_factor);
+
+  use_rgb = config.use_rgb;
+  people_detector.setUseRGB (config.use_rgb);
+
+  minimum_luminance = config.minimum_luminance;
+
+  sensor_tilt_compensation = config.sensor_tilt_compensation;
+  people_detector.setSensorTiltCompensation (config.sensor_tilt_compensation);
+
+  people_detector.setMinimumDistanceBetweenHeads (config.heads_minimum_distance);
+
+  voxel_size = config.voxel_size;
+  people_detector.setVoxelSize (config.voxel_size);
+
+  lock_ground = config.lock_ground;
+
+  max_background_frames = int(config.background_seconds * rate_value);
+
+  if (config.background_resolution != background_octree_resolution)
+  {
+    background_octree_resolution = config.background_resolution;
+    if (background_subtraction)
+      people_detector.setBackground(background_subtraction, background_octree_resolution, background_cloud);
+  }
+
+  if (config.background_subtraction != background_subtraction)
+  {
+    if (config.background_subtraction)
+    {
+      update_background = true;
+    }
+    else
+    {
+      background_subtraction = false;
+      people_detector.setBackground(false, background_octree_resolution, background_cloud);
+    }
+  }
+
+  sr_conf_threshold = config.sr_conf_threshold;
+}
+
+bool
+fileExists(const char *fileName)
+{
+    ifstream infile(fileName);
+    return infile.good();
+}
+
 int
 main (int argc, char** argv)
 {
 	ros::init(argc, argv, "ground_based_people_detector");
 	ros::NodeHandle nh("~");
 
+  // Dynamic reconfigure
+  boost::recursive_mutex config_mutex_;
+  boost::shared_ptr<ReconfigureServer> reconfigure_server_;
+
 	// Read some parameters from launch file:
 	int ground_estimation_mode;
 	nh.param("ground_estimation_mode", ground_estimation_mode, 0);
 	std::string svm_filename;
 	nh.param("classifier_file", svm_filename, std::string("./"));
-	bool use_rgb;
 	nh.param("use_rgb", use_rgb, false);
-	double min_confidence;
 	nh.param("ground_based_people_detection_min_confidence", min_confidence, -1.5);
 	double min_height;
 	nh.param("minimum_person_height", min_height, 1.3);
@@ -282,21 +375,15 @@ main (int argc, char** argv)
 	nh.param("output_topic", output_topic, std::string("/ground_based_people_detector/detections"));
 	std::string camera_info_topic;
 	nh.param("camera_info_topic", camera_info_topic, std::string("/camera/rgb/camera_info"));
-	double rate_value;
 	nh.param("rate", rate_value, 30.0);
-	int sr_conf_threshold;
 	nh.param("sr_conf_threshold", sr_conf_threshold, 200);
 	bool ground_from_extrinsic_calibration;
 	nh.param("ground_from_extrinsic_calibration", ground_from_extrinsic_calibration, false);
-	bool lock_ground; // if true, do not update the ground plane at every frame
 	nh.param("lock_ground", lock_ground, false);
-	bool sensor_tilt_compensation;
 	nh.param("sensor_tilt_compensation", sensor_tilt_compensation, false);
 	double valid_points_threshold;
 	nh.param("valid_points_threshold", valid_points_threshold, 0.3);
-	bool background_subtraction;
 	nh.param("background_subtraction", background_subtraction, false);
-	double background_octree_resolution;
 	nh.param("background_resolution", background_octree_resolution, 0.3);
 	double background_seconds;
 	nh.param("background_seconds", background_seconds, 3.0);
@@ -304,7 +391,6 @@ main (int argc, char** argv)
 	nh.param("update_background_topic", update_background_topic, std::string("/background_update"));
 	double heads_minimum_distance; // Minimum distance between two persons' head
 	nh.param("heads_minimum_distance", heads_minimum_distance, 0.3);
-	double voxel_size;             // Voxel size for downsampling the cloud
 	nh.param("voxel_size", voxel_size, 0.06);
 
 //	Eigen::Matrix3f intrinsics_matrix;
@@ -458,6 +544,11 @@ main (int argc, char** argv)
 	if (background_subtraction)
 	  people_detector.setBackground(background_subtraction, background_octree_resolution, background_cloud);
 
+    // Set up dynamic reconfiguration
+    ReconfigureServer::CallbackType f = boost::bind(&configCb, _1, _2);
+    reconfigure_server_.reset(new ReconfigureServer(config_mutex_, nh));
+    reconfigure_server_->setCallback(f);
+
 //	// Initialize new viewer:
 //	pcl::visualization::PCLVisualizer viewer("PCL Viewer");          // viewer initialization
 //	viewer.setCameraPosition(0,0,-2,0,-1,0,0);
@@ -595,9 +686,9 @@ main (int argc, char** argv)
 	}
 
 	// Delete background file from disk:
-	if (background_subtraction)
+	std::string filename = "/tmp/background_" + frame_id.substr(1, frame_id.length()-1) + ".pcd";
+	if (fileExists (filename.c_str()))
 	{
-	  std::string filename = "/tmp/background_" + frame_id.substr(1, frame_id.length()-1) + ".pcd";
 	  remove( filename.c_str() );
 	}
 

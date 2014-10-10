@@ -63,6 +63,10 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+// Dynamic reconfigure:
+#include <dynamic_reconfigure/server.h>
+#include <detection/HaarDispAdaDetectorConfig.h>
+
 using namespace stereo_msgs;
 using namespace message_filters::sync_policies;
 using namespace opt_msgs;
@@ -77,6 +81,10 @@ using cv::Mat;
 
 class HaarDispAdaNode
 {
+
+    typedef detection::HaarDispAdaDetectorConfig Config;
+    typedef dynamic_reconfigure::Server<Config> ReconfigureServer;
+
   private:
     // Define Node
     ros::NodeHandle node_;
@@ -123,6 +131,10 @@ class HaarDispAdaNode
     // Output detections message:
     DetectionArray::Ptr output_detection_msg_;
 
+    // Dynamic reconfigure
+    boost::recursive_mutex config_mutex_;
+    boost::shared_ptr<ReconfigureServer> reconfigure_server_;
+
   public:
 
     explicit HaarDispAdaNode(const ros::NodeHandle& nh):
@@ -137,38 +149,38 @@ class HaarDispAdaNode
 
       string nn = ros::this_node::getName();
       int qs;
-      if(!node_.getParam(nn + "/Q_Size",qs)){
+      if(!node_.getParam("Q_Size",qs)){
         qs=3;
       }
 
-      if(!node_.getParam(nn + "/use_disparity", use_disparity)){
+      if(!node_.getParam("use_disparity", use_disparity)){
         use_disparity = true;
       }
 
-      if(!node_.getParam(nn + "/haar_disp_ada_min_confidence", min_confidence)){
+      if(!node_.getParam("haar_disp_ada_min_confidence", min_confidence)){
         min_confidence = 3.0;
       }
       HDAC_.setMinConfidence(min_confidence);
 
       int NS;
-      if(!node_.getParam(nn + "/num_Training_Samples",NS)){
+      if(!node_.getParam("num_Training_Samples",NS)){
         NS = 350; // default sets asside very little for training
-        node_.setParam(nn + "/num_Training_Samples",NS);
+        node_.setParam("num_Training_Samples",NS);
       }
       HDAC_.setMaxSamples(NS);
 
       output_detection_msg_ = DetectionArray::Ptr(new DetectionArray);
 
       // Published Messages
-      pub_rois_           = node_.advertise<Rois>("HaarDispAdaOutputRois",qs);
-      pub_Color_Image_    = node_.advertise<Image>("HaarDispAdaColorImage",qs);
-      pub_Disparity_Image_= node_.advertise<DisparityImage>("HaarDispAdaDisparityImage",qs);
+      pub_rois_           = node_.advertise<Rois>("/HaarDispAdaOutputRois",qs);
+      pub_Color_Image_    = node_.advertise<Image>("/HaarDispAdaColorImage",qs);
+      pub_Disparity_Image_= node_.advertise<DisparityImage>("/HaarDispAdaDisparityImage",qs);
       pub_detections_ = node_.advertise<DetectionArray>("/detector/detections",3);
 
       // Subscribe to Messages
-      sub_image_.subscribe(node_,"Color_Image",qs);
-      sub_disparity_.subscribe(node_, "Disparity_Image",qs);
-      sub_detections_.subscribe(node_,"input_detections",qs);
+      sub_image_.subscribe(node_,"/Color_Image",qs);
+      sub_disparity_.subscribe(node_, "/Disparity_Image",qs);
+      sub_detections_.subscribe(node_,"/input_detections",qs);
 
       // Sync the Synchronizer
       approximate_sync_.reset(new ApproximateSync(ApproximatePolicy(qs),
@@ -181,6 +193,11 @@ class HaarDispAdaNode
           _1,
           _2,
           _3));
+
+      // Set up dynamic reconfiguration
+      ReconfigureServer::CallbackType f = boost::bind(&HaarDispAdaNode::configCb, this, _1, _2);
+      reconfigure_server_.reset(new ReconfigureServer(config_mutex_, node_));
+      reconfigure_server_->setCallback(f);
     }
 
     int
@@ -189,7 +206,7 @@ class HaarDispAdaNode
 
       int callback_mode;
       std::string mode="";
-      node_.param(ros::this_node::getName() + "/mode", mode, std::string("none"));
+      node_.param("mode", mode, std::string("none"));
       if(mode.compare("detect") == 0)
       {
         callback_mode = DETECT;
@@ -267,7 +284,7 @@ class HaarDispAdaNode
           (float*) &disparity_msg->image.data[0],
           disparity_msg->image.step);
 
-      if(!node_.getParam(nn + "/UseMissingDataMask",HDAC_.useMissingDataMask_)){
+      if(!node_.getParam("UseMissingDataMask",HDAC_.useMissingDataMask_)){
         HDAC_.useMissingDataMask_ = false;
       }
 
@@ -277,7 +294,7 @@ class HaarDispAdaNode
       // between the focal lengths of the kinect's color camera and ir cameras //
       // TODO, parameterize to disable this hack for the stereo data           //
       bool kinect_disparity_fix;
-      if(!node_.getParam(nn + "/Kinect_Disparity_Fix",kinect_disparity_fix)){
+      if(!node_.getParam("Kinect_Disparity_Fix",kinect_disparity_fix)){
         kinect_disparity_fix = false;
       }
 
@@ -355,7 +372,10 @@ class HaarDispAdaNode
             R.y      = R_out[i].y;
             R.width  = R_out[i].width;
             R.height = R_out[i].height;
-            R.label  = L_out[i];
+            if (use_disparity)
+              R.label  = L_out[i];
+            else
+              R.label = 1;
             R.confidence = C_out[i];
             output_rois_.rois.push_back(R);
           }
@@ -366,34 +386,34 @@ class HaarDispAdaNode
           break;
         case ACCUMULATE:
           numSamples = HDAC_.addToTraining(R_in,L_in,dmatrix);
-          param_name = nn + "/num_Training_Samples";
+          param_name = "num_Training_Samples";
           int NS;
           if(node_.getParam(param_name,NS)){
             float percent = (float)HDAC_.numSamples_ * 100.0/NS;
             ROS_INFO("ACCUMULATING: %6.1f%c",percent,'%');
             if(numSamples >= NS){
-              param_name = nn + "/mode";
+              param_name = "mode";
               node_.setParam(param_name, std::string("train"));
               ROS_ERROR("DONE Accumulating, switching to train mode");
             }
           }
           break;
         case TRAIN:
-          param_name = nn + "/classifier_file";
+          param_name = "classifier_file";
           node_.param(param_name,cfnm,std::string("/home/clewis/classifiers/test.xml"));
-          param_name = nn + "/HaarDispAdaPrior";
+          param_name = "HaarDispAdaPrior";
           node_.getParam(param_name,temp);
           HDAC_.HaarDispAdaPrior_ = temp;
           ROS_ERROR("Submitting %d Samples to Train ouput= %s",HDAC_.numSamples_,cfnm.c_str());
           HDAC_.train(cfnm);
-          param_name = nn + "/mode";
-          node_.setParam(nn + "/mode", std::string("evaluate"));
+          param_name = "mode";
+          node_.setParam("mode", std::string("evaluate"));
           ROS_ERROR("DONE TRAINING, switching to evaluate mode");
           break;
         case EVALUATE:
         {
           if(!HDAC_.loaded){
-            param_name = nn + "/classifier_file";
+            param_name = "classifier_file";
             node_.param(param_name,cfnm,std::string("test.xml"));
             std::cout << "HaarDispAda LOADING " << cfnm.c_str() << std::endl;
             HDAC_.load(cfnm);
@@ -416,7 +436,7 @@ class HaarDispAdaNode
 
           // count the output labels which have the correct and incorrect label
           for(unsigned int i=0; i<R_out.size();i++){
-            if(L_out[i] == 1){
+            if((L_out[i] == 1) | (use_disparity)){
               tp_in_list++;
             }
             else fp_in_list++;
@@ -435,15 +455,24 @@ class HaarDispAdaNode
         // TODO
         break;
         case LOAD:
-          param_name = nn + "/classifier_file";
+          param_name = "classifier_file";
           node_.param(param_name,cfnm,std::string("test.xml"));
           std::cout << "HaarDispAda LOADING " << cfnm.c_str() << std::endl;
           HDAC_.load(cfnm);
-          param_name = nn + "/mode";
+          param_name = "mode";
           node_.setParam(param_name, std::string("detect"));
           break;
       }// end switch
     }
+
+    void
+    configCb (Config &config, uint32_t level)
+    {
+      use_disparity = config.use_disparity;
+      min_confidence = config.haar_disp_ada_min_confidence;
+      HDAC_.setMinConfidence (min_confidence);
+    }
+
     ~HaarDispAdaNode()
     {
     }
@@ -453,7 +482,7 @@ int
 main(int argc, char **argv)
 {
   ros::init(argc, argv, "HaarDispAda");
-  ros::NodeHandle n;
+  ros::NodeHandle n("~");
   HaarDispAdaNode HN(n);
   ros::spin();
   return 0;

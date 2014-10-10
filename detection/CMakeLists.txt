@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(detection)
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
-find_package(catkin REQUIRED COMPONENTS cmake_modules roscpp pcl_ros pcl_conversions nodelet rosconsole image_transport opt_utils opt_msgs)
+find_package(catkin REQUIRED COMPONENTS cmake_modules roscpp rospy pcl_ros pcl_conversions nodelet rosconsole image_transport opt_utils opt_msgs dynamic_reconfigure)
 
 find_package(VTK REQUIRED)
 if(VTK_FOUND)
@@ -30,6 +30,11 @@ MESSAGE("PCL_COMMON_LIBRARIES\n${PCL_COMMON_LIBRARIES}\n")
 if (NOT PCL_FOUND)
     MESSAGE(FATAL_ERROR "PCL not found.\n")
 endif (NOT PCL_FOUND)
+
+# Dynamic reconfigure support
+generate_dynamic_reconfigure_options(cfg/HaarDispAdaDetector.cfg cfg/GroundBasedPeopleDetector.cfg)
+
+include_directories(cfg/cpp)
 
 catkin_package(
    INCLUDE_DIRS include

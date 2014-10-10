@@ -97,8 +97,8 @@ namespace open_ptrack
         float HaarDispAdaPrior_;
         void setMaxSamples(int n);
         int getMaxSamples(){ return(maxSamples_);};
-        void setMinConfidence(float min_confidence);
         float getMinConfidence();
+        void setMinConfidence(float );
 
       private:
         CvBoost HDAC_;
