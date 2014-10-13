@@ -2,7 +2,7 @@
 ## Tracking parameters ##
 #########################
 # Mininum confidence for track initialization:
-min_confidence_initialization: -1.1
+min_confidence_initialization: 4.0
 # Tracking maximum frame rate per sensor:
 rate: 30
 # Tracking reference frame:
@@ -38,7 +38,7 @@ detector_likelihood: true
 # Flag stating if track velocity should be considered in data association:
 velocity_in_motion_term: true
 # Weight of detection likelihood in data association:
-detector_weight: -1.0
+detector_weight: -0.25
 # Weight of motion likelihood in data association:
 motion_weight: 0.25
   

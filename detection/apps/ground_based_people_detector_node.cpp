@@ -284,6 +284,8 @@ main (int argc, char** argv)
   double heads_minimum_distance; // Minimum distance between two persons' head
   nh.param("heads_minimum_distance", heads_minimum_distance, 0.3);
   nh.param("voxel_size", voxel_size, 0.06);
+  bool read_ground_from_file;    // Flag stating if the ground should be read from file, if present
+  nh.param("read_ground_from_file", read_ground_from_file, false);
 
   //	Eigen::Matrix3f intrinsics_matrix;
   intrinsics_matrix << 525, 0.0, 319.5, 0.0, 525, 239.5, 0.0, 0.0, 1.0; // Kinect RGB camera intrinsics
@@ -355,40 +357,9 @@ main (int argc, char** argv)
 
   // Ground estimation:
   std::cout << "Ground plane initialization starting..." << std::endl;
-  Eigen::VectorXf ground_coeffs;
-  // Ground plane equation is computed from the current point cloud data:
   ground_estimator.setInputCloud(cloud);
-  ground_coeffs = ground_estimator.compute();
-
-  if (ground_from_extrinsic_calibration)
-  { // Ground plane equation derived from extrinsic calibration:
-    int pos = pointcloud_topic.find("/", 1);
-    std::string camera_name = pointcloud_topic.substr(1, pos-1);
-
-    // Read worldToCam transform from file:
-    std::string filename = ros::package::getPath("detection") + "/launch/camera_poses.txt";
-    tf::Transform worldToCamTransform = ground_estimator.readTFFromFile (filename, camera_name);
-
-    // Compute ground coeffs from world to camera transform:
-    Eigen::VectorXf ground_coeffs_calib = ground_estimator.computeFromTF (worldToCamTransform);
-
-    // If ground could not be well estimated from point cloud data, use calibration data:
-    // (if error in ground plane estimation from point cloud OR if d coefficient estimated from point cloud
-    // is too different from d coefficient obtained from calibration)
-    bool updated = false; // states if ground plane coefficients are updated according to the point cloud or not
-    if ((ground_coeffs.sum() == 0.0) | (std::fabs(float(ground_coeffs_calib(3) - ground_coeffs(3))) > 0.2))
-    {
-      updated = ground_estimator.refineGround (10, voxel_size, 300 * 0.06 / voxel_size / std::pow (static_cast<double> (sampling_factor), 2), ground_coeffs_calib);
-
-      ground_coeffs = ground_coeffs_calib;
-
-      if (updated)
-        std::cout << "Chosen ground plane estimate obtained from calibration and refined with point cloud." << std::endl;
-      else
-        std::cout << "Chosen ground plane estimate obtained from calibration." << std::endl;
-    }
-  }
-  std::cout << std::endl;
+  Eigen::VectorXf ground_coeffs = ground_estimator.computeMulticamera(ground_from_extrinsic_calibration, read_ground_from_file,
+      pointcloud_topic, sampling_factor, voxel_size);
 
   // Create classifier for people detection:
   open_ptrack::detection::PersonClassifier<pcl::RGB> person_classifier;

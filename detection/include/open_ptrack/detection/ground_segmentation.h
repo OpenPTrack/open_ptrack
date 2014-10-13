@@ -150,6 +150,19 @@ namespace open_ptrack
         compute ();
 
         /**
+         * \brief Compute the ground plane coefficients with the procedure used in multi-camera systems.
+         * \param[in] ground_from_extrinsic_calibration If true, exploit extrinsic calibration for estimatin the ground plane equation.
+         * \param[in] read_ground_from_file Flag stating if the ground should be read from file, if present.
+         * \param[in] pointcloud_topic Topic containing the point cloud.
+         * \param[in] sampling_factor Scale factor used to downsample the point cloud.
+         *
+         * \return Vector of ground plane coefficients.
+         */
+        Eigen::VectorXf
+        computeMulticamera (bool ground_from_extrinsic_calibration, bool read_ground_from_file, std::string pointcloud_topic,
+            int sampling_factor, float voxel_size);
+
+        /**
          * \brief Refine ground coefficients by iterating ground plane detection on the input cloud
          *
          * \param[in] cloud Input cloud.

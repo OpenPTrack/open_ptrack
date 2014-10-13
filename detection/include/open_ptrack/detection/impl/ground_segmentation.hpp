@@ -483,6 +483,99 @@ open_ptrack::detection::GroundplaneEstimation<PointT>::compute ()
   return ground_coeffs;
 }
 
+template <typename PointT> Eigen::VectorXf
+open_ptrack::detection::GroundplaneEstimation<PointT>::computeMulticamera (bool ground_from_extrinsic_calibration, bool read_ground_from_file,
+    std::string pointcloud_topic, int sampling_factor, float voxel_size)
+{
+  Eigen::VectorXf ground_coeffs;
+  ground_coeffs = compute();
+
+  std::string frame_id = cloud_->header.frame_id;
+  if (strcmp(frame_id.substr(0,1).c_str(), "/") == 0)
+  {
+    frame_id = frame_id.substr(1, frame_id.length()-1);
+  }
+
+  // If manual ground plane selection, save the result to file:
+  if (ground_estimation_mode_ == 0)
+  {
+    std::ofstream ground_file;
+    ground_file.open ((ros::package::getPath("detection") + "/conf/ground_" + frame_id + ".txt").c_str());
+    ground_file << ground_coeffs;
+    ground_file.close();
+
+    std::cout << "Ground plane saved to " << ros::package::getPath("detection") + "/conf/ground_" + frame_id + ".txt" << std::endl;
+  }
+
+  bool ground_estimated = false;
+  if (read_ground_from_file)
+  {
+    if (ground_estimation_mode_ > 0) // automatic or semi-automatic mode
+    {
+      // Read ground from file, if the file exists:
+      std::string ground_filename = ros::package::getPath("detection") + "/conf/ground_" + frame_id + ".txt";
+      ifstream infile(ground_filename.c_str());
+      if (infile.good())
+      {
+        std::ifstream ground_file (ground_filename.c_str());
+        std::string line;
+        for (unsigned int row_ind = 0; row_ind < 4; row_ind++)
+        {
+          getline (ground_file, line);
+          ground_coeffs(row_ind) = std::atof(line.c_str());
+        }
+        ground_file.close();
+
+        ground_estimated = true;
+        std::cout << "Chosen ground plane read from file." << std::endl;
+        std::cout << "Ground plane coefficients: " << ground_coeffs(0) << " " << ground_coeffs(1) << " " << ground_coeffs(2) << " " << ground_coeffs(3) << "." << std::endl;
+      }
+      else
+      {
+        std::cout << "Ground plane file not found!" << std::endl;
+      }
+    }
+    else //keeps the ground plane just estimated manually.
+    {
+      ground_estimated = true;
+      std::cout << "Ground plane manually estimated from point cloud." << std::endl;
+    }
+  }
+
+  if (not ground_estimated & ground_from_extrinsic_calibration)
+  { // Ground plane equation derived from extrinsic calibration:
+    int pos = pointcloud_topic.find("/", 1);
+    std::string camera_name = pointcloud_topic.substr(1, pos-1);
+
+    // Read worldToCam transform from file:
+    std::string filename = ros::package::getPath("detection") + "/launch/camera_poses.txt";
+    tf::Transform worldToCamTransform = readTFFromFile (filename, camera_name);
+
+    // Compute ground coeffs from world to camera transform:
+    Eigen::VectorXf ground_coeffs_calib = computeFromTF (worldToCamTransform);
+
+    // If ground could not be well estimated from point cloud data, use calibration data:
+    // (if error in ground plane estimation from point cloud OR if d coefficient estimated from point cloud
+    // is too different from d coefficient obtained from calibration)
+    bool updated = false; // states if ground plane coefficients are updated according to the point cloud or not
+    if ((ground_coeffs.sum() == 0.0) | (std::fabs(float(ground_coeffs_calib(3) - ground_coeffs(3))) > 0.2))
+    {
+      updated = refineGround (10, voxel_size, 300 * 0.06 / voxel_size / std::pow (static_cast<double> (sampling_factor), 2), ground_coeffs_calib);
+
+      ground_coeffs = ground_coeffs_calib;
+
+      if (updated)
+        std::cout << "Chosen ground plane estimate obtained from calibration and refined with point cloud." << std::endl;
+      else
+        std::cout << "Chosen ground plane estimate obtained from calibration." << std::endl;
+    }
+  }
+
+  std::cout << std::endl;
+
+  return ground_coeffs;
+}
+
 template <typename PointT> bool
 open_ptrack::detection::GroundplaneEstimation<PointT>::refineGround (int num_iter, float voxel_size, float inliers_threshold, Eigen::VectorXf& ground_coeffs_calib)
 {
