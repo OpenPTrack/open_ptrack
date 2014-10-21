@@ -45,7 +45,7 @@
 
 #include <calibration_common/pcl/utils.h>
 
-#include <open_ptrack/opt_calibration/calibration_node.h>
+#include <open_ptrack/opt_calibration/opt_calibration_node.h>
 
 namespace open_ptrack
 {
@@ -124,13 +124,15 @@ OPTCalibrationNode::OPTCalibrationNode(const ros::NodeHandle & node_handle)
     if (not node_handle_.getParam(ss.str(), type_s))
       ROS_FATAL_STREAM("No \"" << ss.str() << "\" parameter found!!");
 
-    SensorNode::SensorType type;
-    if (type_s == "pinhole_rgb")
-      type = SensorNode::PINHOLE_RGB;
-    else if (type_s == "kinect_depth")
-      type = SensorNode::KINECT_DEPTH;
-    else
-      ROS_FATAL_STREAM("\"" << ss.str() << "\" parameter value not valid. Please use \"pinhole_rgb\" or \"kinect_depth\".");
+//    SensorNode::SensorType type;
+//    if (type_s == "pinhole_rgb")
+//      type = SensorNode::PINHOLE_RGB;
+//    else if (type_s == "kinect_depth")
+//      type = SensorNode::KINECT_DEPTH;
+//    else if (type_s == "tof_depth")
+//      type = SensorNode::TOF_DEPTH;
+//    else
+//      ROS_FATAL_STREAM("\"" << ss.str() << "\" parameter value not valid. Please use \"pinhole_rgb\", \"kinect_depth\" or \"tof_depth\".");
 
     ss.str("");
     ss << "/sensor_" << i;
@@ -139,32 +141,59 @@ OPTCalibrationNode::OPTCalibrationNode(const ros::NodeHandle & node_handle)
     ss.str("");
     ss << "sensor_" << i << "/name";
     node_handle_.param(ss.str(), frame_id, frame_id);
-    SensorROS::Ptr sensor = boost::make_shared<SensorROS>(frame_id, type);
 
-    if (world_computation_ == UPDATE)
+    ROSDevice::Ptr ros_device;
+
+    if (type_s == "pinhole_rgb")
     {
-      ROS_INFO_STREAM(frame_id << " " << fixed_sensor_frame_id);
-      if (frame_id == fixed_sensor_frame_id)
-         fixed_sensor_ = sensor;
+      PinholeRGBDevice::Ptr device = boost::make_shared<PinholeRGBDevice>(frame_id);
+      pinhole_vec_.push_back(device);
+      ros_device = device;
+      ROS_INFO_STREAM(device->frameId() << " added.");
+      if (world_computation_ == UPDATE)
+      {
+        ROS_INFO_STREAM(frame_id << " == " << fixed_sensor_frame_id << "?");
+        if (frame_id == fixed_sensor_frame_id)
+           fixed_sensor_ = device->sensor();
+      }
+    }
+    else if (type_s == "kinect1")
+    {
+      KinectDevice::Ptr device = boost::make_shared<KinectDevice>(frame_id, frame_id + "_depth");
+      kinect_vec_.push_back(device);
+      ros_device = device;
+      if (world_computation_ == UPDATE)
+      {
+        ROS_INFO_STREAM(frame_id << " == " << fixed_sensor_frame_id << "?");
+        if (frame_id == fixed_sensor_frame_id)
+           fixed_sensor_ = device->colorSensor();
+      }
+    }
+    else if (type_s == "sr4500")
+    {
+      SwissRangerDevice::Ptr device = boost::make_shared<SwissRangerDevice>(frame_id);
+      swiss_ranger_vec_.push_back(device);
+      ros_device = device;
+      if (world_computation_ == UPDATE)
+      {
+        ROS_INFO_STREAM(frame_id << " == " << fixed_sensor_frame_id << "?");
+        if (frame_id == fixed_sensor_frame_id)
+           fixed_sensor_ = device->depthSensor();
+      }
+    }
+    else
+    {
+      ROS_FATAL_STREAM("\"" << ss.str() << "\" parameter value not valid. Please use \"pinhole_rgb\", \"kinect\" or \"swiss_ranger\".");
     }
 
     ss.str("");
-    ss << "sensor_" << i << "/image";
-    sensor->setImageSubscriber(image_transport_.subscribe(ss.str(), 1, &SensorROS::imageCallback, sensor));
+    ss << "sensor_" << i;
+    ros_device->createSubscribers(node_handle_, image_transport_, ss.str());
 
-    ss.str("");
-    ss << "sensor_" << i << "/camera_info";
-    sensor->setCameraInfoSubscriber(node_handle_.subscribe<sensor_msgs::CameraInfo>(ss.str(),
-                                                                                    1,
-                                                                                    &SensorROS::cameraInfoCallback,
-                                                                                    sensor));
-
-    sensor_vec_.push_back(sensor);
   }
 
   if (world_computation_ == UPDATE and not fixed_sensor_)
     ROS_FATAL_STREAM("Wrong \"fixed_sensor/name\" parameter provided: " << fixed_sensor_frame_id);
-
 }
 
 bool OPTCalibrationNode::initialize()
@@ -175,16 +204,15 @@ bool OPTCalibrationNode::initialize()
   {
     ros::spinOnce();
     all_messages_received = true;
-    for (size_t i = 0; i < sensor_vec_.size(); ++i)
-    {
-      SensorROS::Ptr & sensor_ros = sensor_vec_[i];
-      if (not sensor_ros->sensor())
-      {
-        ROS_WARN_THROTTLE(5, "Not all messages received. Waiting...");
-        all_messages_received = false;
-        break;
-      }
-    }
+    for (size_t i = 0; all_messages_received and i < pinhole_vec_.size(); ++i)
+      all_messages_received = pinhole_vec_[i]->hasNewMessages();
+    for (size_t i = 0; all_messages_received and i < kinect_vec_.size(); ++i)
+      all_messages_received = kinect_vec_[i]->hasNewMessages();
+    for (size_t i = 0; all_messages_received and i < swiss_ranger_vec_.size(); ++i)
+      all_messages_received = swiss_ranger_vec_[i]->hasNewMessages();
+
+    if (not all_messages_received)
+      ROS_WARN_THROTTLE(5, "Not all messages received. Waiting...");
     rate.sleep();
   }
 
@@ -193,11 +221,29 @@ bool OPTCalibrationNode::initialize()
   calibration_ = boost::make_shared<OPTCalibration>(node_handle_);
   calibration_->setCheckerboard(checkerboard_);
 
-  for (size_t i = 0; i < sensor_vec_.size(); ++i)
+  for (size_t i = 0; i < pinhole_vec_.size(); ++i)
   {
-    SensorROS::Ptr & sensor_ros = sensor_vec_[i];
-    if (sensor_ros->type() == SensorNode::PINHOLE_RGB)
-      calibration_->addSensor(boost::static_pointer_cast<PinholeSensor>(sensor_ros->sensor()));
+    const PinholeRGBDevice::Ptr & device = pinhole_vec_[i];
+    calibration_->addSensor(device->sensor(), true);
+    sensor_vec_.push_back(device->sensor());
+  }
+
+  for (size_t i = 0; i < kinect_vec_.size(); ++i) // TODO Add flags
+  {
+    const KinectDevice::Ptr & device = kinect_vec_[i];
+    calibration_->addSensor(device->colorSensor(), true);
+    calibration_->addSensor(device->depthSensor(), true);
+    sensor_vec_.push_back(device->colorSensor());
+    sensor_vec_.push_back(device->depthSensor());
+  }
+
+  for (size_t i = 0; i < swiss_ranger_vec_.size(); ++i) // TODO Add flags
+  {
+    const SwissRangerDevice::Ptr & device = swiss_ranger_vec_[i];
+    calibration_->addSensor(device->intensitySensor(), true);
+    calibration_->addSensor(device->depthSensor(), true);
+    sensor_vec_.push_back(device->intensitySensor());
+    sensor_vec_.push_back(device->depthSensor());
   }
 
   return true;
@@ -205,15 +251,28 @@ bool OPTCalibrationNode::initialize()
 
 void OPTCalibrationNode::actionCallback(const std_msgs::String::ConstPtr & msg)
 {
-
   if (msg->data == "save" or msg->data == "saveExtrinsicCalibration")
   {
     calibration_->optimize();
     save();
   }
-  else if (msg->data == "stop")
+  else if (msg->data == "start floor")
   {
-    calibration_->optimize();
+    if (calibration_->floorAcquisition())
+      ROS_WARN("Floor acquisition already started.");
+    else
+      calibration_->startFloorAcquisition();
+  }
+  else if (msg->data == "stop floor")
+  {
+    if (not calibration_->floorAcquisition())
+      ROS_WARN("Floor acquisition not started.");
+    else
+      calibration_->stopFloorAcquisition();
+  }
+  else
+  {
+    ROS_ERROR_STREAM("Action " << msg->data << " unknown!");
   }
 }
 
@@ -224,44 +283,56 @@ void OPTCalibrationNode::spin()
   while (ros::ok())
   {
     ros::spinOnce();
-
     calibration_->nextAcquisition();
 
-    for (int i = 0; i < num_sensors_; ++i)
+    try
     {
-      const SensorROS::Ptr & sensor_ros = sensor_vec_[i];
-
-      if (not sensor_ros->hasNewImage())
-        continue;
-      try
+      for (size_t i = 0; i < pinhole_vec_.size(); ++i)
       {
-        if (sensor_ros->type() == SensorNode::PINHOLE_RGB)
+        const PinholeRGBDevice::Ptr & device = pinhole_vec_[i];
+        if (device->hasNewMessages())
         {
-          cv_bridge::CvImage::Ptr image_ptr = cv_bridge::toCvCopy(sensor_ros->lastImage(),
-                                                                  sensor_msgs::image_encodings::BGR8);
-          calibration_->addData(boost::static_pointer_cast<PinholeSensor>(sensor_ros->sensor()), image_ptr->image);
+          device->convertLastMessages();
+          PinholeRGBDevice::Data::Ptr data = device->lastData();
+          calibration_->addData(device->sensor(), data->image);
         }
       }
-      catch (cv_bridge::Exception & ex)
+      for (size_t i = 0; i < kinect_vec_.size(); ++i)
       {
-        ROS_ERROR("cv_bridge exception: %s", ex.what());
-        return;
+        const KinectDevice::Ptr & device = kinect_vec_[i];
+        if (device->hasNewMessages())
+        {
+          device->convertLastMessages();
+          KinectDevice::Data::Ptr data = device->lastData();
+          calibration_->addData(device->colorSensor(), device->depthSensor(), data->image, data->cloud);
+        }
       }
-      catch (std::runtime_error & ex)
+      for (size_t i = 0; i < swiss_ranger_vec_.size(); ++i)
       {
-        ROS_ERROR("exception: %s", ex.what());
-        return;
+        const SwissRangerDevice::Ptr & device = swiss_ranger_vec_[i];
+        if (device->hasNewMessages())
+        {
+          device->convertLastMessages();
+          SwissRangerDevice::Data::Ptr data = device->lastData();
+          calibration_->addData(device->intensitySensor(), device->depthSensor(), data->intensity_image, data->cloud);
+        }
       }
-
+    }
+    catch (cv_bridge::Exception & ex)
+    {
+      ROS_ERROR("cv_bridge exception: %s", ex.what());
+      return;
+    }
+    catch (std::runtime_error & ex)
+    {
+      ROS_ERROR("exception: %s", ex.what());
+      return;
     }
 
     calibration_->perform();
     calibration_->publish();
-
     rate.sleep();
-
   }
-
 }
 
 bool OPTCalibrationNode::save()
@@ -286,7 +357,7 @@ bool OPTCalibrationNode::save()
     }
     else if (world_computation_ == UPDATE)
     {
-      new_world_pose = fixed_sensor_pose_ * fixed_sensor_->sensor()->pose().inverse();
+      new_world_pose = fixed_sensor_pose_ * fixed_sensor_->pose().inverse();
     }
 
     // Write TF transforms between cameras and world frame
@@ -294,8 +365,7 @@ bool OPTCalibrationNode::save()
     file << "poses:" << std::endl;
     for (size_t i = 0; i < sensor_vec_.size(); ++i)
     {
-      const SensorROS::Ptr & sensor_ros = sensor_vec_[i];
-      const Sensor::Ptr & sensor = sensor_ros->sensor();
+      const Sensor::Ptr & sensor = sensor_vec_[i];
 
       Pose pose = new_world_pose * sensor->pose();
 
@@ -319,8 +389,7 @@ bool OPTCalibrationNode::save()
     file << "inverse_poses:" << std::endl;
     for (size_t i = 0; i < sensor_vec_.size(); ++i)
     {
-      const SensorROS::Ptr & sensor_ros = sensor_vec_[i];
-      const Sensor::Ptr & sensor = sensor_ros->sensor();
+      const Sensor::Ptr & sensor = sensor_vec_[i];
 
       Pose pose = new_world_pose * sensor->pose();
       pose = pose.inverse();

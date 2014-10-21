@@ -34,6 +34,8 @@
 #ifndef OPEN_PTRACK_OPT_CALIBRATION_OPT_CALIBRATION_H_
 #define OPEN_PTRACK_OPT_CALIBRATION_OPT_CALIBRATION_H_
 
+#include <sstream>
+
 #include <ros/ros.h>
 #include <ros/package.h>
 
@@ -53,61 +55,106 @@
 
 #include <camera_info_manager/camera_info_manager.h>
 
-#include <sstream>
+#include <open_ptrack/opt_calibration/opt_checkerboard_extraction.h>
 
-using namespace camera_info_manager;
-using namespace calibration;
 
 namespace open_ptrack
 {
 namespace opt_calibration
 {
 
-typedef PolynomialMatrixProjectedModel<Polynomial<Scalar, 2, 0> > MatrixModel;
-typedef TwoStepsModel<Scalar, MatrixModel, MatrixModel> UndistortionModel;
-typedef DepthUndistortionImpl<UndistortionModel, DepthPCL> UndistortionPCL;
+namespace cb = calibration;
 
-struct SensorNode
+class TreeNode
 {
-  typedef boost::shared_ptr<SensorNode> Ptr;
-  typedef boost::shared_ptr<const SensorNode> ConstPtr;
 
-  enum SensorType
+public:
+
+  typedef boost::shared_ptr<TreeNode> Ptr;
+  typedef boost::shared_ptr<const TreeNode> ConstPtr;
+
+  enum Type
   {
-    KINECT_DEPTH,
-    PINHOLE_RGB
+    INTENSITY,
+    DEPTH,
   };
 
   static const int MAX_LEVEL;
-  static const double MAX_DISTANCE;
   static const double MAX_ERROR;
 
-  SensorNode(const Sensor::Ptr & sensor,
-             SensorType type,
-             size_t id)
+  TreeNode(const cb::Sensor::Ptr & sensor,
+           size_t id,
+           Type type)
     : sensor_(sensor),
       type_(type),
+      id_(id),
       level_(MAX_LEVEL),
-      distance_(MAX_DISTANCE),
       min_error_(MAX_ERROR),
-      id_(id)
+      estimate_pose_(true)
   {
     // Do nothing
   }
 
-  Sensor::Ptr sensor_;
-  SensorType type_;
+  const cb::Sensor::Ptr & sensor() const
+  {
+    return sensor_;
+  }
 
-  int level_;
-  double distance_;
-  double min_error_;
+  void setSensor(const cb::Sensor::Ptr & sensor)
+  {
+    sensor_ = sensor;
+  }
 
+  int level() const
+  {
+    return level_;
+  }
+
+  void setLevel(int level)
+  {
+    level_ = level;
+  }
+
+  double minError() const
+  {
+    return min_error_;
+  }
+
+  void setMinError(double error)
+  {
+    min_error_ = error;
+  }
+
+  size_t id() const
+  {
+    return id_;
+  }
+
+  void setEstimatePose(bool estimate_pose)
+  {
+    estimate_pose_ = estimate_pose;
+  }
+
+  bool estimatePose() const
+  {
+    return estimate_pose_;
+  }
+
+  Type type() const
+  {
+    return type_;
+  }
+
+private:
+
+  cb::Sensor::Ptr sensor_;
+  Type type_;
   size_t id_;
 
-  SensorNode::Ptr connected_sensor_;
-  Pose connected_pose_;
+  int level_;
+  double min_error_;
 
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  bool estimate_pose_;
 
 };
 
@@ -120,76 +167,68 @@ public:
 
   OPTCalibration(const ros::NodeHandle & node_handle);
 
-  inline void setCheckerboard(const Checkerboard::Ptr & checkerboard)
+  inline void setCheckerboard(const cb::Checkerboard::Ptr & checkerboard)
   {
     checkerboard_ = checkerboard;
   }
 
-  inline void addSensor(const PinholeSensor::Ptr & sensor)
-  {
-    SensorNode::Ptr sensor_node = boost::make_shared<SensorNode>(sensor, SensorNode::PINHOLE_RGB, sensor_map_.size());
-    sensor_map_[sensor] = sensor_node;
-    sensor_vec_.push_back(sensor_node);
-  }
+  void addSensor(const cb::PinholeSensor::Ptr & sensor,
+                 bool estimate_pose = true);
+
+  void addSensor(const cb::DepthSensor::Ptr & sensor,
+                 bool estimate_pose = true);
 
   inline void nextAcquisition()
   {
-    view_vec_.push_back(ViewMap());
+    view_map_vec_.push_back(ViewMap());
   }
 
-  bool addData(const PinholeSensor::Ptr & sensor,
-               const cv::Mat & image)
+  bool addData(const cb::PinholeSensor::Ptr & color_sensor,
+               const cb::DepthSensor::Ptr & depth_sensor,
+               const cv::Mat & image,
+               const cb::PCLCloud3::Ptr & cloud);
+
+  bool addData(const cb::PinholeSensor::Ptr & color_sensor,
+               const cv::Mat & image);
+
+  inline void addData(const cb::Sensor::Ptr & sensor,
+                      const cb::View::Ptr & view,
+                      const cb::PlanarObject::Ptr & object,
+                      const cb::Point3 & center)
   {
-    PinholeView<Checkerboard>::Ptr color_view;
-    Checkerboard::Ptr checkerboard;
-
-    if (findCheckerboard(image, sensor, color_view, checkerboard))
-    {
-      addData(sensor, color_view, checkerboard, checkerboard->center());
-      return true;
-    }
-
-    return false;
+    TreeNode::Ptr & node = node_map_.at(sensor);
+    ViewMap & view_map = view_map_vec_.back();
+    view_map[node] = boost::make_shared<CheckerboardView>(view, object, center, floorAcquisition());
+    if (floorAcquisition())
+      floor_estimated_ = false;
   }
 
-  inline void addData(const Sensor::Ptr & sensor,
-                      const View::Ptr & view,
-                      const PlanarObject::Ptr & object,
-                      const Point3 & center)
+  inline void startFloorAcquisition()
   {
-    SensorNode::Ptr & sensor_node = sensor_map_.at(sensor);
-    ViewMap & view_map = view_vec_.back();
-    view_map[sensor_node] = boost::make_shared<CheckerboardView>(view, object, center);
+    assert(not floor_acquisition_);
+    floor_acquisition_ = true;
+  }
+
+  inline void stopFloorAcquisition()
+  {
+    assert(floor_acquisition_);
+    floor_acquisition_ = false;
+  }
+
+  inline bool floorAcquisition() const
+  {
+    return floor_acquisition_;
   }
 
   void perform();
   void publish();
   void optimize();
-  const Pose & getLastCheckerboardPose() const;
+  const cb::Pose & getLastCheckerboardPose() const;
 
 private:
 
-  bool findCheckerboard(const cv::Mat & image,
-                        const PinholeSensor::Ptr & sensor,
-                        PinholeView<Checkerboard>::Ptr & color_view,
-                        Checkerboard::Ptr & checkerboard);
-
-  ros::NodeHandle node_handle_;
-
-  std::map<Sensor::ConstPtr, SensorNode::Ptr> sensor_map_;
-  std::vector<SensorNode::Ptr> sensor_vec_;
-  Checkerboard::Ptr checkerboard_;
-
-  AutomaticCheckerboardFinder finder_;
-
-  BaseObject::Ptr world_;
-
-  tf::TransformBroadcaster tf_pub_;
-  ros::Publisher marker_pub_;
-
-  bool world_set_;
-
-  bool calibration_with_serials_;
+  bool estimateFloor();
+  void convertToWorldFrame();
 
   struct CheckerboardView
   {
@@ -198,29 +237,49 @@ private:
 
     CheckerboardView() {}
 
-    CheckerboardView(const View::Ptr & view,
-                     const PlanarObject::Ptr & object,
-                     const Point3 & center)
-      : view_(view),
-        object_(object),
-        center_(center)
+    CheckerboardView(const cb::View::Ptr & view,
+                     const cb::PlanarObject::Ptr & object,
+                     const cb::Point3 & center,
+                     bool is_floor)
+      : view(view),
+        object(object),
+        center(center),
+        is_floor(is_floor)
     {
     }
 
-    View::Ptr view_;
-    PlanarObject::Ptr object_;
-    Point3 center_;
+    cb::View::Ptr view;
+    cb::PlanarObject::Ptr object;
+    cb::Point3 center;
+    bool is_floor;
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   };
 
-  typedef std::map<SensorNode::Ptr, CheckerboardView::Ptr> ViewMap;
-  std::vector<ViewMap> view_vec_;
+  ros::NodeHandle node_handle_;
+  tf::TransformBroadcaster tf_pub_;
+  ros::Publisher marker_pub_;
 
-  std::vector<Checkerboard::Ptr> checkerboard_vec_;
+  std::map<cb::Sensor::ConstPtr, TreeNode::Ptr> node_map_;
+  std::vector<TreeNode::Ptr> node_vec_;
+  std::vector<cb::Sensor::Ptr> sensor_vec_;
 
+  cb::Checkerboard::Ptr checkerboard_;
+  cb::BaseObject::Ptr world_;
+
+  typedef std::map<TreeNode::Ptr, CheckerboardView::Ptr> ViewMap;
+  std::vector<ViewMap> view_map_vec_;
+
+  std::vector<cb::Checkerboard::Ptr> checkerboard_vec_;
+  std::vector<bool> is_floor_vec_;
+
+  bool tree_initialized_;
   bool initialization_;
   int last_optimization_;
+
+  bool floor_acquisition_;
+  bool floor_estimated_;
+  cb::Plane floor_;
 
 };
 

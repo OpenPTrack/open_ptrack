@@ -31,8 +31,8 @@
  *          Matteo Munaro [matteo.munaro@dei.unipd.it]
  */
 
-#ifndef OPEN_PTRACK_OPT_CALIBRATION_CALIBRATION_NODE_H_
-#define OPEN_PTRACK_OPT_CALIBRATION_CALIBRATION_NODE_H_
+#ifndef OPEN_PTRACK_OPT_CALIBRATION_OPT_CALIBRATION_NODE_H_
+#define OPEN_PTRACK_OPT_CALIBRATION_OPT_CALIBRATION_NODE_H_
 
 #include <ros/ros.h>
 #include <ros/package.h>
@@ -47,6 +47,7 @@
 #include <camera_info_manager/camera_info_manager.h>
 
 #include <open_ptrack/opt_calibration/opt_calibration.h>
+#include <open_ptrack/opt_calibration/ros_device.h>
 
 using namespace camera_info_manager;
 using namespace calibration;
@@ -55,121 +56,6 @@ namespace open_ptrack
 {
 namespace opt_calibration
 {
-
-/** @brief class containing sensor information */
-class SensorROS
-{
-
-public:
-
-  typedef boost::shared_ptr<SensorROS> Ptr;
-  typedef boost::shared_ptr<const SensorROS> ConstPtr;
-
-  /**
-   * @brief SensorROS
-   * @param[in] frame_id The sensor frame.
-   * @param[in] type The type of the sensor.
-   */
-  SensorROS(const std::string & frame_id,
-            SensorNode::SensorType type)
-    : frame_id_(frame_id),
-      type_(type),
-      new_image_(false)
-  {
-    // Do nothing
-  }
-
-  /**
-   * @brief Callback for images.
-   * @param[in] msg Message containing the image.
-   */
-  void imageCallback(const sensor_msgs::Image::ConstPtr & msg)
-  {
-    image_msg_ = msg;
-    new_image_ = true;
-  }
-
-  /**
-   * @brief Callback for camera_info topic, containing intrinsic sensor calibration.
-   * @param[in] msg Message containing camera info (intrinsic parameters).
-   */
-  void cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr & msg)
-  {
-    if (not sensor_)
-    {
-      if (type_ == SensorNode::PINHOLE_RGB)
-      {
-        sensor_ = boost::make_shared<PinholeSensor>();
-        sensor_->setFrameId(frame_id_);
-        PinholeCameraModel::ConstPtr cm = boost::make_shared<PinholeCameraModel>(*msg);
-        boost::static_pointer_cast<PinholeSensor>(sensor_)->setCameraModel(cm);
-      }
-      else
-      {
-        sensor_ = boost::make_shared<KinectDepthSensor<UndistortionModel> >();
-        sensor_->setFrameId(frame_id_);
-        KinectDepthCameraModel::ConstPtr cm = boost::make_shared<KinectDepthCameraModel>(*msg);
-        boost::static_pointer_cast<KinectDepthSensor<UndistortionModel> >(sensor_)->setCameraModel(cm);
-      }
-    }
-  }
-
-  const std::string & frameId() const
-  {
-    return frame_id_;
-  }
-
-  void setImageSubscriber(const image_transport::Subscriber & image_sub)
-  {
-    image_sub_ = image_sub;
-  }
-
-  void setCameraInfoSubscriber(const ros::Subscriber & camera_info_sub)
-  {
-    camera_info_sub_ = camera_info_sub;
-  }
-
-  const sensor_msgs::Image::ConstPtr & lastImage()
-  {
-    assert(new_image_);
-    new_image_ = false;
-    return image_msg_;
-  }
-
-  bool hasNewImage() const
-  {
-    return new_image_;
-  }
-
-  const Sensor::Ptr & sensor() const
-  {
-    return sensor_;
-  }
-
-  bool isSensorSet() const
-  {
-    return sensor_;
-  }
-
-  SensorNode::SensorType type() const
-  {
-    return type_;
-  }
-
-private:
-
-  std::string frame_id_;                    ///< Camera frame.
-
-  image_transport::Subscriber image_sub_;   ///< ROS subscriber to the topic where the sensor publishes the image.
-  ros::Subscriber camera_info_sub_;         ///< ROS subscriber to the topic where the sensor publishes the intrinsic calibration information.
-  sensor_msgs::Image::ConstPtr image_msg_;  ///< Message containing the image.
-
-  Sensor::Ptr sensor_;                      ///< Sensor object related to this SensorROS
-  SensorNode::SensorType type_;             ///< Sensor type.
-
-  bool new_image_;
-
-};
 
 class OPTCalibrationNode
 {
@@ -219,10 +105,15 @@ private:
   Checkerboard::Ptr checkerboard_;                          ///< @brief Object representing a checkerboard.
 
   WorldComputation world_computation_;
-  SensorROS::Ptr fixed_sensor_;
+  Sensor::Ptr fixed_sensor_;
   Pose fixed_sensor_pose_;
 
-  std::vector<SensorROS::Ptr> sensor_vec_;
+  std::vector<PinholeRGBDevice::Ptr> pinhole_vec_;
+  std::vector<KinectDevice::Ptr> kinect_vec_;
+  std::vector<SwissRangerDevice::Ptr> swiss_ranger_vec_;
+
+  std::vector<Sensor::Ptr> sensor_vec_;
+
   int num_sensors_;                                         ///< @brief Number of sensors connected to the network.
 
   OPTCalibration::Ptr calibration_;                         ///< @brief Calibration object.
@@ -232,4 +123,4 @@ private:
 } /* namespace opt_calibration */
 } /* namespace open_ptrack */
 
-#endif /* OPEN_PTRACK_OPT_CALIBRATION_CALIBRATION_NODE_H_ */
+#endif /* OPEN_PTRACK_OPT_CALIBRATION_OPT_CALIBRATION_NODE_H_ */

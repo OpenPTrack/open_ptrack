@@ -1,11 +1,12 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(opt_calibration)
-set(CMAKE_BUILD_TYPE Release)#RelWithDebInfo)
+set(CMAKE_BUILD_TYPE Debug)#RelWithDebInfo)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS cmake_modules roscpp opt_msgs calibration_common kinect camera_info_manager cv_bridge image_transport tf_conversions) 
+find_package(catkin REQUIRED COMPONENTS cmake_modules roscpp opt_msgs calibration_common kinect camera_info_manager
+                                        cv_bridge image_transport tf_conversions swissranger_camera)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -23,7 +24,7 @@ find_package(OpenCV REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES
-  CATKIN_DEPENDS roscpp opt_msgs calibration_common camera_info_manager cv_bridge image_transport
+  CATKIN_DEPENDS roscpp opt_msgs calibration_common camera_info_manager cv_bridge image_transport swissranger_camera
   DEPENDS eigen pcl opencv2
 )
 
@@ -39,8 +40,10 @@ include_directories(include
 )
 
 add_executable(opt_calibration
-  src/opt_calibration.cpp   include/open_ptrack/opt_calibration/opt_calibration.h
-  src/calibration_node.cpp  include/open_ptrack/opt_calibration/calibration_node.h
+  src/opt_calibration.cpp              include/open_ptrack/opt_calibration/opt_calibration.h
+  src/opt_calibration_node.cpp         include/open_ptrack/opt_calibration/opt_calibration_node.h
+  src/ros_device.cpp                   include/open_ptrack/opt_calibration/ros_device.h
+  src/opt_checkerboard_extraction.cpp  include/open_ptrack/opt_calibration/opt_checkerboard_extraction.h
 )
 
 ## Add dependencies to the executable
