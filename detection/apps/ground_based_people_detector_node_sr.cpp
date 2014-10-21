@@ -158,8 +158,8 @@ cloud_cb (const PointCloud2ConstPtr& callback_cloud)
     {
       float * intensity_ptr = (float*)&callback_cloud->data.at(intensity_offset + (j + i*COLS)*point_step);
       float * confidence_ptr = (float*)&callback_cloud->data.at(confidence_offset + (j + i*COLS)*point_step);
-      intensity_image.at<unsigned char>(i,j) = (unsigned char)(intensity_ptr[0] / 255);
-      confidence_image.at<unsigned char>(i,j) = (unsigned char)(confidence_ptr[0] / 255);
+      intensity_image.at<unsigned char>(i,j) = (unsigned char)(intensity_ptr[0] / 257);
+      confidence_image.at<unsigned char>(i,j) = (unsigned char)(confidence_ptr[0] / 257);
     }
   }
 
@@ -177,7 +177,7 @@ cloud_cb (const PointCloud2ConstPtr& callback_cloud)
     cloud->points[i].y = current_point_ptr[1];
     cloud->points[i].z = current_point_ptr[2];
     float * intensity_ptr = (float*)&callback_cloud->data.at(intensity_offset + i*point_step);
-    unsigned char intensity = ((intensity_ptr[0])/255 - minVal) * 255 / (maxVal - minVal);
+    unsigned char intensity = ((intensity_ptr[0])/257 - minVal) * 255 / (maxVal - minVal);
     cloud->points[i].r = intensity;
     cloud->points[i].g = intensity;
     cloud->points[i].b = intensity;
