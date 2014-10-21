@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<launch>
+  
+  <arg name="camera_info_path" default="$(find opt_calibration)/camera_info/" />
+  <arg name="camera_name" />
+  
+  <node pkg="opt_calibration" type="save_camera_info_sr.sh" name="save_camera_info_sr" output="screen"
+        args="$(arg camera_name) $(arg camera_info_path)" />
+
+</launch>
+
