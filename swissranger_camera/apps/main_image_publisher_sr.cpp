@@ -58,6 +58,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+//#include <swissranger_camera/utility.h>
+
 using namespace sensor_msgs;
 
 typedef pcl::PointXYZRGB PointT;
@@ -71,6 +73,8 @@ ros::Publisher image_pub, info_pub, image_rect_pub;
 sensor_msgs::CameraInfo camera_info_msg;
 std::string swissranger_frame_id;
 int scale_factor;
+
+int seq_;
 
 void
 cloud_cb (const PointCloud2ConstPtr& callback_cloud)
@@ -93,8 +97,8 @@ cloud_cb (const PointCloud2ConstPtr& callback_cloud)
     {
       float * intensity_ptr = (float*)&callback_cloud->data.at(intensity_offset + (j + i*COLS)*point_step);
       float * confidence_ptr = (float*)&callback_cloud->data.at(confidence_offset + (j + i*COLS)*point_step);
-      intensity_image.at<unsigned char>(i,j) = (unsigned char)(intensity_ptr[0] / 255);
-      confidence_image.at<unsigned char>(i,j) = (unsigned char)(confidence_ptr[0] / 255);
+      intensity_image.at<unsigned char>(i,j) = (unsigned char)(intensity_ptr[0] / 257);
+      confidence_image.at<unsigned char>(i,j) = (unsigned char)(confidence_ptr[0] / 257);
     }
   }
 
@@ -109,7 +113,7 @@ cloud_cb (const PointCloud2ConstPtr& callback_cloud)
     for (unsigned int j = 0; j < COLS; j++)
     {
       float * intensity_ptr = (float*)&callback_cloud->data.at(intensity_offset + (j + i*COLS)*point_step);
-      intensity_image.at<unsigned char>(i,j) = (intensity_ptr[0] / 255 - minVal) * 255 / (maxVal - minVal);
+      intensity_image.at<unsigned char>(i,j) = (intensity_ptr[0] / 257 - minVal) * 255 / (maxVal - minVal);
     }
   }
 
@@ -126,6 +130,8 @@ cloud_cb (const PointCloud2ConstPtr& callback_cloud)
     output_intensity_image = intensity_image;
   }
 
+  ++seq_;
+  ros::Time now = ros::Time::now();
   // Send intensity image:
   if (image_pub.getNumSubscribers() > 0)
   {
@@ -134,8 +140,28 @@ cloud_cb (const PointCloud2ConstPtr& callback_cloud)
     cv_ptr->image = output_intensity_image;
     cv_ptr->header = callback_cloud->header;
     cv_ptr->header.frame_id = swissranger_frame_id;
+    cv_ptr->header.seq = seq_;
+    cv_ptr->header.stamp = now;
     image_pub.publish(cv_ptr->toImageMsg());
   }
+
+//  sr::Utility sr_utility;
+//  sr_utility.setConfidenceThreshold(0.0f);
+//  sr_utility.setInputCloud(callback_cloud);
+//  sr_utility.setIntensityType(sr::Utility::INTENSITY_8BIT);
+//  sr_utility.setConfidenceType(sr::Utility::CONFIDENCE_8BIT);
+//  sr_utility.setNormalizeIntensity(true);
+//  sr_utility.split(sr::Utility::ALL);
+
+//  if (image_pub.getNumSubscribers() > 0)
+//  {
+//    cv_bridge::CvImagePtr cv_ptr(new cv_bridge::CvImage);
+//    cv_ptr->encoding = "mono8";
+//    cv_ptr->image = sr_utility.getIntensity();
+//    cv_ptr->header = callback_cloud->header;
+//    cv_ptr->header.frame_id = swissranger_frame_id;
+//    image_pub.publish(cv_ptr->toImageMsg());
+//  }
 
   //  // Undistort image:
   //  cv::Mat undistorted_image;
@@ -177,6 +203,8 @@ cloud_cb (const PointCloud2ConstPtr& callback_cloud)
   {
     camera_info_msg.header.seq = callback_cloud->header.seq;
     camera_info_msg.header.stamp = callback_cloud->header.stamp;
+    camera_info_msg.header.seq = seq_;
+    camera_info_msg.header.stamp = now;
     info_pub.publish(camera_info_msg);
   }
 
@@ -201,6 +229,8 @@ main (int argc, char** argv)
   nh.param("camera_info_topic", camera_info_topic, std::string("/swissranger/intensity/image_resized/camera_info"));
   double rate_value;
   nh.param("rate", rate_value, 30.0);
+
+  seq_ = 0;
 
   // Subscribers:
   //ros::Subscriber sub = nh.subscribe(pointcloud_topic, 1, cloud_cb);
@@ -234,6 +264,17 @@ main (int argc, char** argv)
     camera_info_msg.height = camera_info_msg.height * scale_factor;
     camera_info_msg.width = camera_info_msg.width * scale_factor;
   }
+  
+  camera_info_msg.R[0] = 1.0;
+  camera_info_msg.R[4] = 1.0;
+  camera_info_msg.R[8] = 1.0;
+  
+  camera_info_msg.P[0] = camera_info_msg.K[0];
+  camera_info_msg.P[2] = camera_info_msg.K[2];
+  camera_info_msg.P[5] = camera_info_msg.K[4];
+  camera_info_msg.P[6] = camera_info_msg.K[5];
+  camera_info_msg.P[10] = camera_info_msg.K[8];
+  
 
   //	cv::namedWindow("Confidence map", CV_WINDOW_NORMAL);
 
