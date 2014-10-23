@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!-- Sensor parameters -->
+  <arg name="square" />
+  <arg name="size" />
+  <arg name="camera_id" />
+  <arg name="device_ip"       default="192.168.1.31" />
+  <arg name="scale_factor"    default="4" />
+  <arg name="camera_info_url" default="file://$(find opt_calibration)/camera_info/$(arg camera_id).yaml" />
+
+  <!-- Launch sensor node -->
+  <include file="$(find swissranger_camera)/launch/sr_eth.launch">
+    <arg name="camera_id" value="$(arg camera_id)" />
+    <arg name="device_ip" value="$(arg device_ip)" />
+  </include>
+
+  <!-- Launch image publisher node -->
+  <include file="$(find swissranger_camera)/launch/publisher_for_calibration.launch">
+    <arg name="camera_id"    value="$(arg camera_id)" />
+    <arg name="scale_factor" value="$(arg scale_factor)" />
+  </include>
+
+  <!-- Launch calibration node -->
+  <node pkg="camera_calibration" type="cameracalibrator.py" name="$(arg camera_id)_calibration"
+        args="--square $(arg square) --size $(arg size)" output="screen">
+    <remap from="image"  to="/$(arg camera_id)/intensity/image_resized" />
+    <remap from="camera" to="/set_camera_info_srv" />
+  </node>
+  
+  <!-- Launch SetCameraInfo service -->
+  <node pkg="swissranger_camera" type="set_camera_info.py" name="set_camera_info_srv">
+    <param name="camera_id"       value="$(arg camera_id)" />
+    <param name="scale_factor"    value="$(arg scale_factor)" />
+    <param name="camera_info_url" value="$(arg camera_info_url)" />
+  </node>
+
+</launch>
