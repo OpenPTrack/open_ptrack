@@ -5,11 +5,13 @@
   <arg name="camera_id"               default="sr4500"/>
   <arg name="device_ip"               default="192.168.1.33" />
   <arg name="ground_from_calibration" default="false" />
+  <arg name="camera_info_url"         default="file://$(env HOME)/.ros/camera_info/$(arg camera_id).yaml" />
 
   <!-- Start the SR4500 -->
   <include file="$(find swissranger_camera)/launch/sr_eth.launch">
-    <arg name="camera_id" value="$(arg camera_id)" />
-    <arg name="device_ip" value="$(arg device_ip)" />
+    <arg name="camera_id"       value="$(arg camera_id)" />
+    <arg name="device_ip"       value="$(arg device_ip)" />
+    <arg name="camera_info_url" value="$(arg camera_info_url)" />
   </include>
 
   <!-- Launch ground based people detection node -->
