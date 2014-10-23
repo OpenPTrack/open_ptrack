@@ -87,7 +87,8 @@ class Listener :
       file.write('  </include>\n\n')
       
       file.write('  <include file="$(find swissranger_camera)/launch/publisher_for_calibration.launch">\n')
-      file.write('    <arg name="camera_id" value="$(arg camera_id)" />\n')
+      file.write('    <arg name="camera_id"       value="$(arg camera_id)" />\n')
+      file.write('    <arg name="camera_info_url" value="file://$(find opt_calibration)/camera_info/$(arg camera_id).yaml" />\n')
       file.write('  </include>\n\n')
       
     elif request.type == OPTSensorRequest.TYPE_KINECT1:
