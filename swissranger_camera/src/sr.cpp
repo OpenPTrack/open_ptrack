@@ -186,16 +186,15 @@ public:
     // None right now
 
     try
-      {
-        dev_ = new sr::SR(use_filter_);
-      }
+    {
+      dev_ = new sr::SR(use_filter_);
+    }
     catch (sr::Exception& e)
-      {
-        ROS_ERROR_STREAM("Exception thrown while constructing camera driver: "
-                         << e.what ());
-        nh_.shutdown();
-        return;
-      }
+    {
+      ROS_ERROR_STREAM("Exception thrown while constructing camera driver: " << e.what ());
+      nh_.shutdown();
+      return;
+    }
 
     getInitParams();
   } 
@@ -218,9 +217,11 @@ public:
     nh_.param("modulation_freq", modulation_freq_, -1);
     std::string default_addr("");
     nh_.param("ether_addr",  ether_addr_, default_addr);
-    cinfo_ = new camera_info_manager::CameraInfoManager(nh_);
 
     nh_.param("camera_name",  camera_name_, std::string("swissranger"));
+    std::string camera_info_url;
+    nh_.param("camera_info_url",  camera_info_url, std::string(""));
+    cinfo_ = new camera_info_manager::CameraInfoManager(nh_, camera_name_, camera_info_url);
 
     nh_.param("use_filter", use_filter_, static_cast<bool>(USE_FILTER));
     dynamic_reconfigure::Server<swissranger_camera::SwissRangerConfig >::CallbackType f = boost::bind(&SRNode::reconfig, this, _1, _2);
