@@ -54,6 +54,8 @@
 #include <sensor_msgs/image_encodings.h>
 #include <cv_bridge/cv_bridge.h>
 
+#include <camera_info_manager/camera_info_manager.h>
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -71,7 +73,7 @@ cv::Mat intensity_image;
 cv::Mat confidence_image;
 ros::Publisher image_pub, info_pub, image_rect_pub;
 sensor_msgs::CameraInfo camera_info_msg;
-std::string swissranger_frame_id;
+std::string swissranger_name;
 int scale_factor;
 
 int seq_;
@@ -139,9 +141,11 @@ cloud_cb (const PointCloud2ConstPtr& callback_cloud)
     cv_ptr->encoding = "mono8";
     cv_ptr->image = output_intensity_image;
     cv_ptr->header = callback_cloud->header;
-    cv_ptr->header.frame_id = swissranger_frame_id;
-    cv_ptr->header.seq = seq_;
-    cv_ptr->header.stamp = now;
+    cv_ptr->header.frame_id = "/" + swissranger_name;
+    cv_ptr->header.seq = callback_cloud->header.seq;
+    cv_ptr->header.stamp = callback_cloud->header.stamp;
+//    cv_ptr->header.seq = seq_;
+//    cv_ptr->header.stamp = now;
     image_pub.publish(cv_ptr->toImageMsg());
   }
 
@@ -163,48 +167,13 @@ cloud_cb (const PointCloud2ConstPtr& callback_cloud)
 //    image_pub.publish(cv_ptr->toImageMsg());
 //  }
 
-  //  // Undistort image:
-  //  cv::Mat undistorted_image;
-  //  cv::Mat new_camera_matrix;
-  //  cv::Mat distortion_coeffs(5,1,CV_32F);
-  //  distortion_coeffs.at<float>(0) = -0.348799905748622;
-  //  distortion_coeffs.at<float>(1) = 0.133373516437116;
-  //  distortion_coeffs.at<float>(2) = 0.00579477365472071;
-  //  distortion_coeffs.at<float>(3) = 0.00178143189450469;
-  //  distortion_coeffs.at<float>(4) = 0;
-  //
-  //  cv::Mat old_camera_matrix(3,3,CV_32F);
-  //  old_camera_matrix.at<float>(0) = camera_info_msg.K[0];
-  //  old_camera_matrix.at<float>(1) = camera_info_msg.K[1];
-  //  old_camera_matrix.at<float>(2) = camera_info_msg.K[2];
-  //  old_camera_matrix.at<float>(3) = camera_info_msg.K[3];
-  //  old_camera_matrix.at<float>(4) = camera_info_msg.K[4];
-  //  old_camera_matrix.at<float>(5) = camera_info_msg.K[5];
-  //  old_camera_matrix.at<float>(6) = camera_info_msg.K[6];
-  //  old_camera_matrix.at<float>(7) = camera_info_msg.K[7];
-  //  old_camera_matrix.at<float>(8) = camera_info_msg.K[8];
-  //
-  //  cv::undistort(output_intensity_image, undistorted_image, old_camera_matrix, distortion_coeffs, new_camera_matrix);
-  //
-  //  // Send undistorted image:
-  //  if (image_pub.getNumSubscribers() > 0)
-  //  {
-  //    cv_bridge::CvImagePtr cv_ptr(new cv_bridge::CvImage);
-  //    cv_ptr->encoding = "mono8";
-  //    cv_ptr->image = undistorted_image;
-  //    cv_ptr->header = callback_cloud->header;
-  //    cv_ptr->header.frame_id = "/swissranger";
-  //    image_rect_pub.publish(cv_ptr->toImageMsg());
-  //  }
-
-
   // Send camera info:
   if (info_pub.getNumSubscribers() > 0)
   {
     camera_info_msg.header.seq = callback_cloud->header.seq;
     camera_info_msg.header.stamp = callback_cloud->header.stamp;
-    camera_info_msg.header.seq = seq_;
-    camera_info_msg.header.stamp = now;
+//    camera_info_msg.header.seq = seq_;
+//    camera_info_msg.header.stamp = now;
     info_pub.publish(camera_info_msg);
   }
 
@@ -220,15 +189,20 @@ main (int argc, char** argv)
 
   // Read some parameters from launch file:
   nh.param("scale_factor", scale_factor, 1);
-  nh.param("frame_id", swissranger_frame_id, std::string("/swissranger"));
-  std::string pointcloud_topic;
+  nh.param("camera_name", swissranger_name, std::string("swissranger"));
+
+  std::string pointcloud_topic, image_resized_topic, camera_info_topic;
   nh.param("pointcloud_topic", pointcloud_topic, std::string("/swissranger/pointcloud2_raw"));
-  std::string image_resized_topic;
   nh.param("image_resized_topic", image_resized_topic, std::string("/swissranger/intensity/image_resized"));
-  std::string camera_info_topic;
   nh.param("camera_info_topic", camera_info_topic, std::string("/swissranger/intensity/image_resized/camera_info"));
+
   double rate_value;
   nh.param("rate", rate_value, 30.0);
+
+  std::string camera_info_url;
+  nh.param("camera_info_url", camera_info_url, std::string(""));
+
+  camera_info_manager::CameraInfoManager manager(nh, swissranger_name, camera_info_url);
 
   seq_ = 0;
 
@@ -240,41 +214,57 @@ main (int argc, char** argv)
   image_pub = nh.advertise<Image>(image_resized_topic, 3);
   info_pub = nh.advertise<CameraInfo>(camera_info_topic, 3);
 
-  // Initialize confidence and intensity images
-  intensity_image = cv::Mat(ROWS, COLS, CV_8U, cv::Scalar(255));
-  confidence_image = cv::Mat(ROWS, COLS, CV_8U, cv::Scalar(255));
 
   // Create camera_info message:
-  camera_info_msg.header.frame_id = swissranger_frame_id;
-  camera_info_msg.height = ROWS;
-  camera_info_msg.width = COLS;
-  camera_info_msg.K[0] = 148.906628757021;
-  camera_info_msg.K[2] = 87.307592764537;
-  camera_info_msg.K[4] = 148.634545599915;
-  camera_info_msg.K[5] = 70.8860920144388;
-  camera_info_msg.K[8] = 1.0;
+  if (manager.loadCameraInfo(camera_info_url))
+  {
+    camera_info_msg = manager.getCameraInfo();
+  }
+  else
+  {
+    ROS_INFO_STREAM("[" << swissranger_name << "] loading default parameters.");
+
+    camera_info_msg.header.frame_id = "/" + swissranger_name;
+    camera_info_msg.height = ROWS;
+    camera_info_msg.width = COLS;
+
+    camera_info_msg.K[0] = 148.906628757021;
+    camera_info_msg.K[2] = 87.307592764537;
+    camera_info_msg.K[4] = 148.634545599915;
+    camera_info_msg.K[5] = 70.8860920144388;
+    camera_info_msg.K[8] = 1.0;
+
+    camera_info_msg.R[0] = 1.0;
+    camera_info_msg.R[4] = 1.0;
+    camera_info_msg.R[8] = 1.0;
+
+    camera_info_msg.P[0] = camera_info_msg.K[0];
+    camera_info_msg.P[2] = camera_info_msg.K[2];
+    camera_info_msg.P[5] = camera_info_msg.K[4];
+    camera_info_msg.P[6] = camera_info_msg.K[5];
+    camera_info_msg.P[10] = camera_info_msg.K[8];
+  }
+
+  // Initialize confidence and intensity images
+  intensity_image = cv::Mat(camera_info_msg.height, camera_info_msg.width, CV_8U, cv::Scalar(255));
+  confidence_image = cv::Mat(camera_info_msg.height, camera_info_msg.width, CV_8U, cv::Scalar(255));
 
   // Update camera_info according to the scale factor:
   if (scale_factor != 1)
   {
-    camera_info_msg.K[0] = camera_info_msg.K[0] * scale_factor;
-    camera_info_msg.K[2] = camera_info_msg.K[2] * scale_factor;
-    camera_info_msg.K[4] = camera_info_msg.K[4] * scale_factor;
-    camera_info_msg.K[5] = camera_info_msg.K[5] * scale_factor;
-    camera_info_msg.height = camera_info_msg.height * scale_factor;
-    camera_info_msg.width = camera_info_msg.width * scale_factor;
+    camera_info_msg.height *= scale_factor;
+    camera_info_msg.width *= scale_factor;
+
+    camera_info_msg.K[0] *= scale_factor;
+    camera_info_msg.K[2] *= scale_factor;
+    camera_info_msg.K[4] *= scale_factor;
+    camera_info_msg.K[5] *= scale_factor;
+
+    camera_info_msg.P[0] *= scale_factor;
+    camera_info_msg.P[2] *= scale_factor;
+    camera_info_msg.P[5] *= scale_factor;
+    camera_info_msg.P[6] *= scale_factor;
   }
-  
-  camera_info_msg.R[0] = 1.0;
-  camera_info_msg.R[4] = 1.0;
-  camera_info_msg.R[8] = 1.0;
-  
-  camera_info_msg.P[0] = camera_info_msg.K[0];
-  camera_info_msg.P[2] = camera_info_msg.K[2];
-  camera_info_msg.P[5] = camera_info_msg.K[4];
-  camera_info_msg.P[6] = camera_info_msg.K[5];
-  camera_info_msg.P[10] = camera_info_msg.K[8];
-  
 
   //	cv::namedWindow("Confidence map", CV_WINDOW_NORMAL);
 
@@ -286,4 +276,3 @@ main (int argc, char** argv)
   }
   return 0;
 }
-
