@@ -99,6 +99,7 @@ typedef detection::GroundBasedPeopleDetectorConfig Config;
 typedef dynamic_reconfigure::Server<Config> ReconfigureServer;
 
 bool new_cloud_available_flag = false;
+bool camera_info_available_flag = false;
 PointCloudT::Ptr cloud(new PointCloudT);
 
 bool intrinsics_already_set = false;
@@ -136,6 +137,14 @@ bool background_subtraction;
 int sr_conf_threshold;
 
 enum { COLS = 176, ROWS = 144 };
+
+void
+camera_info_cb (const CameraInfo::ConstPtr & msg)
+{
+  intrinsics_matrix << msg->P[0], 0, msg->P[2], 0, msg->P[5], msg->P[6], 0, 0, 1;
+  people_detector.setIntrinsics(intrinsics_matrix);
+  camera_info_available_flag = true;
+}
 
 void
 cloud_cb (const PointCloud2ConstPtr& callback_cloud)
@@ -399,7 +408,7 @@ main (int argc, char** argv)
 	//horizontal field of view = 2 atan(0.5 width / focallength)
 	//vertical field of view = 2 atan(0.5 height / focallength)
 //	intrinsics_matrix << 128.0, 0.0, 88.0, 0.0, 128.0, 72.0, 0.0, 0.0, 1.0; // camera intrinsics
-	intrinsics_matrix << 148.906628757021, 0, 87.307592764537, 0, 148.634545599915, 70.8860920144388, 0, 0, 1;
+//	intrinsics_matrix << 148.906628757021, 0, 87.307592764537, 0, 148.634545599915, 70.8860920144388, 0, 0, 1;
 
 	// Initialize transforms to be used to correct sensor tilt to identity matrix:
 	Eigen::Affine3f transform, anti_transform;
@@ -408,6 +417,7 @@ main (int argc, char** argv)
 
 	// Subscribers:
 	ros::Subscriber sub = nh.subscribe(pointcloud_topic, 1, cloud_cb);
+  ros::Subscriber camera_info_sub = nh.subscribe(camera_info_topic, 1, camera_info_cb);
 	ros::Subscriber update_background_sub = nh.subscribe(update_background_topic, 1, updateBackgroundCallback);
 
 	// Publishers:
@@ -506,7 +516,7 @@ main (int argc, char** argv)
 	// People detection app initialization:
 	people_detector.setVoxelSize(voxel_size);                        // set the voxel size
 	people_detector.setMaxDistance(max_distance);                    // set maximum distance of people from the sensor
-	people_detector.setIntrinsics(intrinsics_matrix);                // set RGB camera intrinsic parameters
+//	people_detector.setIntrinsics(intrinsics_matrix);                // set RGB camera intrinsic parameters
 	people_detector.setClassifier(person_classifier);                // set person classifier
 	people_detector.setHeightLimits(min_height, max_height);         // set person classifier
 	people_detector.setSamplingFactor(sampling_factor);              // set sampling factor
@@ -528,7 +538,7 @@ main (int argc, char** argv)
 	// Main loop:
 	while(ros::ok())
 	{
-		if (new_cloud_available_flag)
+    if (new_cloud_available_flag and camera_info_available_flag)
 		{
 			new_cloud_available_flag = false;
 

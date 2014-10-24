@@ -147,18 +147,20 @@ class Listener :
     file.write('  <!-- Sensor parameters -->\n')
     
     if request.type == OPTSensorRequest.TYPE_SR4500:
-      file.write('  <arg name="camera_id"   default="' + request.id + '" />\n')
+      file.write('  <arg name="camera_id"       default="' + request.id + '" />\n')
       if request.ip == '':
         file.close();
         rospy.logerr('Missing "ip" field for the SR4500 sensor!')
         return (OPTSensorResponse.STATUS_ERROR, 'Missing "ip" field!')
-      file.write('  <arg name="device_ip"   default="' + request.ip + '" />\n\n')
+      file.write('  <arg name="device_ip"       default="' + request.ip + '" />\n')
+      file.write('  <arg name="camera_info_url" default="file://$(find opt_calibration)/camera_info/$(arg camera_id).yaml" />\n\n')
       
       file.write('  <!-- Detection node -->\n')
       file.write('  <include file="$(find detection)/launch/detector_sr4500.launch">\n')
       file.write('    <arg name="camera_id"               value="$(arg camera_id)" />\n')
       file.write('    <arg name="device_ip"               value="$(arg device_ip)" />\n')
       file.write('    <arg name="ground_from_calibration" value="true" />\n')
+      file.write('    <arg name="camera_info_url"         value="$(arg camera_info_url)" />\n')
       file.write('  </include>\n\n')
     
     elif request.type == OPTSensorRequest.TYPE_KINECT1:

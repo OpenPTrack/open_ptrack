@@ -217,14 +217,12 @@ public:
     nh_.param("modulation_freq", modulation_freq_, -1);
     std::string default_addr("");
     nh_.param("ether_addr",  ether_addr_, default_addr);
-
     nh_.param("camera_name",  camera_name_, std::string("swissranger"));
-    std::string camera_info_url;
-    nh_.param("camera_info_url",  camera_info_url, std::string(""));
-    cinfo_ = new camera_info_manager::CameraInfoManager(nh_, camera_name_, camera_info_url);
+
+    cinfo_ = new camera_info_manager::CameraInfoManager(nh_, camera_name_);
 
     nh_.param("use_filter", use_filter_, static_cast<bool>(USE_FILTER));
-    dynamic_reconfigure::Server<swissranger_camera::SwissRangerConfig >::CallbackType f = boost::bind(&SRNode::reconfig, this, _1, _2);
+    dynamic_reconfigure::Server<swissranger_camera::SwissRangerConfig>::CallbackType f = boost::bind(&SRNode::reconfig, this, _1, _2);
     dynsrv.setCallback(f);
   }
 
@@ -275,7 +273,7 @@ public:
 //    first_cycle = false;
   }
 
-  void reconfig(swissranger_camera::SwissRangerConfig &newconfig, uint32_t level)
+  void reconfig(swissranger_camera::SwissRangerConfig & newconfig, uint32_t level)
   {
     ROS_DEBUG("dynamic reconfigure level 0x%x", level);
 
@@ -295,7 +293,33 @@ public:
       // set the new URL and load CameraInfo (if any) from it
       if (cinfo_->validateURL(newconfig.camera_info_url))
       {
-        cinfo_->loadCameraInfo(newconfig.camera_info_url);
+        // Create camera_info message:
+        if (not cinfo_->loadCameraInfo(newconfig.camera_info_url))
+        {
+          cam_info_.header.frame_id = camera_name_;
+          cam_info_.height = 144;
+          cam_info_.width = 176;
+
+          cam_info_.K[0] = 149.0;
+          cam_info_.K[2] = 88.0;
+          cam_info_.K[4] = 149.0;
+          cam_info_.K[5] = 72.0;
+          cam_info_.K[8] = 1.0;
+
+          cam_info_.R[0] = 1.0;
+          cam_info_.R[4] = 1.0;
+          cam_info_.R[8] = 1.0;
+
+          cam_info_.P[0] = cam_info_.K[0];
+          cam_info_.P[2] = cam_info_.K[2];
+          cam_info_.P[5] = cam_info_.K[4];
+          cam_info_.P[6] = cam_info_.K[5];
+          cam_info_.P[10] = cam_info_.K[8];
+
+          cinfo_->setCameraInfo(cam_info_);
+          newconfig.camera_info_url = "";
+        }
+
       }
       else
       {
@@ -336,8 +360,7 @@ public:
 
     config_ = newconfig;                // save new parameters
 
-    ROS_DEBUG_STREAM("[" << camera_name_
-                     << "] reconfigured: frame_id " << newconfig.frame_id
+    ROS_DEBUG_STREAM("[" << camera_name_  << "] reconfigured: frame_id " << newconfig.frame_id
                      << ", camera_info_url " << newconfig.camera_info_url);
   }
 
