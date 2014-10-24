@@ -504,7 +504,6 @@ main (int argc, char** argv)
 	person_classifier.loadSVMFromFile(svm_filename);   // load trained SVM
 
 	// People detection app initialization:
-	open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT> people_detector;    // people detection object
 	people_detector.setVoxelSize(voxel_size);                        // set the voxel size
 	people_detector.setMaxDistance(max_distance);                    // set maximum distance of people from the sensor
 	people_detector.setIntrinsics(intrinsics_matrix);                // set RGB camera intrinsic parameters
