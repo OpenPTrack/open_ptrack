@@ -385,6 +385,9 @@ namespace open_ptrack
         /** \brief Octree representing the background */
         pcl::octree::OctreePointCloud<PointT> *background_octree_;
 
+        /** \brief Frame counter */
+        unsigned int frame_counter_;
+
     };
   } /* namespace detection */
 } /* namespace open_ptrack */

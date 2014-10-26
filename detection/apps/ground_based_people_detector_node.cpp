@@ -112,6 +112,8 @@ double background_octree_resolution;
 PointCloudT::Ptr background_cloud;
 // If true, background subtraction is performed
 bool background_subtraction;
+// Threshold on the ratio of valid points needed for ground estimation
+double valid_points_threshold;
 
 void
 cloud_cb (const PointCloudT::ConstPtr& callback_cloud)
@@ -181,6 +183,8 @@ computeBackgroundCloud (int frames, float voxel_size, std::string frame_id, ros:
 void
 configCb(Config &config, uint32_t level)
 {
+  valid_points_threshold = config.valid_points_threshold;
+
   min_confidence = config.ground_based_people_detection_min_confidence;
 
   people_detector.setHeightLimits (config.minimum_person_height, config.maximum_person_height);
@@ -273,7 +277,6 @@ main (int argc, char** argv)
   nh.param("ground_from_extrinsic_calibration", ground_from_extrinsic_calibration, false);
   nh.param("lock_ground", lock_ground, false);
   nh.param("sensor_tilt_compensation", sensor_tilt_compensation, false);
-  double valid_points_threshold;
   nh.param("valid_points_threshold", valid_points_threshold, 0.2);
   nh.param("background_subtraction", background_subtraction, false);
   nh.param("background_resolution", background_octree_resolution, 0.3);
@@ -314,9 +317,30 @@ main (int argc, char** argv)
     rate.sleep();
   }
 
+  // Create classifier for people detection:
+  open_ptrack::detection::PersonClassifier<pcl::RGB> person_classifier;
+  person_classifier.loadSVMFromFile(svm_filename);   // load trained SVM
+
+  // People detection app initialization:
+  people_detector.setVoxelSize(voxel_size);                        // set the voxel size
+  people_detector.setMaxDistance(max_distance);                    // set maximum distance of people from the sensor
+  people_detector.setIntrinsics(intrinsics_matrix);                // set RGB camera intrinsic parameters
+  people_detector.setClassifier(person_classifier);                // set person classifier
+  people_detector.setHeightLimits(min_height, max_height);         // set person classifier
+  people_detector.setSamplingFactor(sampling_factor);              // set sampling factor
+  people_detector.setUseRGB(use_rgb);                              // set if RGB should be used or not
+  people_detector.setSensorTiltCompensation(sensor_tilt_compensation);      // enable point cloud rotation correction
+  people_detector.setMinimumDistanceBetweenHeads (heads_minimum_distance);  // set minimum distance between persons' head
+
+  // Set up dynamic reconfiguration
+  ReconfigureServer::CallbackType f = boost::bind(&configCb, _1, _2);
+  reconfigure_server_.reset(new ReconfigureServer(config_mutex_, nh));
+  reconfigure_server_->setCallback(f);
+
   // Loop until a valid point cloud is found
   open_ptrack::detection::GroundplaneEstimation<PointT> ground_estimator(ground_estimation_mode);
   bool first_valid_frame = false;
+  int no_valid_frame_counter = 0;
   while (!first_valid_frame)
   {
     if (!ground_estimator.tooManyNaN(cloud, 1 - valid_points_threshold))
@@ -326,7 +350,11 @@ main (int argc, char** argv)
     }
     else
     {
-      std::cout << "No valid frame. Move the camera to a better position..." << std::endl;
+      if (++no_valid_frame_counter > 60)
+      {
+        std::cout << "No valid frame. Move the camera to a better position..." << std::endl;
+        no_valid_frame_counter = 0;
+      }
     }
 
     // Execute callbacks:
@@ -353,6 +381,8 @@ main (int argc, char** argv)
     {
       std::cout << "Background read from file." << std::endl << std::endl;
     }
+
+    people_detector.setBackground(background_subtraction, background_octree_resolution, background_cloud);
   }
 
   // Ground estimation:
@@ -360,28 +390,6 @@ main (int argc, char** argv)
   ground_estimator.setInputCloud(cloud);
   Eigen::VectorXf ground_coeffs = ground_estimator.computeMulticamera(ground_from_extrinsic_calibration, read_ground_from_file,
       pointcloud_topic, sampling_factor, voxel_size);
-
-  // Create classifier for people detection:
-  open_ptrack::detection::PersonClassifier<pcl::RGB> person_classifier;
-  person_classifier.loadSVMFromFile(svm_filename);   // load trained SVM
-
-  // People detection app initialization:
-  people_detector.setVoxelSize(voxel_size);                        // set the voxel size
-  people_detector.setMaxDistance(max_distance);                    // set maximum distance of people from the sensor
-  people_detector.setIntrinsics(intrinsics_matrix);                // set RGB camera intrinsic parameters
-  people_detector.setClassifier(person_classifier);                // set person classifier
-  people_detector.setHeightLimits(min_height, max_height);         // set person classifier
-  people_detector.setSamplingFactor(sampling_factor);              // set sampling factor
-  people_detector.setUseRGB(use_rgb);                              // set if RGB should be used or not
-  people_detector.setSensorTiltCompensation(sensor_tilt_compensation);		  // enable point cloud rotation correction
-  people_detector.setMinimumDistanceBetweenHeads (heads_minimum_distance);  // set minimum distance between persons' head
-  if (background_subtraction)
-    people_detector.setBackground(background_subtraction, background_octree_resolution, background_cloud);
-
-  // Set up dynamic reconfiguration
-  ReconfigureServer::CallbackType f = boost::bind(&configCb, _1, _2);
-  reconfigure_server_.reset(new ReconfigureServer(config_mutex_, nh));
-  reconfigure_server_->setCallback(f);
 
   // Main loop:
   while(ros::ok())

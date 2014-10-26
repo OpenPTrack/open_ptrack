@@ -67,6 +67,7 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::GroundBasedPeople
   // set flag values for mandatory parameters:
   sqrt_ground_coeffs_ = std::numeric_limits<float>::quiet_NaN();
   person_classifier_set_flag_ = false;
+  frame_counter_ = 0;
 }
 
 template <typename PointT> void
@@ -310,26 +311,38 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::rotateGround(Eige
 template <typename PointT> bool
 open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vector<pcl::people::PersonCluster<PointT> >& clusters)
 {
+  frame_counter_++;
+
+  // Define if debug info should be written or not for this frame:
+  bool debug_flag = false;
+  if ((frame_counter_ % 60) == 0)
+  {
+    debug_flag = true;
+  }
+
   // Check if all mandatory variables have been set:
-  if (sqrt_ground_coeffs_ != sqrt_ground_coeffs_)
+  if (debug_flag)
   {
-    PCL_ERROR ("[open_ptrack::detection::GroundBasedPeopleDetectionApp::compute] Floor parameters have not been set or they are not valid!\n");
-    return (false);
-  }
-  if (cloud_ == NULL)
-  {
-    PCL_ERROR ("[open_ptrack::detection::GroundBasedPeopleDetectionApp::compute] Input cloud has not been set!\n");
-    return (false);
-  }
-  if (intrinsics_matrix_(0) == 0)
-  {
-    PCL_ERROR ("[open_ptrack::detection::GroundBasedPeopleDetectionApp::compute] Camera intrinsic parameters have not been set!\n");
-    return (false);
-  }
-  if (!person_classifier_set_flag_)
-  {
-    PCL_ERROR ("[open_ptrack::detection::GroundBasedPeopleDetectionApp::compute] Person classifier has not been set!\n");
-    return (false);
+    if (sqrt_ground_coeffs_ != sqrt_ground_coeffs_)
+    {
+      PCL_ERROR ("[open_ptrack::detection::GroundBasedPeopleDetectionApp::compute] Floor parameters have not been set or they are not valid!\n");
+      return (false);
+    }
+    if (cloud_ == NULL)
+    {
+      PCL_ERROR ("[open_ptrack::detection::GroundBasedPeopleDetectionApp::compute] Input cloud has not been set!\n");
+      return (false);
+    }
+    if (intrinsics_matrix_(0) == 0)
+    {
+      PCL_ERROR ("[open_ptrack::detection::GroundBasedPeopleDetectionApp::compute] Camera intrinsic parameters have not been set!\n");
+      return (false);
+    }
+    if (!person_classifier_set_flag_)
+    {
+      PCL_ERROR ("[open_ptrack::detection::GroundBasedPeopleDetectionApp::compute] Person classifier has not been set!\n");
+      return (false);
+    }
   }
 
   if (!dimension_limits_set_)    // if dimension limits have not been set by the user
@@ -403,7 +416,12 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
   if (inliers->size () >= (300 * 0.06 / voxel_size_ / std::pow (static_cast<double> (sampling_factor_), 2)))
     ground_model->optimizeModelCoefficients (*inliers, ground_coeffs_, ground_coeffs_);
   else
-    PCL_INFO ("No groundplane update!\n");
+  {
+    if (debug_flag)
+    {
+      PCL_INFO ("No groundplane update!\n");
+    }
+  }
 
   // Background Subtraction (optional):
   if (background_subtraction_)
@@ -475,13 +493,13 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
     subclustering.setSensorPortraitOrientation(vertical_);
     subclustering.subcluster(clusters);
 
-    for (unsigned int i = 0; i < rgb_image_->points.size(); i++)
-    {
-      if ((rgb_image_->points[i].r < 0) | (rgb_image_->points[i].r > 255) | isnan(rgb_image_->points[i].r))
-      {
-        std::cout << "ERROR!" << std::endl;
-      }
-    }
+//    for (unsigned int i = 0; i < rgb_image_->points.size(); i++)
+//    {
+//      if ((rgb_image_->points[i].r < 0) | (rgb_image_->points[i].r > 255) | isnan(rgb_image_->points[i].r))
+//      {
+//        std::cout << "ERROR in RGB data!" << std::endl;
+//      }
+//    }
 
     if (use_rgb_) // if RGB information can be used
     {

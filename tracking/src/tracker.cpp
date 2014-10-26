@@ -393,7 +393,7 @@ namespace open_ptrack
             }
             else
             {
-              std::cout << "Id: " << t->getId() << ", lowConfConsFrames: " << t->getLowConfidenceConsecutiveFrames() << ", newConf: " << d.getConfidence()<< std::endl;
+              //std::cout << "Id: " << t->getId() << ", lowConfConsFrames: " << t->getLowConfidenceConsecutiveFrames() << ", newConf: " << d.getConfidence()<< std::endl;
             }
           }
         }
