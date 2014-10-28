@@ -152,6 +152,7 @@ bool OPTCalibration::addData(const cb::PinholeSensor::Ptr & color_sensor,
     tf_pub_.sendTransform(transform_msg);
 
     addData(color_sensor, color_view, extracted_checkerboard, extracted_checkerboard->center());
+
     return true;
   }
   return false;

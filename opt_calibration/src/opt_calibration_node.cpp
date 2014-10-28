@@ -95,7 +95,6 @@ OPTCalibrationNode::OPTCalibrationNode(const ros::NodeHandle & node_handle)
 
     fixed_sensor_pose_.linear() = q.toRotationMatrix();
     fixed_sensor_pose_.translation() = t.vector();
-
   }
 
   node_handle_.param("num_sensors", num_sensors_, 0);
@@ -253,15 +252,21 @@ void OPTCalibrationNode::actionCallback(const std_msgs::String::ConstPtr & msg)
 {
   if (msg->data == "save" or msg->data == "saveExtrinsicCalibration")
   {
+    ROS_INFO("Saving calibration results...");
     calibration_->optimize();
     save();
   }
   else if (msg->data == "start floor")
   {
     if (calibration_->floorAcquisition())
+    {
       ROS_WARN("Floor acquisition already started.");
+    }
     else
+    {
+      ROS_INFO("Floor acquisition started.");
       calibration_->startFloorAcquisition();
+    }
   }
   else if (msg->data == "stop floor")
   {
@@ -284,6 +289,7 @@ void OPTCalibrationNode::spin()
   {
     ros::spinOnce();
     calibration_->nextAcquisition();
+    ROS_INFO("--------------------------------------------------");
 
     try
     {
@@ -294,7 +300,8 @@ void OPTCalibrationNode::spin()
         {
           device->convertLastMessages();
           PinholeRGBDevice::Data::Ptr data = device->lastData();
-          calibration_->addData(device->sensor(), data->image);
+          bool b = calibration_->addData(device->sensor(), data->image);
+          ROS_INFO_STREAM("[" << device->frameId() << "] image stamp: " << device->lastMessages().image_msg->header.stamp << (b ? " *" : ""));
         }
       }
       for (size_t i = 0; i < kinect_vec_.size(); ++i)
