@@ -359,8 +359,8 @@ bool OPTCalibrationNode::save()
 
     if (world_computation_ == LAST_CHECKERBOARD)
     {
-      AngleAxis rotation(M_PI, Vector3(1.0, 1.0, 0.0).normalized());
-      new_world_pose = rotation * calibration_->getLastCheckerboardPose().inverse();
+      //AngleAxis rotation(M_PI, Vector3(1.0, 1.0, 0.0).normalized());
+      new_world_pose = /*rotation * */calibration_->getLastCheckerboardPose().inverse();
     }
     else if (world_computation_ == UPDATE)
     {
