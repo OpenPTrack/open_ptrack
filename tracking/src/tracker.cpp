@@ -295,6 +295,10 @@ namespace open_ptrack
           // Compute joint likelihood and put it in the distance matrix:
 
           distance_matrix_(track, measure++) = likelihood_weights_[0] * detector_likelihood + likelihood_weights_[1] * motion_likelihood;
+          
+          // Remove NaN and inf:
+          if (isnan(distance_matrix_(track, measure-1)) | (not std::isfinite(distance_matrix_(track, measure-1))))
+            distance_matrix_(track, measure-1) = 2*gate_distance_;
 
           //std::cout << (*it)->getId() << ": " << "Motion likelihood: " << motionWeight * motionLikelihood << std::endl;
           //if (detector_likelihood_)
