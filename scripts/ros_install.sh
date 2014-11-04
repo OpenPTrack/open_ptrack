@@ -6,7 +6,7 @@ if [ $UBUNTU_VERSION = trusty ] || [ $UBUNTU_VERSION = saucy ] ; then
   ROS_DISTRO=indigo
 fi
 
-ROS_PACKAGES="python-rosinstall ros-$ROS_DISTRO-robot-state-publisher ros-$ROS_DISTRO-cmake-modules ros-$ROS_DISTRO-freenect-stack ros-$ROS_DISTRO-openni-launch"
+ROS_PACKAGES="python-rosinstall ros-$ROS_DISTRO-robot-state-publisher ros-$ROS_DISTRO-cmake-modules ros-$ROS_DISTRO-freenect-stack ros-$ROS_DISTRO-openni-launch ros-$ROS_DISTRO-camera-info-manager-py"
 
 echo "deb http://packages.ros.org/ros/ubuntu $UBUNTU_VERSION main" | sudo tee /etc/apt/sources.list.d/ros-latest.list
 wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
