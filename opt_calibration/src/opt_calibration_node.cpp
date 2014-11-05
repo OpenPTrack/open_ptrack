@@ -289,7 +289,7 @@ void OPTCalibrationNode::spin()
   {
     ros::spinOnce();
     calibration_->nextAcquisition();
-    ROS_INFO("--------------------------------------------------");
+    ROS_DEBUG("--------------------------------------------------");
 
     try
     {
@@ -301,7 +301,7 @@ void OPTCalibrationNode::spin()
           device->convertLastMessages();
           PinholeRGBDevice::Data::Ptr data = device->lastData();
           bool b = calibration_->addData(device->sensor(), data->image);
-          ROS_INFO_STREAM("[" << device->frameId() << "] image stamp: " << device->lastMessages().image_msg->header.stamp << (b ? " *" : ""));
+          ROS_DEBUG_STREAM("[" << device->frameId() << "] image stamp: " << device->lastMessages().image_msg->header.stamp << (b ? " *" : ""));
         }
       }
       for (size_t i = 0; i < kinect_vec_.size(); ++i)
