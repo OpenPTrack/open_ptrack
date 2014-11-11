@@ -136,6 +136,12 @@ namespace open_ptrack
       detection_msg_.confidence = confidence;
     }
 
+    void
+    Detection::setWorldCentroid(const Eigen::Vector3d& centroid)
+    {
+      world_centroid_ = centroid;
+    }
+
     /************************ protected methods ************************/
 
     cv::Rect

@@ -6,7 +6,7 @@ set(CMAKE_BUILD_TYPE Release)#RelWithDebInfo)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS cmake_modules roscpp opt_msgs calibration_common kinect camera_info_manager
-                                        cv_bridge image_transport tf_conversions swissranger_camera)
+                                        cv_bridge image_transport tf_conversions swissranger_camera pcl_ros detection)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -71,3 +71,18 @@ target_link_libraries(stereo_publisher
   ${OpenCV_LIBS}
 )
 
+add_executable(opt_calibration_refinement
+  apps/opt_calibration_refinement.cpp
+  src/trajectory_registration.cpp
+)
+target_link_libraries(opt_calibration_refinement
+  ${catkin_LIBRARIES}
+)
+
+#add_executable(global_registration
+#  apps/global_registration.cpp
+#  src/trajectory_registration.cpp
+#)
+#target_link_libraries(global_registration
+#  ${catkin_LIBRARIES}
+#)

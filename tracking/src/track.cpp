@@ -176,6 +176,7 @@ namespace open_ptrack
 
       // Update Kalman filter from the last time the track was visible:
       int framesLost = int(round((detection_source->getTime() - last_time_detected_).toSec() / period_)) - 1;
+
       for(int i = 0; i < framesLost; i++)
       {
         filter_->predict();
@@ -302,6 +303,7 @@ namespace open_ptrack
     Track::getMahalanobisDistance(double x, double y, const ros::Time& when)
     {
       int difference = int(round((when - last_time_predicted_).toSec() / period_));
+//      std::cout << "time difference from last detection: " << difference << std::endl;
       int index;
       if(difference <= 0)
       {
@@ -336,6 +338,9 @@ namespace open_ptrack
         difference = int(round(dt / period_));
         int vIndex = (MAX_SIZE + last_time_predicted_index_ + difference) % MAX_SIZE;
 
+//        std::cout << "dt: " << dt << std::endl;
+//        std::cout << "vIndex: " << vIndex << std::endl;
+
         double vx, vy;
         if(difference != 0)
         {
@@ -347,6 +352,8 @@ namespace open_ptrack
           vx = mahalanobis_map4d_[vIndex].x;
           vy = mahalanobis_map4d_[vIndex].x;
         }
+
+//        std::cout << "vx: " << vx << ", vy: " << vy<< std::endl;
 
         return open_ptrack::tracking::KalmanFilter::performMahalanobisDistance(x, y, vx, vy, mahalanobis_map4d_[index]);
       }

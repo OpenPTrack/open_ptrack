@@ -300,10 +300,10 @@ namespace open_ptrack
           if (isnan(distance_matrix_(track, measure-1)) | (not std::isfinite(distance_matrix_(track, measure-1))))
             distance_matrix_(track, measure-1) = 2*gate_distance_;
 
-          //std::cout << (*it)->getId() << ": " << "Motion likelihood: " << motionWeight * motionLikelihood << std::endl;
-          //if (detector_likelihood_)
-          //	std::cout << (*it)->getId() << ": " << "Detector likelihood: " << detectorWeight * dit->getConfidence() << std::endl;
-          //std::cout << (*it)->getId() << ": " << "JOINT LIKELIHOOD: " << distance_matrix_(track, measure-1) << std::endl;
+//          std::cout << (*it)->getId() << ": " << "Motion likelihood: " << likelihood_weights_[0] * motion_likelihood << std::endl;
+//          if (detector_likelihood_)
+//          	std::cout << (*it)->getId() << ": " << "Detector likelihood: " << likelihood_weights_[1] * dit->getConfidence() << std::endl;
+//          std::cout << (*it)->getId() << ": " << "JOINT LIKELIHOOD: " << distance_matrix_(track, measure-1) << std::endl;
 
           /*ROS_INFO("%d(%f, %f) = %f", t->getId(),
 					dit->getWorldCentroid()(0),

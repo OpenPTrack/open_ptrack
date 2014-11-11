@@ -1,0 +1,11 @@
+############################
+## Calibration refinement ##
+############################
+# Bin size for the time variable:
+time_bin_size: 0.25
+# Max correspondence distance for ICP:
+icp_max_correspondence_distance: 2.0
+# Number of iterations of the calibration refinement procedure:
+calibration_refinement_iterations: 4
+# Flag stating if detection clouds should be saved to disk every ten seconds:
+save_detection_clouds: false

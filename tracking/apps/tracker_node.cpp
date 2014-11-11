@@ -38,6 +38,7 @@
  */
 
 #include <ros/ros.h>
+#include <ros/package.h>
 #include <opencv2/opencv.hpp>
 #include <Eigen/Eigen>
 #include <visualization_msgs/MarkerArray.h>
@@ -109,6 +110,10 @@ double acceleration_variance;
 double position_variance_weight;
 double voxel_size;
 double gate_distance;
+bool calibration_refinement;
+std::map<std::string, Eigen::Matrix4d> registration_matrices;
+double max_detection_delay;
+ros::Time latest_time;
 
 /**
  * \brief Create marker to be visualized in RViz
@@ -144,6 +149,29 @@ createMarker (int id, std::string frame_id, ros::Time stamp, Eigen::Vector3d pos
   return marker;
 }
 
+Eigen::Matrix4d
+readMatrixFromFile (std::string filename)
+{
+  Eigen::Matrix4d matrix;
+  std::string line;
+  std::ifstream myfile (filename.c_str());
+  if (myfile.is_open())
+  {
+    int k = 0;
+    std::string number;
+    while (myfile >> number)
+    {
+      matrix(int(k/4), int(k%4)) = std::atof(number.c_str());
+      k++;
+    }
+    myfile.close();
+  }
+
+  std::cout << matrix << std::endl;
+
+  return matrix;
+}
+
 /**
  * \brief Read the DetectionArray message and use the detections for creating/updating/deleting tracks
  *
@@ -155,6 +183,18 @@ detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
   // Read message header information:
   std::string frame_id = msg->header.frame_id;
   ros::Time frame_time = msg->header.stamp;
+
+  // Compute delay of detection message, if any:
+  double time_delay = 0.0;
+  if (frame_time > latest_time)
+  {
+    latest_time = frame_time;
+    time_delay = 0.0;
+  }
+  else
+  {
+    time_delay = (latest_time - frame_time).toSec();
+  }
 
   tf::StampedTransform transform;
   tf::StampedTransform inverse_transform;
@@ -223,8 +263,62 @@ detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
       }
     }
 
+    // Detection correction by means of calibration refinement:
+    if (calibration_refinement)
+    {
+      if (strcmp(frame_id.substr(0,1).c_str(), "/") == 0)
+      {
+        frame_id = frame_id.substr(1, frame_id.size() - 1);
+      }
+
+      Eigen::Matrix4d registration_matrix;
+      std::map<std::string, Eigen::Matrix4d>::iterator registration_matrices_iterator = registration_matrices.find(frame_id);
+      if (registration_matrices_iterator != registration_matrices.end())
+      { // camera already present
+        registration_matrix = registration_matrices_iterator->second;
+      }
+      else
+      { // camera not present
+        std::cout << "Reading refinement matrix of " << frame_id << " from file." << std::endl;
+        std::string refinement_filename = ros::package::getPath("opt_calibration") + "/conf/registration_" + frame_id + ".txt";
+        std::ifstream f(refinement_filename.c_str());
+        if (f.good()) // if the file exists
+        {
+          f.close();
+          registration_matrix = readMatrixFromFile (refinement_filename);
+          registration_matrices.insert(std::pair<std::string, Eigen::Matrix4d> (frame_id, registration_matrix));
+        }
+        else  // if the file does not exist
+        {
+          // insert the identity matrix
+          std::cout << "Refinement file not found! Not doing refinement for this sensor." << std::endl;
+          registration_matrices.insert(std::pair<std::string, Eigen::Matrix4d> (frame_id, Eigen::Matrix4d::Identity()));
+        }
+      }
+
+      if(detections_vector.size() > 0)
+      {
+        // Apply detection refinement:
+        for(unsigned int i = 0; i < detections_vector.size(); i++)
+        {
+          Eigen::Vector3d old_centroid = detections_vector[i].getWorldCentroid();
+
+//          std::cout << frame_id << std::endl;
+//          std::cout << registration_matrix << std::endl;
+//          std::cout << "old_centroid: " << old_centroid.transpose() << std::endl;
+          Eigen::Vector4d old_centroid_homogeneous(old_centroid(0), old_centroid(1), old_centroid(2), 1.0);
+          Eigen::Vector4d refined_centroid = registration_matrix * old_centroid_homogeneous;
+          detections_vector[i].setWorldCentroid(Eigen::Vector3d(refined_centroid(0), refined_centroid(1), refined_centroid(2)));
+
+          Eigen::Vector3d refined_centroid2 = detections_vector[i].getWorldCentroid();
+//          std::cout << "refined_centroid2: " << refined_centroid2.transpose() << std::endl;
+//          std::cout << "difference: " << (refined_centroid2 - old_centroid).transpose() << std::endl << std::endl;
+        }
+      }
+    }
+
     // If at least one detection has been received:
-    if(detections_vector.size() > 0)
+    if((detections_vector.size() > 0) & (time_delay < max_detection_delay))
     {
       // Perform detection-track association:
       tracker->newFrame(detections_vector);
@@ -393,6 +487,8 @@ void
 configCb(Config &config, uint32_t level)
 {
   tracker->setMinConfidenceForTrackInitialization (config.min_confidence_initialization);
+  max_detection_delay = config.max_detection_delay;
+  calibration_refinement = config.calibration_refinement;
   tracker->setSecBeforeOld (config.sec_before_old);
   tracker->setSecBeforeFake (config.sec_before_fake);
   tracker->setSecRemainNew (config.sec_remain_new);
@@ -512,6 +608,9 @@ main(int argc, char** argv)
 
   bool debug_mode;
   nh.param("debug_active", debug_mode, false);
+
+  nh.param("calibration_refinement", calibration_refinement, false);
+  nh.param("max_detection_delay", max_detection_delay, 3.0);
 
   // Read number of sensors in the network:
   int num_cameras = 1;

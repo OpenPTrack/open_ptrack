@@ -1,0 +1,13 @@
+<launch>
+
+  <!-- Load calibration results -->
+  <include file="$(find opt_calibration)/launch/opt_calibration_results.launch"/>
+
+  <!-- Calibration refinement -->
+  <node pkg="opt_calibration" type="opt_calibration_refinement" name="opt_calibration_refinement" output="screen"> 
+    <rosparam command="load" file="$(find opt_calibration)/conf/camera_network.yaml" /> 
+    <rosparam command="load" file="$(find tracking)/conf/tracker_multicamera.yaml" /> 
+    <rosparam command="load" file="$(find opt_calibration)/conf/calibration_refinement.yaml" /> 
+  </node>
+
+</launch>

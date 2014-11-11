@@ -184,6 +184,14 @@ namespace open_ptrack
          */
         void
         setConfidence(double confidence);
+
+        /**
+         * \brief Set the detection centroid in world reference frame.
+         *
+         * \param[in] centroid The detection centroid in world reference frame.
+         */
+        void
+        setWorldCentroid(const Eigen::Vector3d& centroid);
     };
   } /* namespace detection */
 } /* namespace open_ptrack */
