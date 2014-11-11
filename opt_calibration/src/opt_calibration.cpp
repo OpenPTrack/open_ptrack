@@ -85,10 +85,12 @@ void OPTCalibration::addSensor(const cb::DepthSensor::Ptr & sensor,
   node->setEstimatePose(estimate_pose);
 }
 
-bool OPTCalibration::addData(const cb::PinholeSensor::Ptr & color_sensor,
-                             const cb::DepthSensor::Ptr & depth_sensor,
-                             const cv::Mat & image,
-                             const cb::PCLCloud3::Ptr & cloud)
+bool OPTCalibration::analyzeData(const cb::PinholeSensor::Ptr & color_sensor,
+                                 const cb::DepthSensor::Ptr & depth_sensor,
+                                 const cv::Mat & image,
+                                 const cb::PCLCloud3::Ptr & cloud,
+                                 CheckerboardView::Ptr & color_cb_view,
+                                 CheckerboardView::Ptr & depth_cb_view)
 {
   OPTCheckerboardExtraction ex;
   ex.setImage(image);
@@ -100,8 +102,8 @@ bool OPTCalibration::addData(const cb::PinholeSensor::Ptr & color_sensor,
 
   cb::PinholeView<cb::Checkerboard>::Ptr color_view;
   cb::DepthViewPCL<cb::PlanarObject>::Ptr depth_view;
-  cb::PlanarObject::Ptr extracted_plane;
   cb::Checkerboard::Ptr extracted_checkerboard;
+  cb::PlanarObject::Ptr extracted_plane;
   if (ex.perform(color_view, depth_view, extracted_checkerboard, extracted_plane))
   {
     visualization_msgs::Marker checkerboard_marker;
@@ -122,15 +124,27 @@ bool OPTCalibration::addData(const cb::PinholeSensor::Ptr & color_sensor,
     extracted_plane->toTF(transform_msg);
     tf_pub_.sendTransform(transform_msg);
 
-    addData(color_sensor, color_view, extracted_checkerboard, extracted_checkerboard->center());
-    addData(depth_sensor, depth_view, extracted_plane, depth_view->centroid());
+    color_cb_view = boost::make_shared<CheckerboardView>(color_view,
+                                                         extracted_checkerboard,
+                                                         extracted_checkerboard->center(),
+                                                         floorAcquisition());
+
+    depth_cb_view = boost::make_shared<CheckerboardView>(depth_view,
+                                                         extracted_plane,
+                                                         depth_view->centroid(),
+                                                         floorAcquisition());
+
+//    analyzeData(color_sensor, color_view, extracted_checkerboard, extracted_checkerboard->center());
+//    analyzeData(depth_sensor, depth_view, extracted_plane, depth_view->centroid());
+
     return true;
   }
   return false;
 }
 
-bool OPTCalibration::addData(const cb::PinholeSensor::Ptr & color_sensor,
-                             const cv::Mat & image)
+bool OPTCalibration::analyzeData(const cb::PinholeSensor::Ptr & color_sensor,
+                                 const cv::Mat & image,
+                                 CheckerboardView::Ptr & color_cb_view)
 {
   OPTCheckerboardExtraction ex;
   ex.setImage(image);
@@ -151,7 +165,11 @@ bool OPTCalibration::addData(const cb::PinholeSensor::Ptr & color_sensor,
     extracted_checkerboard->toTF(transform_msg);
     tf_pub_.sendTransform(transform_msg);
 
-    addData(color_sensor, color_view, extracted_checkerboard, extracted_checkerboard->center());
+    color_cb_view = boost::make_shared<CheckerboardView>(color_view,
+                                                         extracted_checkerboard,
+                                                         extracted_checkerboard->center(),
+                                                         floorAcquisition());
+//    analyzeData(color_sensor, color_view, extracted_checkerboard, extracted_checkerboard->center());
 
     return true;
   }
@@ -747,8 +765,8 @@ void OPTCalibration::optimize()
       cb::Vector3 origin_floor = floor_pose.inverse() * origin;
 //      ROS_INFO_STREAM("O 2D  " << origin_floor.transpose());
 
-      cb_data.row(i)[2] = theta;
       cb_data.row(i).head<2>() = origin_floor.head<2>();
+      cb_data.row(i)[2] = theta;
     }
   }
 
@@ -859,6 +877,13 @@ void OPTCalibration::optimize()
 //  if (floor_estimated_)
 //    ROS_INFO_STREAM("F* " << -floor_data.normalized().transpose() << " " << floor_data.norm());
 
+  cb::Plane plane(-floor_data.normalized(), floor_data.norm());
+  cb::Transform plane_pose;
+  plane_pose.linear().col(2) = plane.normal();
+  plane_pose.linear().col(0) = (plane.projection(floor_data + cb::Vector3::UnitX()) - floor_data).normalized();
+  plane_pose.linear().col(1) = plane_pose.linear().col(2).cross(plane_pose.linear().col(0));
+  plane_pose.translation() = floor_data;
+
   for (size_t i = 0; i < checkerboard_vec_.size(); ++i)
   {
     cb::Checkerboard::Ptr & checkerboard = checkerboard_vec_[i];
@@ -874,12 +899,6 @@ void OPTCalibration::optimize()
       checkerboard_pose.translation().head<2>() = checkerboard_pose_2d.translation();
 //      ROS_INFO_STREAM("O 2D* " << (checkerboard_pose * cb::Point3::Zero()).transpose());
 
-      cb::Plane plane(-floor_data.normalized(), floor_data.norm());
-      cb::Transform plane_pose;
-      plane_pose.linear().col(2) = plane.normal();
-      plane_pose.linear().col(0) = (plane.projection(floor_data + cb::Vector3::UnitX()) - floor_data).normalized();
-      plane_pose.linear().col(1) = plane_pose.linear().col(2).cross(plane_pose.linear().col(0));
-      plane_pose.translation() = floor_data;
 //      ROS_INFO_STREAM("O* " << (plane_pose * checkerboard_pose * cb::Point3::Zero()).transpose());// << "\n------------------\n" << checkerboard->pose().matrix());
       checkerboard->transform(plane_pose * checkerboard_pose * checkerboard->pose().inverse());
     }

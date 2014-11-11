@@ -165,6 +165,32 @@ public:
   typedef boost::shared_ptr<OPTCalibration> Ptr;
   typedef boost::shared_ptr<const OPTCalibration> ConstPtr;
 
+  struct CheckerboardView
+  {
+    typedef boost::shared_ptr<CheckerboardView> Ptr;
+    typedef boost::shared_ptr<const CheckerboardView> ConstPtr;
+
+    CheckerboardView() {}
+
+    CheckerboardView(const cb::View::Ptr & view,
+                     const cb::PlanarObject::Ptr & object,
+                     const cb::Point3 & center,
+                     bool is_floor)
+      : view(view),
+        object(object),
+        center(center),
+        is_floor(is_floor)
+    {
+    }
+
+    cb::View::Ptr view;
+    cb::PlanarObject::Ptr object;
+    cb::Point3 center;
+    bool is_floor;
+
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  };
+
   OPTCalibration(const ros::NodeHandle & node_handle);
 
   inline void setCheckerboard(const cb::Checkerboard::Ptr & checkerboard)
@@ -183,22 +209,23 @@ public:
     view_map_vec_.push_back(ViewMap());
   }
 
-  bool addData(const cb::PinholeSensor::Ptr & color_sensor,
-               const cb::DepthSensor::Ptr & depth_sensor,
-               const cv::Mat & image,
-               const cb::PCLCloud3::Ptr & cloud);
+  bool analyzeData(const cb::PinholeSensor::Ptr & color_sensor,
+                   const cb::DepthSensor::Ptr & depth_sensor,
+                   const cv::Mat & image,
+                   const cb::PCLCloud3::Ptr & cloud,
+                   CheckerboardView::Ptr & color_cb_view,
+                   CheckerboardView::Ptr & depth_cb_view);
 
-  bool addData(const cb::PinholeSensor::Ptr & color_sensor,
-               const cv::Mat & image);
+  bool analyzeData(const cb::PinholeSensor::Ptr & color_sensor,
+                   const cv::Mat & image,
+                   CheckerboardView::Ptr & color_cb_view);
 
   inline void addData(const cb::Sensor::Ptr & sensor,
-                      const cb::View::Ptr & view,
-                      const cb::PlanarObject::Ptr & object,
-                      const cb::Point3 & center)
+                      const CheckerboardView::Ptr & cb_view)
   {
     TreeNode::Ptr & node = node_map_.at(sensor);
     ViewMap & view_map = view_map_vec_.back();
-    view_map[node] = boost::make_shared<CheckerboardView>(view, object, center, floorAcquisition());
+    view_map[node] = cb_view;
     if (floorAcquisition())
       floor_estimated_ = false;
   }
@@ -230,31 +257,6 @@ private:
   bool estimateFloor();
   void convertToWorldFrame();
 
-  struct CheckerboardView
-  {
-    typedef boost::shared_ptr<CheckerboardView> Ptr;
-    typedef boost::shared_ptr<const CheckerboardView> ConstPtr;
-
-    CheckerboardView() {}
-
-    CheckerboardView(const cb::View::Ptr & view,
-                     const cb::PlanarObject::Ptr & object,
-                     const cb::Point3 & center,
-                     bool is_floor)
-      : view(view),
-        object(object),
-        center(center),
-        is_floor(is_floor)
-    {
-    }
-
-    cb::View::Ptr view;
-    cb::PlanarObject::Ptr object;
-    cb::Point3 center;
-    bool is_floor;
-
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  };
 
   ros::NodeHandle node_handle_;
   tf::TransformBroadcaster tf_pub_;

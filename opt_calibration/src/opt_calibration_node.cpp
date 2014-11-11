@@ -32,6 +32,7 @@
  */
 
 #include <fstream>
+#include <omp.h>
 
 #include <tf_conversions/tf_eigen.h>
 #include <tf/transform_listener.h>
@@ -59,6 +60,7 @@ OPTCalibrationNode::OPTCalibrationNode(const ros::NodeHandle & node_handle)
     fixed_sensor_pose_(Pose::Identity())
 {
   action_sub_ = node_handle_.subscribe("action", 1, &OPTCalibrationNode::actionCallback, this);
+  detection_sub_ = node_handle_.subscribe("detection", 1, &OPTCalibrationNode::detectionCallback, this);
 
   std::string world_computation_s;
   node_handle_.param("world_computation", world_computation_s, std::string("first_sensor"));
@@ -277,8 +279,13 @@ void OPTCalibrationNode::actionCallback(const std_msgs::String::ConstPtr & msg)
   }
   else
   {
-    ROS_ERROR_STREAM("Action " << msg->data << " unknown!");
+    ROS_ERROR_STREAM("Unknown action: \"" << msg->data << "\"!");
   }
+}
+
+void OPTCalibrationNode::detectionCallback(const opt_msgs::DetectionArray::ConstPtr & msg)
+{
+
 }
 
 void OPTCalibrationNode::spin()
@@ -293,6 +300,7 @@ void OPTCalibrationNode::spin()
 
     try
     {
+#pragma omp parallel for
       for (size_t i = 0; i < pinhole_vec_.size(); ++i)
       {
         const PinholeRGBDevice::Ptr & device = pinhole_vec_[i];
@@ -300,8 +308,15 @@ void OPTCalibrationNode::spin()
         {
           device->convertLastMessages();
           PinholeRGBDevice::Data::Ptr data = device->lastData();
-          bool b = calibration_->addData(device->sensor(), data->image);
-          ROS_DEBUG_STREAM("[" << device->frameId() << "] image stamp: " << device->lastMessages().image_msg->header.stamp << (b ? " *" : ""));
+
+          OPTCalibration::CheckerboardView::Ptr cb_view;
+          bool cb_found = calibration_->analyzeData(device->sensor(), data->image, cb_view);
+          if (cb_found)
+          {
+#pragma omp critical
+            calibration_->addData(device->sensor(), cb_view);
+          }
+          ROS_DEBUG_STREAM("[" << device->frameId() << "] image stamp: " << device->lastMessages().image_msg->header.stamp << (cb_found ? " *" : ""));
         }
       }
       for (size_t i = 0; i < kinect_vec_.size(); ++i)
@@ -311,7 +326,15 @@ void OPTCalibrationNode::spin()
         {
           device->convertLastMessages();
           KinectDevice::Data::Ptr data = device->lastData();
-          calibration_->addData(device->colorSensor(), device->depthSensor(), data->image, data->cloud);
+          OPTCalibration::CheckerboardView::Ptr color_cb_view;
+          OPTCalibration::CheckerboardView::Ptr depth_cb_view;
+          if (calibration_->analyzeData(device->colorSensor(), device->depthSensor(),
+                                        data->image, data->cloud,
+                                        color_cb_view, depth_cb_view))
+          {
+            calibration_->addData(device->colorSensor(), color_cb_view);
+            calibration_->addData(device->depthSensor(), depth_cb_view);
+          }
         }
       }
       for (size_t i = 0; i < swiss_ranger_vec_.size(); ++i)
@@ -321,7 +344,15 @@ void OPTCalibrationNode::spin()
         {
           device->convertLastMessages();
           SwissRangerDevice::Data::Ptr data = device->lastData();
-          calibration_->addData(device->intensitySensor(), device->depthSensor(), data->intensity_image, data->cloud);
+          OPTCalibration::CheckerboardView::Ptr color_cb_view;
+          OPTCalibration::CheckerboardView::Ptr depth_cb_view;
+          if (calibration_->analyzeData(device->intensitySensor(), device->depthSensor(),
+                                    data->intensity_image, data->cloud,
+                                    color_cb_view, depth_cb_view))
+          {
+            calibration_->addData(device->intensitySensor(), color_cb_view);
+            calibration_->addData(device->depthSensor(), depth_cb_view);
+          }
         }
       }
     }
