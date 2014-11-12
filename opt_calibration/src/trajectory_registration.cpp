@@ -266,6 +266,7 @@ namespace open_ptrack
         std::string viewer_name, bool spin_flag)
     {
       pcl::visualization::PCLVisualizer viewer (viewer_name);
+      viewer.setCameraPosition(4.85038, 0.777564, 23.63, 0.0101831, 0.998897, -0.0458376);
       for(std::map<std::string, int>::iterator colormap_iterator = color_map_.begin(); colormap_iterator != color_map_.end(); colormap_iterator++)
       {
         pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(cloud_vector[colormap_iterator->second]);
@@ -325,6 +326,9 @@ namespace open_ptrack
         final_viewer.spinOnce();
       }
       final_viewer.addText ("AFTER CALIBRATION REFINEMENT", 10, 10, "v2 text", v2);
+
+      final_viewer.setCameraPosition(-2.40825,-0.54434,30.8287, 0.00352108,0.999943,0.0100698, v1);
+      final_viewer.setCameraPosition(-2.40825,-0.54434,30.8287, 0.00352108,0.999943,0.0100698, v2);
 
       final_viewer.spin();
     }

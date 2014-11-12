@@ -329,10 +329,10 @@ detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
             // Create marker and add it to message:
             Eigen::Vector3d centroid = detections_vector[i].getWorldCentroid();
 
-            Eigen::Vector2d badPoint(-3.43483, 2.18623);
-            Eigen::Vector2d currPoint(centroid(0), centroid(1));
-            if ((currPoint - badPoint).norm() > 0.2)
-            {
+//            Eigen::Vector2d badPoint(-3.43483, 2.18623);
+//            Eigen::Vector2d currPoint(centroid(0), centroid(1));
+//            if ((currPoint - badPoint).norm() > 0.2)
+//            {
               visualization_msgs::Marker marker = createMarker (i, frame_id, frame_time, centroid, camera_colors[color_index]);
               marker_msg->markers.push_back(marker);
 
@@ -349,7 +349,7 @@ detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
               //            point.z =  (time_offset.toSec() / time_scale_factor);
               cloud_vector[color_index]->push_back(point);
               timestamp_vector[color_index].push_back(time_offset.toSec());
-            }
+//            }
           }
 
           //        std::cout << color_index << " " << (ros::Time::now() - start_time_playback).toSec() << " " << time_delay << std::endl;
@@ -443,6 +443,7 @@ main(int argc, char** argv)
   nh.param("calibration_refinement_iterations", N_iter, 4);
 
   doing_calibration_refinement = false;
+  detection_viewer.setCameraPosition(4.85038, 0.777564, 23.63, 0.0101831, 0.998897, -0.0458376);
 
   // Read number of sensors in the network:
   int num_cameras = 0;
