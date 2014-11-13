@@ -296,7 +296,7 @@ void OPTCalibrationNode::spin()
   {
     ros::spinOnce();
     calibration_->nextAcquisition();
-    ROS_DEBUG("--------------------------------------------------");
+    ROS_INFO("--------------------------------------------------");
 
     try
     {
@@ -308,15 +308,13 @@ void OPTCalibrationNode::spin()
         {
           device->convertLastMessages();
           PinholeRGBDevice::Data::Ptr data = device->lastData();
-
           OPTCalibration::CheckerboardView::Ptr cb_view;
-          bool cb_found = calibration_->analyzeData(device->sensor(), data->image, cb_view);
-          if (cb_found)
+          if (calibration_->analyzeData(device->sensor(), data->image, cb_view))
           {
 #pragma omp critical
             calibration_->addData(device->sensor(), cb_view);
+            ROS_INFO_STREAM("[" << device->frameId() << "] checkerboard detected");
           }
-          ROS_DEBUG_STREAM("[" << device->frameId() << "] image stamp: " << device->lastMessages().image_msg->header.stamp << (cb_found ? " *" : ""));
         }
       }
       for (size_t i = 0; i < kinect_vec_.size(); ++i)
@@ -334,6 +332,7 @@ void OPTCalibrationNode::spin()
           {
             calibration_->addData(device->colorSensor(), color_cb_view);
             calibration_->addData(device->depthSensor(), depth_cb_view);
+            ROS_INFO_STREAM("[" << device->frameId() << "] checkerboard detected");
           }
         }
       }
@@ -352,6 +351,7 @@ void OPTCalibrationNode::spin()
           {
             calibration_->addData(device->intensitySensor(), color_cb_view);
             calibration_->addData(device->depthSensor(), depth_cb_view);
+            ROS_INFO_STREAM("[" << device->frameId() << "] checkerboard detected");
           }
         }
       }
