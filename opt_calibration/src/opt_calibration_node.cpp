@@ -335,7 +335,7 @@ void OPTCalibrationNode::spin()
           {
             calibration_->addData(device->colorSensor(), color_cb_view);
             calibration_->addData(device->depthSensor(), depth_cb_view);
-            ROS_INFO_STREAM("[" << device->frameId() << "] checkerboard detected");
+            ROS_INFO_STREAM("[" << device->colorFrameId() << "] checkerboard detected");
           }
         }
       }
