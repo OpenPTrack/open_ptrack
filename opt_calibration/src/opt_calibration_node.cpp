@@ -327,8 +327,8 @@ void OPTCalibrationNode::spin()
           KinectDevice::Data::Ptr data = device->lastData();
           OPTCalibration::CheckerboardView::Ptr color_cb_view;
           OPTCalibration::CheckerboardView::Ptr depth_cb_view;
-          ROS_DEBUG_STREAM("[" << device->frameId() << "] analysing image generated at: " << device->lastMessages().image_msg->header.stamp);
-          ROS_DEBUG_STREAM("[" << device->frameId() << "] analysing cloud generated at: " << device->lastMessages().cloud_msg->header.stamp);
+          ROS_DEBUG_STREAM("[" << device->colorFrameId() << "] analysing image generated at: " << device->lastMessages().image_msg->header.stamp);
+          ROS_DEBUG_STREAM("[" << device->depthFrameId() << "] analysing cloud generated at: " << device->lastMessages().cloud_msg->header.stamp);
           if (calibration_->analyzeData(device->colorSensor(), device->depthSensor(),
                                         data->image, data->cloud,
                                         color_cb_view, depth_cb_view))
