@@ -47,6 +47,7 @@
 #include <calibration_common/pcl/utils.h>
 
 #include <open_ptrack/opt_calibration/opt_calibration_node.h>
+#include <opt_msgs/CalibrationStatus.h>
 
 namespace open_ptrack
 {
@@ -60,7 +61,7 @@ OPTCalibrationNode::OPTCalibrationNode(const ros::NodeHandle & node_handle)
     fixed_sensor_pose_(Pose::Identity())
 {
   action_sub_ = node_handle_.subscribe("action", 1, &OPTCalibrationNode::actionCallback, this);
-  detection_sub_ = node_handle_.subscribe("detection", 1, &OPTCalibrationNode::detectionCallback, this);
+  status_pub_ = node_handle_.advertise<opt_msgs::CalibrationStatus>("status", 1);
 
   std::string world_computation_s;
   node_handle_.param("world_computation", world_computation_s, std::string("first_sensor"));
@@ -227,6 +228,8 @@ bool OPTCalibrationNode::initialize()
     const PinholeRGBDevice::Ptr & device = pinhole_vec_[i];
     calibration_->addSensor(device->sensor(), true);
     sensor_vec_.push_back(device->sensor());
+    images_acquired_map_[device->frameId()] = 0;
+    status_msg_.sensor_ids.push_back(device->frameId());
   }
 
   for (size_t i = 0; i < kinect_vec_.size(); ++i) // TODO Add flags
@@ -236,6 +239,10 @@ bool OPTCalibrationNode::initialize()
     calibration_->addSensor(device->depthSensor(), true);
     sensor_vec_.push_back(device->colorSensor());
     sensor_vec_.push_back(device->depthSensor());
+    images_acquired_map_[device->colorFrameId()] = 0;
+    images_acquired_map_[device->depthFrameId()] = 0;
+    status_msg_.sensor_ids.push_back(device->colorFrameId());
+    status_msg_.sensor_ids.push_back(device->depthFrameId());
   }
 
   for (size_t i = 0; i < swiss_ranger_vec_.size(); ++i) // TODO Add flags
@@ -245,7 +252,14 @@ bool OPTCalibrationNode::initialize()
     calibration_->addSensor(device->depthSensor(), true);
     sensor_vec_.push_back(device->intensitySensor());
     sensor_vec_.push_back(device->depthSensor());
+    images_acquired_map_[device->frameId()] = 0;
+    status_msg_.sensor_ids.push_back(device->frameId());
   }
+
+  status_msg_.images_acquired.resize(status_msg_.sensor_ids.size(), 0);
+  status_msg_.header.stamp = ros::Time::now();
+  status_msg_.header.seq = 0;
+  status_pub_.publish(status_msg_);
 
   return true;
 }
@@ -283,11 +297,6 @@ void OPTCalibrationNode::actionCallback(const std_msgs::String::ConstPtr & msg)
   }
 }
 
-void OPTCalibrationNode::detectionCallback(const opt_msgs::DetectionArray::ConstPtr & msg)
-{
-
-}
-
 void OPTCalibrationNode::spin()
 {
   ros::Rate rate(5.0);
@@ -296,7 +305,8 @@ void OPTCalibrationNode::spin()
   {
     ros::spinOnce();
     calibration_->nextAcquisition();
-    ROS_INFO("-----------------------------------------------");
+
+    int count = 0;
 
     try
     {
@@ -310,11 +320,13 @@ void OPTCalibrationNode::spin()
           PinholeRGBDevice::Data::Ptr data = device->lastData();
           OPTCalibration::CheckerboardView::Ptr cb_view;
           ROS_DEBUG_STREAM("[" << device->frameId() << "] analysing image generated at: " << device->lastMessages().image_msg->header.stamp);
+#pragma omp critical
           if (calibration_->analyzeData(device->sensor(), data->image, cb_view))
           {
-#pragma omp critical
             calibration_->addData(device->sensor(), cb_view);
+            images_acquired_map_[device->frameId()]++;
             ROS_INFO_STREAM("[" << device->frameId() << "] checkerboard detected");
+            ++count;
           }
         }
       }
@@ -335,7 +347,9 @@ void OPTCalibrationNode::spin()
           {
             calibration_->addData(device->colorSensor(), color_cb_view);
             calibration_->addData(device->depthSensor(), depth_cb_view);
+            images_acquired_map_[device->colorFrameId()]++;
             ROS_INFO_STREAM("[" << device->colorFrameId() << "] checkerboard detected");
+            ++count;
           }
         }
       }
@@ -356,7 +370,9 @@ void OPTCalibrationNode::spin()
           {
             calibration_->addData(device->intensitySensor(), color_cb_view);
             calibration_->addData(device->depthSensor(), depth_cb_view);
+            images_acquired_map_[device->frameId()]++;
             ROS_INFO_STREAM("[" << device->frameId() << "] checkerboard detected");
+            ++count;
           }
         }
       }
@@ -372,8 +388,20 @@ void OPTCalibrationNode::spin()
       return;
     }
 
+    status_msg_.header.stamp = ros::Time::now();
+    status_msg_.header.seq++;
+    for (size_t i = 0; i < status_msg_.sensor_ids.size(); ++i)
+    {
+      status_msg_.images_acquired[i] = images_acquired_map_[status_msg_.sensor_ids[i]];
+    }
+    status_pub_.publish(status_msg_);
+
     calibration_->perform();
     calibration_->publish();
+
+    if (count > 0)
+      ROS_INFO("-----------------------------------------------");
+
     rate.sleep();
   }
 }

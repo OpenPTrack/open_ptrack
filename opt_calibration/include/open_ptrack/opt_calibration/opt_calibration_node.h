@@ -42,7 +42,7 @@
 #include <sensor_msgs/image_encodings.h>
 
 #include <std_msgs/String.h>
-#include <opt_msgs/DetectionArray.h>
+#include <opt_msgs/CalibrationStatus.h>
 
 #include <calibration_common/calibration_common.h>
 #include <camera_info_manager/camera_info_manager.h>
@@ -72,12 +72,6 @@ public:
    * @param[in] msg Message containing the command as a string.
    */
   void actionCallback(const std_msgs::String::ConstPtr & msg);
-
-  /**
-   * @brief detectionCallback
-   * @param[in] msg
-   */
-  void detectionCallback(const opt_msgs::DetectionArray::ConstPtr & msg);
 
   /**
    * @brief Calibration initialization.
@@ -111,7 +105,9 @@ private:
   ros::Subscriber action_sub_;                              ///< @brief Subscriber to topic where action commands are sent.
   Checkerboard::Ptr checkerboard_;                          ///< @brief Object representing a checkerboard.
 
-  ros::Subscriber detection_sub_;
+  ros::Publisher status_pub_;
+  std::map<std::string, int> images_acquired_map_;
+  opt_msgs::CalibrationStatus status_msg_;
 
   WorldComputation world_computation_;
   Sensor::Ptr fixed_sensor_;

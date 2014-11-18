@@ -100,8 +100,13 @@ class CalibrationInitializer :
     file.write('  <arg name="cell_height"   default="' + str(self.checkerboard['cell_height']) + '" />\n\n')
   
     # Rviz and calibration node
-    file.write('  <!-- Opening Rviz for visualization-->\n')
+    file.write('  <!-- Opening Rviz for visualization -->\n')
     file.write('  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find opt_calibration)/conf/opt_calibration.rviz" />\n\n')
+    
+    file.write('  <!-- Plot calibration status -->\n')
+    file.write('  <node name="opt_calibration_status_plot" pkg="opt_calibration" type="status_plot.py" output="screen">\n')
+    file.write('    <remap from="~calibration_status" to="/opt_calibration/status" />\n')
+    file.write('  </node>\n\n')
     
     file.write('  <!-- Launching calibration -->\n')
     file.write('  <node pkg="opt_calibration" type="opt_calibration" name="opt_calibration" output="screen">\n\n')
