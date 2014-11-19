@@ -115,6 +115,9 @@ std::map<std::string, Eigen::Matrix4d> registration_matrices;
 double max_detection_delay;
 ros::Time latest_time;
 
+std::map<std::string, ros::Time> last_received_detection_;
+ros::Duration max_time_between_detections_;
+
 /**
  * \brief Create marker to be visualized in RViz
  *
@@ -183,6 +186,8 @@ detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
   // Read message header information:
   std::string frame_id = msg->header.frame_id;
   ros::Time frame_time = msg->header.stamp;
+
+  last_received_detection_[frame_id] = frame_time;
 
   // Compute delay of detection message, if any:
   double time_delay = 0.0;
@@ -612,17 +617,25 @@ main(int argc, char** argv)
   nh.param("calibration_refinement", calibration_refinement, false);
   nh.param("max_detection_delay", max_detection_delay, 3.0);
 
+  double max_time_between_detections_d;
+  nh.param("max_time_between_detections", max_time_between_detections_d, 10.0);
+  max_time_between_detections_ = ros::Duration(max_time_between_detections_d);
+
   // Read number of sensors in the network:
   int num_cameras = 1;
   if (extrinsic_calibration)
   {
-	num_cameras = 0;
+    num_cameras = 0;
     XmlRpc::XmlRpcValue network;
     nh.getParam("network", network);
-    std::map<std::string, XmlRpc::XmlRpcValue>::iterator i;
     for (unsigned i = 0; i < network.size(); i++)
     {
       num_cameras += network[i]["sensors"].size();
+      for (unsigned j = 0; j < network[i]["sensors"].size(); j++)
+      {
+        std::string frame_id = network[i]["sensors"][j]["id"];
+        last_received_detection_["/" + frame_id] = ros::Time(0);
+      }
     }
   }
 
@@ -698,7 +711,35 @@ main(int argc, char** argv)
   }
 
   // Spin and execute callbacks:
-  ros::spin();
+//  ros::spin();
+
+  std::map<std::string, ros::Time> last_message;
+  for (std::map<std::string, ros::Time>::const_iterator it = last_received_detection_.begin(); it != last_received_detection_.end(); ++it)
+    last_message[it->first] = ros::Time::now();
+
+  while (ros::ok())
+  {
+    ros::spinOnce();
+    ros::Time now = ros::Time::now();
+    for (std::map<std::string, ros::Time>::const_iterator it = last_received_detection_.begin(); it != last_received_detection_.end(); ++it)
+    {
+      ros::Duration duration(now - it->second);
+      if (duration > max_time_between_detections_)
+      {
+        if (it->second > ros::Time(0) and now - last_message[it->first] > max_time_between_detections_)
+        {
+          ROS_WARN_STREAM("[" << it->first << "] last detection was " << duration.toSec() << " seconds ago");
+          last_message[it->first] = now;
+        }
+        else if (now - last_message[it->first] > max_time_between_detections_)
+        {
+          ROS_WARN_STREAM("[" << it->first << "] still waiting for detection messages...");
+          last_message[it->first] = now;
+        }
+      }
+    }
+    hz.sleep();
+  }
 
   return 0;
 }
