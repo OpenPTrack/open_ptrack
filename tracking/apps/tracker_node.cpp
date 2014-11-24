@@ -333,7 +333,7 @@ detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
       if(output_tracking_results)
       {
         opt_msgs::TrackArray::Ptr tracking_results_msg(new opt_msgs::TrackArray);
-        tracking_results_msg->header.stamp = frame_time;
+        tracking_results_msg->header.stamp = ros::Time::now();//frame_time;
         tracking_results_msg->header.frame_id = world_frame_id;
         tracker->toMsg(tracking_results_msg);
         // Publish tracking message:
