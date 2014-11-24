@@ -118,6 +118,8 @@ ros::Time latest_time;
 std::map<std::string, ros::Time> last_received_detection_;
 ros::Duration max_time_between_detections_;
 
+std::map<std::string, std::pair<double, int> > number_messages_delay_map_;
+
 /**
  * \brief Create marker to be visualized in RViz
  *
@@ -323,7 +325,7 @@ detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
     }
 
     // If at least one detection has been received:
-    if((detections_vector.size() > 0) & (time_delay < max_detection_delay))
+    if((detections_vector.size() > 0) && (time_delay < max_detection_delay))
     {
       // Perform detection-track association:
       tracker->newFrame(detections_vector);
@@ -424,7 +426,7 @@ detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
         detection_trajectory_pub.publish(detection_history_pointcloud); // publish trajectory message
       }
     }
-    else // if no detections have been received
+    else // if no detections have been received or detection_delay is above max_detection_delay
     {
       if(output_tracking_results)
       { // Publish an empty tracking message
@@ -432,6 +434,21 @@ detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
         tracking_results_msg->header.stamp = frame_time;
         tracking_results_msg->header.frame_id = world_frame_id;
         results_pub.publish(tracking_results_msg);
+      }
+      if((detections_vector.size() > 0) && (time_delay >= max_detection_delay))
+      {
+        if (number_messages_delay_map_.find(msg->header.frame_id) == number_messages_delay_map_.end())
+          number_messages_delay_map_[msg->header.frame_id] = std::pair<double, int>(0.0, 0);
+
+        number_messages_delay_map_[msg->header.frame_id].first += time_delay;
+        number_messages_delay_map_[msg->header.frame_id].second++;
+
+        if (number_messages_delay_map_[msg->header.frame_id].second == 100)
+        {
+          double avg = number_messages_delay_map_[msg->header.frame_id].first / number_messages_delay_map_[msg->header.frame_id].second;
+          ROS_WARN_STREAM("[" << msg->header.frame_id << "] received 100 detections with average delay " << avg << " > " << max_detection_delay);
+          number_messages_delay_map_[msg->header.frame_id] = std::pair<double, int>(0.0, 0);
+        }
       }
     }
   }
