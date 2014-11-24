@@ -114,6 +114,10 @@ public:
     node_handle_.param("sigma_noise", sigma_noise, 0.0);
     computeWeights(sigma_process, sigma_noise);
 
+    double prediction_duration_d;
+    node_handle_.param("prediction_duration", prediction_duration_d, 0.1);
+    prediction_duration_ = ros::Duration(prediction_duration_d);
+
     generateColors();
     history_cloud_ = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGB> >();
     history_cloud_index_ = 0;
@@ -145,6 +149,7 @@ public:
     publish_empty_ = config.publish_empty;
 
     computeWeights(config.sigma_process, config.sigma_noise);
+    prediction_duration_ = ros::Duration(config.prediction_duration);
 
     max_history_size_ = config.max_history_size;
 
@@ -251,8 +256,7 @@ private:
 
   void computeWeights(double sigma_process, double sigma_noise)
   {
-    ROS_INFO_STREAM(sigma_process << " " << sigma_noise);
-    if (sigma_noise < 0.0001)
+    if (sigma_noise < 1e-5)
     {
       alpha_ = 1.0;
       beta_ = gamma_ = 0.0;
@@ -271,8 +275,6 @@ private:
       alpha_ = 1.0 - s * s;
       beta_ = 2.0 * (1.0 - s) * (1.0 - s);
       gamma_ = beta_ * beta_ / (2 * alpha_);
-
-      ROS_INFO_STREAM(t << ": " << alpha_ << " " << beta_ << " " << gamma_);
     }
   }
 
@@ -288,8 +290,8 @@ private:
 
   void appendToHistory(const LastData & data)
   {
-    if (data.last_msg.tracks[0].visibility == opt_msgs::Track::NOT_VISIBLE)
-      return;
+//    if (data.last_msg.tracks[0].visibility == opt_msgs::Track::NOT_VISIBLE)
+//      return;
 
     config_mutex_.lock();
     if (history_cloud_->size() < max_history_size_)
@@ -320,22 +322,23 @@ private:
 
       config_mutex_.lock();
       bool ok = (now - time) < time_alive_;
+      bool prediction = (now - time) < prediction_duration_;
       config_mutex_.unlock();
 
       if (ok)
       {
-        if (state_map_.find(it->first) != state_map_.end())
+        if (state_map_.find(it->first) != state_map_.end() and prediction)
         {
           Eigen::Array2d position, velocity, acceleration;
           state_map_[it->first]->predict((now - time).toSec(), position, velocity, acceleration);
           saved_msg.tracks[0].x = position[0];
           saved_msg.tracks[0].y = position[1];
+          track_msg.tracks.push_back(saved_msg.tracks[0]);
+          track_msg.header.frame_id = "world";
+          createMarker(marker_msg, it->second);
+          appendToHistory(it->second);
+          ++added;
         }
-        track_msg.tracks.push_back(saved_msg.tracks[0]);
-        track_msg.header.frame_id = "world";
-        createMarker(marker_msg, it->second);
-        appendToHistory(it->second);
-        ++added;
       }
       else
       {
@@ -473,6 +476,7 @@ private:
 
   ros::Rate rate_;
   double alpha_, beta_, gamma_;
+  ros::Duration prediction_duration_;
 
   std::map<int, boost::shared_ptr<TrackState> > state_map_;
 
