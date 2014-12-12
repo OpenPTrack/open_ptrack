@@ -30,7 +30,8 @@ minimum_person_height: 1.0
 # Maximum person height:
 maximum_person_height: 2.3
 # Threshold on distance from the sensor:
-max_distance: 50.0
+# Blackfly Stereo best range is 12 m, greater is possible w/ larger error
+max_distance: 12.0
 # Point cloud downsampling factor:
 sampling_factor: 4
 # Flag stating if classifiers based on RGB image should be used or not:
