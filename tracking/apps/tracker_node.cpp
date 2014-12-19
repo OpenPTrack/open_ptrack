@@ -45,6 +45,7 @@
 #include <std_msgs/Bool.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
+#include <pcl/visualization/image_viewer.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
@@ -119,6 +120,7 @@ std::map<std::string, ros::Time> last_received_detection_;
 ros::Duration max_time_between_detections_;
 
 std::map<std::string, std::pair<double, int> > number_messages_delay_map_;
+pcl::visualization::ImageViewer legend_viewer("Camera legend for detections");
 
 /**
  * \brief Create marker to be visualized in RViz
@@ -152,6 +154,47 @@ createMarker (int id, std::string frame_id, ros::Time stamp, Eigen::Vector3d pos
   marker.lifetime = ros::Duration(0.2);
 
   return marker;
+}
+
+void
+plotCameraLegend (std::map<std::string, int> curr_color_map)
+{
+  // Compose camera legend:
+  cv::Mat legend_image = cv::Mat::zeros(500, 500, CV_8UC3);
+  for(std::map<std::string, int>::iterator colormap_iterator = curr_color_map.begin(); colormap_iterator != curr_color_map.end(); colormap_iterator++)
+  {
+    int color_index = colormap_iterator->second;
+    cv::Vec3f color = camera_colors[color_index];
+    int y_coord = color_index * legend_image.rows / (curr_color_map.size()+1) + 0.5 * legend_image.rows / (curr_color_map.size()+1);
+    cv::line(legend_image, cv::Point(0,y_coord), cv::Point(100,y_coord), cv::Scalar(255*color(2), 255*color(1), 255*color(0)), 8);
+    cv::putText(legend_image, colormap_iterator->first, cv::Point(110,y_coord), 1, 1, cv::Scalar(255, 255, 255), 1);
+  }
+
+  // Transform legend to point cloud:
+  pcl::PointCloud<pcl::RGB>::Ptr legend_image_cloud(new pcl::PointCloud<pcl::RGB>);
+  pcl::RGB black_point;
+  black_point.r = 0;
+  black_point.g = 0;
+  black_point.b = 0;
+  legend_image_cloud->points.resize(legend_image.rows * legend_image.cols, black_point);
+  legend_image_cloud->width = legend_image.cols;
+  legend_image_cloud->height = legend_image.rows;
+  for (unsigned int i = 0; i < legend_image.rows; i++)
+  {
+    for (unsigned int j = 0; j < legend_image.cols; j++)
+    {
+      cv::Vec3b current_color = legend_image.at<cv::Vec3b>(i,j);
+      legend_image_cloud->at(j,i).r = current_color(2);
+      legend_image_cloud->at(j,i).g = current_color(1);
+      legend_image_cloud->at(j,i).b = current_color(0);
+    }
+  }
+
+  // Plot camera legend:
+  //pcl::visualization::ImageViewer legend_viewer("Camera legend");
+  legend_viewer.addRGBImage<pcl::RGB>(legend_image_cloud);
+  legend_viewer.spinOnce();
+  legend_viewer.spinOnce();
 }
 
 Eigen::Matrix4d
@@ -403,6 +446,9 @@ detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
         { // camera not present
           color_index = color_map.size();
           color_map.insert(std::pair<std::string, int> (frame_id, color_index));
+
+          // Plot legend with camera names and colors:
+          plotCameraLegend (color_map);
         }
         for (unsigned int i = 0; i < detections_vector.size(); i++)
         {
