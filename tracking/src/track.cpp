@@ -101,6 +101,7 @@ namespace open_ptrack
       z_ = old_track.z_;
       height_ = old_track.height_;
       distance_ = old_track.distance_;
+      age_ = old_track.age_;
 
       detection_source_ = old_track.detection_source_;
       velocity_in_motion_term_ = old_track.velocity_in_motion_term_;
@@ -112,6 +113,8 @@ namespace open_ptrack
       last_time_detected_with_high_confidence_ = old_track.last_time_detected_with_high_confidence_;
       last_time_predicted_ = old_track.last_time_predicted_;
       last_time_predicted_index_ = old_track.last_time_predicted_index_;
+
+      data_association_score_ = old_track.data_association_score_;
     }
 
     void
@@ -131,6 +134,7 @@ namespace open_ptrack
       first_time_detected_ = detection_source->getTime();
       last_time_predicted_ = last_time_detected_ = last_time_detected_with_high_confidence_ = detection_source->getTime();
       last_time_predicted_index_ = 0;
+      age_ = 0.0;
     }
 
     void
@@ -140,6 +144,7 @@ namespace open_ptrack
         double z,
         double height,
         double distance,
+        double data_assocation_score,
         double confidence,
         double min_confidence,
         double min_confidence_detections,
@@ -223,6 +228,11 @@ namespace open_ptrack
         low_confidence_consecutive_frames_ = 0;
       }
       last_detector_confidence_ = confidence;
+
+      data_association_score_ = data_assocation_score;
+
+      // Compute track age:
+      age_ = (detection_source->getTime() - first_time_detected_).toSec();
 
       detection_source_ = detection_source;
     }
@@ -564,7 +574,9 @@ namespace open_ptrack
       track_msg.x = _x;
       track_msg.y = _y;
       track_msg.height = height_;
-      track_msg.distance = distance_;  // NEW
+      track_msg.distance = distance_;
+      track_msg.age = age_;
+      track_msg.confidence = - data_association_score_;   // minus for transforming distance into a sort of confidence
       track_msg.visibility = visibility_;
 
       Eigen::Vector3d top(_x, _y, z_ + (height_/2));

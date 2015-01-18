@@ -61,6 +61,7 @@
 #include <opt_msgs/Detection.h>
 #include <opt_msgs/DetectionArray.h>
 #include <opt_msgs/TrackArray.h>
+#include <opt_msgs/IDArray.h>
 //#include <open_ptrack/opt_utils/ImageConverter.h>
 
 // Dynamic reconfigure:
@@ -88,6 +89,7 @@ ros::Publisher marker_pub;
 ros::Publisher pointcloud_pub;
 ros::Publisher detection_marker_pub;
 ros::Publisher detection_trajectory_pub;
+ros::Publisher alive_ids_pub;
 size_t starting_index;
 size_t detection_insert_index;
 tf::Transform camera_frame_to_world_transform;
@@ -409,6 +411,13 @@ detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
 //        }
 //      }
 
+      // Publish IDs of active tracks:
+      opt_msgs::IDArray::Ptr alive_ids_msg(new opt_msgs::IDArray);
+      alive_ids_msg->header.stamp = ros::Time::now();
+      alive_ids_msg->header.frame_id = world_frame_id;
+      tracker->getAliveIDs (alive_ids_msg);
+      alive_ids_pub.publish (alive_ids_msg);
+
       // Show the pose of each tracked object with a 3D marker (to be visualized with ROS RViz)
       if(output_markers)
       {
@@ -605,6 +614,7 @@ main(int argc, char** argv)
   results_pub = nh.advertise<opt_msgs::TrackArray>("/tracker/tracks", 100);
   detection_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("/detector/markers_array", 1);
   detection_trajectory_pub = nh.advertise<pcl::PointCloud<pcl::PointXYZRGBA> >("/detector/history", 1);
+  alive_ids_pub = nh.advertise<opt_msgs::IDArray>("/tracker/alive_ids", 1);
 
   // Dynamic reconfigure
   boost::recursive_mutex config_mutex_;

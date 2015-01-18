@@ -8,6 +8,8 @@ float64 x
 float64 y
 float64 height
 float64 distance
+float64 age
+float64 confidence
 
 uint8 visibility
 

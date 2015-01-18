@@ -138,8 +138,14 @@ namespace open_ptrack
         /** \brief Track distance from the camera */
         double distance_;
 
+        /** \brief Track age (in seconds) */
+        double age_;
+
         /** \brief Confidence of the last detection associated to the track */
         double last_detector_confidence_;
+
+        /** \brief Last data association score obtained by this track */
+        double data_association_score_;
 
         /** \brief Color associated to the track */
         Eigen::Vector3f color_;
@@ -210,6 +216,7 @@ namespace open_ptrack
             double z,
             double height,
             double distance,
+            double data_assocation_score,
             double confidence,
             double min_confidence,
             double min_confidence_detections,

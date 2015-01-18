@@ -44,6 +44,7 @@
 #include <open_ptrack/tracking/track.h>
 #include <open_ptrack/tracking/munkres.h>
 #include <opt_msgs/TrackArray.h>
+#include <opt_msgs/IDArray.h>
 #include <visualization_msgs/MarkerArray.h>
 
 namespace open_ptrack
@@ -210,6 +211,14 @@ namespace open_ptrack
          */
         void
         toMsg(opt_msgs::TrackArray::Ptr& msg, std::string& source_frame_id);
+
+        /**
+         * \brief Writes the ID of each alive track into an IDArray message.
+         *
+         * \param[in] msg The IDArray message to fill.
+         */
+        void
+        getAliveIDs (opt_msgs::IDArray::Ptr& msg);
 
         /**
          * \brief Appends the location of each track to a point cloud starting from starting_index (using

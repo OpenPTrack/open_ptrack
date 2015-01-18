@@ -76,6 +76,8 @@ trackingCallback(const opt_msgs::TrackArray::ConstPtr& tracking_msg)
     current_track.Add("x", tracking_msg->tracks[i].x);
     current_track.Add("y", tracking_msg->tracks[i].y);
     current_track.Add("height", tracking_msg->tracks[i].height);
+    current_track.Add("age", tracking_msg->tracks[i].age);
+    current_track.Add("confidence", tracking_msg->tracks[i].confidence);
 
     tracks.Add(current_track);
   }

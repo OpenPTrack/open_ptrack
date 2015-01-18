@@ -210,6 +210,17 @@ namespace open_ptrack
       }
     }
 
+    void
+    Tracker::getAliveIDs (opt_msgs::IDArray::Ptr& msg)
+    {
+      for(std::list<open_ptrack::tracking::Track*>::iterator it = tracks_.begin(); it != tracks_.end(); it++)
+      {
+        open_ptrack::tracking::Track* t = *it;
+        msg->ids.push_back ((*it)->getId());
+      }
+      msg->max_ID = tracks_counter_;
+    }
+
     size_t
     Tracker::appendToPointCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pointcloud, size_t starting_index, size_t max_size)
     {
@@ -251,7 +262,7 @@ namespace open_ptrack
 
       bool first_update = true;
       t->update(detection.getWorldCentroid()(0), detection.getWorldCentroid()(1), detection.getWorldCentroid()(2),
-          detection.getHeight(), detection.getDistance(), //0.0,
+          detection.getHeight(), detection.getDistance(), 0.0,
           detection.getConfidence(), min_confidence_, min_confidence_detections_, detection.getSource(), first_update);
 
       ROS_INFO("Created %d", t->getId());
@@ -387,7 +398,7 @@ namespace open_ptrack
               // Update track with the associated detection:
               bool first_update = false;
               t->update(d.getWorldCentroid()(0), d.getWorldCentroid()(1), d.getWorldCentroid()(2),d.getHeight(),
-                  d.getDistance(), //distance_matrix_(track, measure),
+                  d.getDistance(), distance_matrix_(track, measure),
                   d.getConfidence(), min_confidence_, min_confidence_detections_,
                   d.getSource(), first_update);
 
