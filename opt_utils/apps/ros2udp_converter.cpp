@@ -38,6 +38,7 @@
 
 #include <ros/ros.h>
 #include <opt_msgs/TrackArray.h>
+#include <opt_msgs/IDArray.h>
 #include <open_ptrack/opt_utils/udp_messaging.h>
 #include <open_ptrack/opt_utils/json.h>
 
@@ -51,6 +52,8 @@ bool json_spacing;      // use spacing (true) or not (false) in JSON messages
 bool json_use_tabs;     // use tabs (true) or not (false) in JSON messages
 struct ComData udp_data;  // parameters for UDP messaging
 open_ptrack::opt_utils::UDPMessaging udp_messaging(udp_data);   // instance of class UDPMessaging
+ros::Time last_heartbeat_time;
+double heartbeat_interval;
 
 void
 trackingCallback(const opt_msgs::TrackArray::ConstPtr& tracking_msg)
@@ -67,7 +70,7 @@ trackingCallback(const opt_msgs::TrackArray::ConstPtr& tracking_msg)
   root.Add("header", header);
 
   /// Add tracks array:
-  // 50 characters for every track
+  // >50 characters for every track
   Jzon::Array tracks;
   for (unsigned int i = 0; i < tracking_msg->tracks.size(); i++)
   {
@@ -107,6 +110,58 @@ trackingCallback(const opt_msgs::TrackArray::ConstPtr& tracking_msg)
   udp_messaging.sendFromSocketUDP(&udp_data);
 }
 
+void
+aliveIDsCallback(const opt_msgs::IDArray::ConstPtr& alive_ids_msg)
+{
+  ros::Time msg_time = ros::Time(alive_ids_msg->header.stamp.sec, alive_ids_msg->header.stamp.nsec);
+  if ((msg_time - last_heartbeat_time).toSec() > heartbeat_interval)
+  {
+    /// Create JSON-formatted message:
+    Jzon::Object root, header, stamp;
+
+    /// Add header:
+    header.Add("seq", int(alive_ids_msg->header.seq));
+    stamp.Add("sec", int(alive_ids_msg->header.stamp.sec));
+    stamp.Add("nsec", int(alive_ids_msg->header.stamp.nsec));
+    header.Add("stamp", stamp);
+    header.Add("frame_id", "heartbeat");
+    root.Add("header", header);
+
+    Jzon::Array alive_IDs;
+    for (unsigned int i = 0; i < alive_ids_msg->ids.size(); i++)
+    {
+      alive_IDs.Add(alive_ids_msg->ids[i]);
+    }
+    root.Add("alive_IDs", alive_IDs);
+    root.Add("max_ID", alive_ids_msg->max_ID);
+
+    /// Convert JSON object to string:
+    Jzon::Format message_format = Jzon::StandardFormat;
+    message_format.indentSize = json_indent_size;
+    message_format.newline = json_newline;
+    message_format.spacing = json_spacing;
+    message_format.useTabs = json_use_tabs;
+    Jzon::Writer writer(root, message_format);
+    writer.Write();
+    std::string json_string = writer.GetResult();
+    //  std::cout << "String sent: " << json_string << std::endl;
+
+    /// Copy string to message buffer:
+    char buf[udp_buffer_length];
+    for (unsigned int i = 0; i < udp_buffer_length; i++)
+    {
+      buf[i] = 0;
+    }
+    sprintf(buf, "%s", json_string.c_str());
+    udp_data.pc_pck_ = buf;         // buffer where the message is written
+
+    /// Send message:
+    udp_messaging.sendFromSocketUDP(&udp_data);
+
+    last_heartbeat_time = msg_time;
+  }
+}
+
 typedef unsigned long uint32;
 // convert a string represenation of an IP address into its numeric equivalent
 static uint32 Inet_AtoN(const char * buf)
@@ -144,9 +199,11 @@ main(int argc, char **argv)
   nh.param("json/newline", json_newline, false);
   nh.param("json/spacing", json_spacing, false);
   nh.param("json/use_tabs", json_use_tabs, false);
+  nh.param("json/heartbeat_interval", heartbeat_interval, 0.25);
 
   // ROS subscriber:
   ros::Subscriber tracking_sub = nh.subscribe<opt_msgs::TrackArray>("input_topic", 1, trackingCallback);
+  ros::Subscriber alive_ids_sub = nh.subscribe<opt_msgs::IDArray>("alive_ids_topic", 1, aliveIDsCallback);
 
   // Initialize UDP parameters:
   char buf[0];

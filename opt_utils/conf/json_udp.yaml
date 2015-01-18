@@ -3,6 +3,7 @@ udp:
   buffer_length: 2048
   hostip: "127.0.0.1"
   #change to 224.0.0.1 for LAN multicast or X.X.X.255 (or 192 / etc depending on netmask) for broadcast
+  heartbeat_interval: 0.25
 
 json:
   indent_size: 0

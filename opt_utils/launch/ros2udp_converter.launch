@@ -1,6 +1,7 @@
 <launch>
   <node pkg="opt_utils" type="ros2udp_converter" name="ros2udp_converter" output="screen">
     <remap from ="~input_topic" to="/tracker/tracks_smoothed"/>  
+    <remap from ="~alive_ids_topic" to="/tracker/alive_ids"/>  
     <rosparam command="load" file="$(find opt_utils)/conf/json_udp.yaml" /> 
   </node>
 </launch>
