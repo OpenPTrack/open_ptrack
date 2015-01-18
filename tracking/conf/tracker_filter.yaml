@@ -14,7 +14,7 @@ publish_empty: true
 ## Smoothing parameters ##
 ##########################
 # Error of the measurements provided by the tracker (0.0 means no error, i.e. no smoothing will be applied):
-sigma_noise: 0.30
+sigma_noise: 0.0 #0.30
 # How much the acceleration of a track can vary (small values = high smoothing):
 sigma_process: 0.05
 # Time lapse (after last detection) that a the position of a track is predicted and published:
