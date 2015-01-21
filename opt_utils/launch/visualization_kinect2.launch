@@ -1,0 +1,15 @@
+<launch>
+  
+  <!-- display the rois -->
+  <node pkg="opt_utils" type="roi_viewer" name="PeopleDetectionViewer" >
+    <param name="mode" type="string" value="roi_display"/> 
+    <param name="label" type="int" value="1" />
+    <param name="show_confidence" type="bool" value="true" />
+    <remap from ="input_image" to="/kinect2_head/rgb_lowres/image"/>
+	<remap from ="input_detections" to="/detector/detections"/>  
+  </node>
+
+  <!-- ROS visualizer -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find tracking)/conf/tracking.rviz" />  
+
+</launch>
