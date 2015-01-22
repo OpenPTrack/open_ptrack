@@ -135,6 +135,10 @@ class CalibrationInitializer :
         file.write('    <param name="sensor_' + str(index) + '/type"         value="pinhole_rgb" />\n')
         file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/$(arg sensor_' + str(index) + '_name)/rgb/image_rect_color" />\n')
         file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/$(arg sensor_' + str(index) + '_name)/rgb/camera_info" />\n\n')
+      elif sensor['type'] == 'kinect2':
+        file.write('    <param name="sensor_' + str(index) + '/type"         value="pinhole_rgb" />\n')
+        file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/$(arg sensor_' + str(index) + '_name)/rgb_rect/image" />\n')
+        file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/$(arg sensor_' + str(index) + '_name)/rgb_rect/camera_info" />\n\n')
       elif sensor['type'] == 'stereo_pg':
         file.write('    <param name="sensor_' + str(index) + '/type"         value="pinhole_rgb" />\n')
         file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/$(arg sensor_' + str(index) + '_name)/left/image_rect_color" />\n')
@@ -169,7 +173,11 @@ class CalibrationInitializer :
         if sensor_item['type'] == 'kinect1':
           sensor_msg.type = OPTSensorRequest.TYPE_KINECT1
           if 'serial' in sensor_item:
-            sensor_msg.serial = sensor_item['serial']
+            sensor_msg.serial = sensor_item['serial']   
+        elif sensor_item['type'] == 'kinect2':
+          sensor_msg.type = OPTSensorRequest.TYPE_KINECT2
+          if 'serial' in sensor_item:
+            sensor_msg.serial = sensor_item['serial']  
         elif sensor_item['type'] == 'sr4500':
           sensor_msg.type = OPTSensorRequest.TYPE_SR4500
           sensor_msg.ip = sensor_item['ip']

@@ -1,6 +1,7 @@
 # Camera network parameters
 # Supported sensor types: 
 #  * Kinect 1st version (type: kinect1)
+#  * Kinect 2nd version (type: kinect2)
 #  * SwissRanger 4500 (type: sr4500)
 #  * Custom stereo pair composed of PointGrey (e.g. BlackFly) cameras (type: stereo_pg)
 #
@@ -8,13 +9,13 @@
 #  - pc: "Cassiopea"
 #    sensors:
 #      - type: kinect1
-#        id: "Kinect0"
-#      - type: kinect1
-#        id: "Kinect1"
+#        id: "Kinect_v1_0"
+#      - type: kinect2
+#        id: "Kinect_v2"
 #  - pc: "pc_2"
 #    sensors:
 #      - type: kinect1
-#        id: "Kinect2"
+#        id: "Kinect_v1_1"
 #        serial: "A00364820345039A"
 #      - type: sr4500
 #        id: "SwissRanger0"

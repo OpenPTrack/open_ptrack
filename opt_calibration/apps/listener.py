@@ -128,7 +128,23 @@ class Listener :
       file.write('  <!-- Launch stereo processing -->\n')
       file.write('  <include file="$(find opt_calibration)/launch/stereo_processing.launch">\n')
       file.write('    <arg name="stereo_namespace" value="$(arg stereo_name)" />\n')
-      file.write('  </include>\n\n')      
+      file.write('  </include>\n\n')  
+    elif request.type == OPTSensorRequest.TYPE_KINECT2:
+      file.write('  <arg name="sensor_name"     default="' + request.id + '" />\n')
+      if request.serial != '':
+        file.write('  <arg name="sensor_id" default="' + request.serial + '" />\n')
+      file.write('\n')
+      
+      file.write('  <!-- Launch sensor -->\n')
+      file.write('  <include file="$(find kinect2_bridge)/launch/kinect2_bridge.launch">\n')
+      if request.serial != '':
+        file.write('    <arg name="sensor_id"           value="$(arg sensor_id)" />\n')
+      #  file.write('    <arg name="rgb_camera_info_url" value="file://$(find opt_calibration)/camera_info/rgb_$(arg sensor_serial).yaml" />\n')
+      #else:
+      #  file.write('    <arg name="rgb_camera_info_url" value="file://$(find opt_calibration)/camera_info/rgb_$(arg sensor_id).yaml" />\n')
+      file.write('    <arg name="sensor_name"         value="$(arg sensor_name)" />\n')
+      file.write('    <arg name="publish_frame"       value="true" />\n')
+      file.write('  </include>\n\n')  
       
     file.write('</launch>\n')
     file.close();
@@ -195,7 +211,22 @@ class Listener :
       file.write('    <arg name="conf_file_right"         value="$(arg conf_file_right)" />\n')
       file.write('    <arg name="ground_from_calibration" value="true" />\n')
       file.write('  </include>\n\n')
-
+    elif request.type == OPTSensorRequest.TYPE_KINECT2:
+      if request.serial != '':
+        file.write('  <arg name="sensor_id"   default="' + request.serial + '" />\n')
+      file.write('  <arg name="sensor_name" default="' + request.id + '" />\n\n')
+      
+      file.write('  <!-- Detection node -->\n')
+      file.write('  <include file="$(find kinect2_bridge)/launch/ kinect2_bridge.launch">\n')
+      if request.serial != '':
+        file.write('    <arg name="sensor_id"               value="$(arg sensor_id)" />\n')
+        file.write('    <arg name="rgb_camera_info_url"     value="file://$(find opt_calibration)/camera_info/rgb_$(arg sensor_id).yaml" />\n')
+      else:
+        file.write('    <arg name="rgb_camera_info_url"     value="file://$(find opt_calibration)/camera_info/rgb_$(arg sensor_name).yaml" />\n')
+      file.write('    <arg name="sensor_name"             value="$(arg sensor_name)" />\n')
+      file.write('    <arg name="ground_from_calibration" value="true" />\n')
+      file.write('  </include>\n\n')
+      
     file.write('</launch>\n')
     file.close();
     rospy.loginfo(file_name + ' created!');
