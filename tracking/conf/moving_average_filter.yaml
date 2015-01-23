@@ -1,0 +1,26 @@
+#####################
+## Node parameters ##
+#####################
+# Tracking output frame rate:
+rate: 30.0
+# Time lapse (after last detection) before a track is removed:
+track_lifetime_with_no_detections: 1.0
+# Interval between two heartbeat messages:
+heartbeat_time: 5.0
+# Flag stating if empty tracking messages should be published or not:
+publish_empty: true
+
+##########################
+## Smoothing parameters ##
+##########################
+# Number of positions to account when calculating the average position:
+window_size: 10
+# Time lapse before a position is removed from the position list. This option removes old data even if they are within the averaging window:
+position_lifetime: 1.0
+
+###########
+## Debug ##
+###########
+# Max size of the history pointcloud:
+max_history_size: 1000
+

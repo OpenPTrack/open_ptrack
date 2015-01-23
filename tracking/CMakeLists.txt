@@ -12,7 +12,9 @@ include_directories(${Eigen_INCLUDE_DIRS} include ${catkin_INCLUDE_DIRS})
 
 # Dynamic reconfigure support
 generate_dynamic_reconfigure_options(cfg/Tracker.cfg
-                                     cfg/TrackerSmoother.cfg)
+                                     #cfg/TrackerSmoother.cfg
+                                     cfg/MovingAverageSmoother.cfg
+)
 
 include_directories(cfg/cpp)
 
@@ -28,7 +30,10 @@ target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 add_executable(tracker apps/tracker_node.cpp)
 target_link_libraries(tracker ${PROJECT_NAME} ${catkin_LIBRARIES})
 
-add_executable(tracker_filter apps/tracker_filter_node.cpp)
-add_dependencies(tracker_filter ${PROJECT_NAME}_gencfg)
-target_link_libraries(tracker_filter ${PROJECT_NAME} ${catkin_LIBRARIES})
+#add_executable(tracker_filter apps/tracker_filter_node.cpp)
+#add_dependencies(tracker_filter ${PROJECT_NAME}_gencfg)
+#target_link_libraries(tracker_filter ${PROJECT_NAME} ${catkin_LIBRARIES})
 
+add_executable(moving_average_filter apps/moving_average_filter_node.cpp)
+add_dependencies(moving_average_filter ${PROJECT_NAME}_gencfg)
+target_link_libraries(moving_average_filter ${PROJECT_NAME} ${catkin_LIBRARIES})
