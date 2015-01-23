@@ -365,8 +365,8 @@ void OPTCalibrationNode::spin()
           ROS_DEBUG_STREAM("[" << device->frameId() << "] analysing image generated at: " << device->lastMessages().intensity_msg->header.stamp);
           ROS_DEBUG_STREAM("[" << device->frameId() << "] analysing cloud generated at: " << device->lastMessages().cloud_msg->header.stamp);
           if (calibration_->analyzeData(device->intensitySensor(), device->depthSensor(),
-                                    data->intensity_image, data->cloud,
-                                    color_cb_view, depth_cb_view))
+                                        data->intensity_image, data->cloud,
+                                        color_cb_view, depth_cb_view))
           {
             calibration_->addData(device->intensitySensor(), color_cb_view);
             calibration_->addData(device->depthSensor(), depth_cb_view);
@@ -379,12 +379,12 @@ void OPTCalibrationNode::spin()
     }
     catch (cv_bridge::Exception & ex)
     {
-      ROS_ERROR("cv_bridge exception: %s", ex.what());
+      ROS_ERROR_STREAM("cv_bridge exception: " << ex.what());
       return;
     }
     catch (std::runtime_error & ex)
     {
-      ROS_ERROR("exception: %s", ex.what());
+      ROS_ERROR_STREAM("exception: " << ex.what());
       return;
     }
 
@@ -423,8 +423,19 @@ bool OPTCalibrationNode::save()
 
     if (world_computation_ == LAST_CHECKERBOARD)
     {
-      //AngleAxis rotation(M_PI, Vector3(1.0, 1.0, 0.0).normalized());
-      new_world_pose = /*rotation * */calibration_->getLastCheckerboardPose().inverse();
+      new_world_pose = calibration_->getLastCheckerboardPose().inverse();
+      for (size_t i = 0; i < sensor_vec_.size(); ++i)
+      {
+        const Sensor::Ptr & sensor = sensor_vec_[i];
+        Pose pose = new_world_pose * sensor->pose();
+        if(pose.translation().z() < 0)
+        {
+          ROS_INFO_STREAM("[" << sensor->frameId() << "] z < 0. Flipping /world orientation.");
+          AngleAxis rotation(M_PI, Vector3(1.0, 1.0, 0.0).normalized());
+          new_world_pose = rotation * calibration_->getLastCheckerboardPose().inverse();
+          break;
+        }
+      }
     }
     else if (world_computation_ == UPDATE)
     {
