@@ -144,7 +144,10 @@ class Listener :
       #  file.write('    <arg name="rgb_camera_info_url" value="file://$(find opt_calibration)/camera_info/rgb_$(arg sensor_id).yaml" />\n')
       file.write('    <arg name="sensor_name"         value="$(arg sensor_name)" />\n')
       file.write('    <arg name="publish_frame"       value="true" />\n')
-      file.write('  </include>\n\n')  
+      file.write('  </include>\n\n') 
+
+      file.write('  <!-- Publish a further transform -->\n')
+      file.write('  <node pkg="tf" type="static_transform_publisher" name="$(arg sensor_name)_broadcaster" args="0 0 0 1.57079 -1.57079 0 /$(arg sensor_name) /$(arg sensor_name)_link  100" />\n\n')     
       
     file.write('</launch>\n')
     file.close();
@@ -217,7 +220,7 @@ class Listener :
       file.write('  <arg name="sensor_name" default="' + request.id + '" />\n\n')
       
       file.write('  <!-- Detection node -->\n')
-      file.write('  <include file="$(find kinect2_bridge)/launch/ kinect2_bridge.launch">\n')
+      file.write('  <include file="$(find detection)/launch/detector_kinect2.launch">\n')
       if request.serial != '':
         file.write('    <arg name="sensor_id"               value="$(arg sensor_id)" />\n')
         file.write('    <arg name="rgb_camera_info_url"     value="file://$(find opt_calibration)/camera_info/rgb_$(arg sensor_id).yaml" />\n')
