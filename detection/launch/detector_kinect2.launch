@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!-- Camera parameters -->
+  <arg name="sensor_id"               default="" />
+  <arg name="sensor_name"             default="kinect2" />
+  <arg name="rgb_camera_info_url"     default="" />
+  <arg name="intermediate_topic"      default="/detector/detections" />
+  <arg name="ground_from_calibration" default="false" />
+
+  <!-- Launch sensor -->
+  <include file="$(find kinect2_bridge)/launch/kinect2_bridge.launch">
+    <arg name="sensor_id"           value="$(arg sensor_id)" />
+    <arg name="sensor_name"         value="$(arg sensor_name)" />
+    <arg name="publish_frame"       value="true" />
+  </include>
+  
+  <!-- Launch ground based people detection node -->
+  <node pkg="detection" type="ground_based_people_detector"
+        name="ground_based_people_detector_$(arg sensor_name)" output="screen" respawn="true">
+        
+    <rosparam command="load"                        file="$(find detection)/conf/ground_based_people_detector.yaml" /> 
+    
+    <param name="classifier_file"                   value="$(find detection)/data/HogSvmPCL.yaml"/>
+    <param name="pointcloud_topic"                  value="/$(arg sensor_name)/depth_lowres/points"/>
+    <param name="output_topic"                      value="$(arg intermediate_topic)"/>
+    <param name="camera_info_topic"                 value="/$(arg sensor_name)/depth_lowres/camera_info"/>
+    <param name="rate"                              value="60.0"/>  
+    <param name="ground_from_extrinsic_calibration" value="$(arg ground_from_calibration)"/>  
+    
+  </node>
+
+</launch>
