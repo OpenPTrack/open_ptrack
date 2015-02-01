@@ -136,7 +136,7 @@ class Listener :
       file.write('\n')
       
       file.write('  <!-- Launch sensor -->\n')
-      file.write('  <include file="$(find kinect2_bridge)/launch/kinect2_bridge.launch">\n')
+      file.write('  <include file="$(find kinect2_bridge)/launch/kinect2_bridge_ir.launch">\n')
       if request.serial != '':
         file.write('    <arg name="sensor_id"           value="$(arg sensor_id)" />\n')
       #  file.write('    <arg name="rgb_camera_info_url" value="file://$(find opt_calibration)/camera_info/rgb_$(arg sensor_serial).yaml" />\n')

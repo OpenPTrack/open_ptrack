@@ -5,7 +5,8 @@
     <param name="mode" type="string" value="roi_display"/> 
     <param name="label" type="int" value="1" />
     <param name="show_confidence" type="bool" value="true" />
-    <remap from ="input_image" to="/kinect2_head/rgb_lowres/image"/>
+    <!--remap from ="input_image" to="/kinect2_head/rgb_lowres/image"/-->
+    <remap from ="input_image" to="/kinect2_head/ir_rect_eq/image"/>
 	<remap from ="input_detections" to="/detector/detections"/>  
   </node>
 

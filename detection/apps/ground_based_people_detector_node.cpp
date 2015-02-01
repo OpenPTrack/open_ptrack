@@ -254,7 +254,7 @@ main (int argc, char** argv)
   std::string svm_filename;
 
   nh.param("classifier_file", svm_filename, std::string("./"));
-  nh.param("use_rgb", use_rgb, false);
+  nh.param("use_rgb", use_rgb, true);
   nh.param("minimum_luminance", minimum_luminance, 20);
   nh.param("ground_based_people_detection_min_confidence", min_confidence, -1.5);
   double max_distance;
