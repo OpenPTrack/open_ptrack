@@ -1,0 +1,46 @@
+#######################
+## Ground estimation ##
+#######################
+# Ground estimation mode - 0:manual, 1:semi-auto, 2:auto with user validation, 3:fully automatic (default 0) 
+ground_estimation_mode: 0
+# Flag stating if the ground should be read from file, if present:
+read_ground_from_file: false
+# Flag that locks the ground plane update:
+lock_ground: false
+# Threshold on the ratio of valid points needed for ground estimation:
+valid_points_threshold: 0.3
+
+############################
+## Background subtraction ##
+############################
+# Flag enabling/disabling background subtraction:
+background_subtraction: false
+# Resolution of the octree representing the background:
+background_resolution: 0.3
+# Seconds to use to learn the background:
+background_seconds: 3.0
+
+##############################################
+## Ground based people detection parameters ##
+##############################################
+# Minimum detection confidence:
+ground_based_people_detection_min_confidence: -1.75
+# Minimum person height:
+minimum_person_height: 1.0
+# Maximum person height:
+maximum_person_height: 2.3
+# Kinect's best range is 5.0 m, greater is possible w/ larger error
+max_distance: 10.0 
+# Point cloud downsampling factor:
+sampling_factor: 4
+# Flag stating if classifiers based on RGB image should be used or not:
+use_rgb: true
+# Threshold on image luminance. If luminance is over this threhsold, classifiers on RGB image are also used:
+minimum_luminance: 0
+# If true, sensor tilt angle wrt ground plane is compensated to improve people detection:
+sensor_tilt_compensation: true  
+# Minimum distance between two persons:
+heads_minimum_distance: 0.3
+# Voxel size used to downsample the point cloud (lower: detection slower but more precise; higher: detection faster but less precise):
+voxel_size: 0.06
+
