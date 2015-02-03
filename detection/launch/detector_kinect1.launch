@@ -19,7 +19,7 @@
   <node pkg="detection" type="ground_based_people_detector"
         name="ground_based_people_detector_$(arg camera_name)" output="screen" respawn="true">
         
-    <rosparam command="load"                        file="$(find detection)/conf/ground_based_people_detector.yaml" /> 
+    <rosparam command="load"                        file="$(find detection)/conf/ground_based_people_detector_kinect2.yaml" /> 
     
     <param name="classifier_file"                   value="$(find detection)/data/HogSvmPCL.yaml"/>
     <param name="pointcloud_topic"                  value="/$(arg camera_name)/depth_registered/points"/>
