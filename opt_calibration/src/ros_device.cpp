@@ -41,9 +41,14 @@ void PinholeRGBDevice::createSubscribers(ros::NodeHandle & nh,
 
 PinholeRGBDevice::Data::Ptr PinholeRGBDevice::convertMessages(const Messages & messages)
 {
+  assert(sensor_);
   cv_bridge::CvImage::Ptr image_ptr = cv_bridge::toCvCopy(messages.image_msg, sensor_msgs::image_encodings::BGR8);
+
+  cv::Mat rectified;
+  sensor_->cameraModel()->rectifyImage(image_ptr->image, rectified);
+
   Data::Ptr data = boost::make_shared<Data>();
-  data->image = image_ptr->image;
+  data->image = rectified;
   return data;
 }
 
@@ -103,9 +108,15 @@ void KinectDevice::createSubscribers(ros::NodeHandle & nh,
 
 KinectDevice::Data::Ptr KinectDevice::convertMessages(const Messages & messages)
 {
+  assert(color_sensor_);
+  cv_bridge::CvImage::Ptr image_ptr = cv_bridge::toCvCopy(messages.image_msg, sensor_msgs::image_encodings::BGR8);
+
+  cv::Mat rectified;
+  color_sensor_->cameraModel()->rectifyImage(image_ptr->image, rectified);
+
   Data::Ptr data = boost::make_shared<Data>();
+  data->image = rectified;
   data->cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
-//  calibration::convertToPointCloud<uint16_t, pcl::PointXYZ>(*messages.image_msg, depth_sensor_->cameraModel()->cameraInfo(), data->cloud);
   pcl::fromROSMsg(*messages.cloud_msg, *data->cloud);
   return data;
 }
@@ -148,8 +159,10 @@ SwissRangerDevice::Data::Ptr SwissRangerDevice::convertMessages(const Messages &
 {
   assert(messages.cloud_msg and messages.intensity_msg);
   cv_bridge::CvImage::Ptr image_ptr = cv_bridge::toCvCopy(messages.intensity_msg, sensor_msgs::image_encodings::MONO8);
+  cv::Mat rectified;
+  intensity_sensor_->cameraModel()->rectifyImage(image_ptr->image, rectified);
   Data::Ptr data = boost::make_shared<Data>();
-  data->intensity_image = image_ptr->image;
+  data->intensity_image = rectified;
 
   sr::Utility sr_utility;
   sr_utility.setConfidenceThreshold(confidence_threshold_);
