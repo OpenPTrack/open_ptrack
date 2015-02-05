@@ -133,7 +133,7 @@ class CalibrationInitializer :
         file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/$(arg sensor_' + str(index) + '_name)/intensity/camera_info" />\n\n')
       elif sensor['type'] == 'kinect1':
         file.write('    <param name="sensor_' + str(index) + '/type"         value="pinhole_rgb" />\n')
-        file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/$(arg sensor_' + str(index) + '_name)/rgb/image_rect_color" />\n')
+        file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/$(arg sensor_' + str(index) + '_name)/rgb/image_color" />\n')
         file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/$(arg sensor_' + str(index) + '_name)/rgb/camera_info" />\n\n')
       elif sensor['type'] == 'kinect2':
         file.write('    <param name="sensor_' + str(index) + '/type"         value="pinhole_rgb" />\n')
@@ -141,7 +141,7 @@ class CalibrationInitializer :
         file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/$(arg sensor_' + str(index) + '_name)/rgb_rect/camera_info" />\n\n')
       elif sensor['type'] == 'stereo_pg':
         file.write('    <param name="sensor_' + str(index) + '/type"         value="pinhole_rgb" />\n')
-        file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/$(arg sensor_' + str(index) + '_name)/left/image_rect_color" />\n')
+        file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/$(arg sensor_' + str(index) + '_name)/left/image_color" />\n')
         file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/$(arg sensor_' + str(index) + '_name)/left/camera_info" />\n\n')
       else:
         rospy.logfatal('Sensor type "' + sensor['type'] + '" not supported yet!');

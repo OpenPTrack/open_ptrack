@@ -243,6 +243,9 @@ main (int argc, char** argv)
     camera_info_msg.P[5] = camera_info_msg.K[4];
     camera_info_msg.P[6] = camera_info_msg.K[5];
     camera_info_msg.P[10] = camera_info_msg.K[8];
+
+    camera_info_msg.distortion_model = "plumb_bob";
+    camera_info_msg.D.resize(5, 0);
   }
 
   // Initialize confidence and intensity images

@@ -44,11 +44,20 @@ PinholeRGBDevice::Data::Ptr PinholeRGBDevice::convertMessages(const Messages & m
   assert(sensor_);
   cv_bridge::CvImage::Ptr image_ptr = cv_bridge::toCvCopy(messages.image_msg, sensor_msgs::image_encodings::BGR8);
 
-  cv::Mat rectified;
-  sensor_->cameraModel()->rectifyImage(image_ptr->image, rectified);
-
   Data::Ptr data = boost::make_shared<Data>();
-  data->image = rectified;
+
+  try
+  {
+    cv::Mat rectified;
+    sensor_->cameraModel()->rectifyImage(image_ptr->image, rectified);
+    data->image = rectified;
+  }
+  catch (const image_geometry::Exception & ex)
+  {
+    ROS_WARN_STREAM_ONCE(ex.what() << std::endl << "Message (from topic \"" << image_sub_.getTopic() << "\"): " << std::endl << sensor_->cameraModel()->cameraInfo());
+    data->image = image_ptr->image;
+  }
+
   return data;
 }
 
@@ -111,11 +120,20 @@ KinectDevice::Data::Ptr KinectDevice::convertMessages(const Messages & messages)
   assert(color_sensor_);
   cv_bridge::CvImage::Ptr image_ptr = cv_bridge::toCvCopy(messages.image_msg, sensor_msgs::image_encodings::BGR8);
 
-  cv::Mat rectified;
-  color_sensor_->cameraModel()->rectifyImage(image_ptr->image, rectified);
-
   Data::Ptr data = boost::make_shared<Data>();
-  data->image = rectified;
+
+  try
+  {
+    cv::Mat rectified;
+    color_sensor_->cameraModel()->rectifyImage(image_ptr->image, rectified);
+    data->image = rectified;
+  }
+  catch (const image_geometry::Exception & ex)
+  {
+    ROS_WARN_STREAM_ONCE(ex.what() << std::endl << "Message (from topic \"" << camera_sub_.getTopic() << "\"): " << std::endl << color_sensor_->cameraModel()->cameraInfo());
+    data->image = image_ptr->image;
+  }
+
   data->cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
   pcl::fromROSMsg(*messages.cloud_msg, *data->cloud);
   return data;
@@ -159,10 +177,20 @@ SwissRangerDevice::Data::Ptr SwissRangerDevice::convertMessages(const Messages &
 {
   assert(messages.cloud_msg and messages.intensity_msg);
   cv_bridge::CvImage::Ptr image_ptr = cv_bridge::toCvCopy(messages.intensity_msg, sensor_msgs::image_encodings::MONO8);
-  cv::Mat rectified;
-  intensity_sensor_->cameraModel()->rectifyImage(image_ptr->image, rectified);
+
   Data::Ptr data = boost::make_shared<Data>();
-  data->intensity_image = rectified;
+
+  try
+  {
+    cv::Mat rectified;
+    intensity_sensor_->cameraModel()->rectifyImage(image_ptr->image, rectified);
+    data->intensity_image = rectified;
+  }
+  catch (const image_geometry::Exception & ex)
+  {
+    ROS_WARN_STREAM_ONCE(ex.what() << std::endl << "Message (from topic \"" << camera_sub_.getTopic() << "\"): " << std::endl << intensity_sensor_->cameraModel()->cameraInfo());
+    data->intensity_image = image_ptr->image;
+  }
 
   sr::Utility sr_utility;
   sr_utility.setConfidenceThreshold(confidence_threshold_);
