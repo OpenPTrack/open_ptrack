@@ -2,7 +2,7 @@
 ## Ground estimation ##
 #######################
 # Ground estimation mode - 0:manual, 1:semi-auto, 2:auto with user validation, 3:fully automatic (default 0) 
-ground_estimation_mode: 0
+ground_estimation_mode: 3
 # Flag stating if the ground should be read from file, if present:
 read_ground_from_file: false
 # Flag that locks the ground plane update:
@@ -29,7 +29,7 @@ ground_based_people_detection_min_confidence: -1.75
 minimum_person_height: 1.0
 # Maximum person height:
 maximum_person_height: 2.3
-# Kinect's best range is 5.0 m, greater is possible w/ larger error
+# Max depth range:
 max_distance: 10.0 
 # Point cloud downsampling factor:
 sampling_factor: 4
