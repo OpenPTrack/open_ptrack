@@ -20,7 +20,7 @@ git checkout iai_kinect2
 #####################################################
 
 cd depends/
-sudo apt-get install git cmake cmake-curses-gui libXmu-dev libXi-dev libgl-dev dos2unix xorg-dev libglu1-mesa-dev libtool automake libudev-dev libgtk2.0-dev pkg-config libjpeg-turbo8-dev libturbojpeg libglewmx-dev
+sudo apt-get install git cmake cmake-curses-gui libXmu-dev libXi-dev libgl1-mesa-dev dos2unix xorg-dev libglu1-mesa-dev libtool automake libudev-dev libgtk2.0-dev pkg-config libjpeg-turbo8-dev libturbojpeg libglewmx-dev
 ./install_ubuntu.sh 
 if [ ! -f /usr/lib/x86_64-linux-gnu/libturbojpeg.so ]
 then
