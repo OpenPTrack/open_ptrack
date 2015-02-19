@@ -1,0 +1,59 @@
+*** Kinect 2 installation for Ubuntu 14.04 ***
+Date: 2015-01-21
+
+Step 1:
+Install OpenCL for your graphic card.
+After the installation (maybe not necessary because everything is already
+installed), if you are using an Nvidia card substitute the default OpenCL
+libraries (old and not standards-compliant) with the working ones:
+
+  sudo apt-get install ocl-icd-opencl-dev
+
+Step 2:
+Install Kinect 2 driver and ROS package
+
+  roscd open_ptrack/../scripts
+  chmod +x kinect2_install.sh
+  ./kinect2_install.sh
+
+
+Step 3:
+Reboot
+
+
+Step 4:
+Sometimes the Kinect 2 is not working because of some OS parameters
+not set. To set those parameters run:
+
+  cd ~/workspace/ros/catkin/devel/lib/kinect2_bridge
+  sudo ./kinect2_bridge
+
+This step is just to perform some operations as super-user. After you
+launch the executable, the process will die, that is normal.
+
+
+Step 5:
+Test
+
+1. TEST POINT CLOUD:
+
+  roslaunch kinect2_bridge kinect2_bridge.launch
+
+If everything is ok, you should see the Kinect2 point cloud in a RViz:
+
+  rosrun rviz rviz
+
+ - set Fixed Frame as /kinect2_head_rgb_optical_frame
+ - add a PointCloud2 visualization and set the topic as /kinect2_head/depth_lowres/points
+
+You can test the point cloud framerate with:
+
+  rostopic hz /kinect2_head/depth_lowres/points 
+
+2. TEST SINGLE-CAMERA TRACKING:
+
+  roslaunch tracking detection_and_tracking_kinect2.launch
+
+
+NB: tested with Ubuntu kernel 3.13.0-37-generic. There were some USB3 issues with previous versions of the kernel.
+
