@@ -1,10 +1,12 @@
 *** Kinect 2 installation for Ubuntu 14.04 ***
-Date: 2015-01-21
+Date: 2015-02-25
 
 Step 1:
-Install OpenCL for your graphic card.
-After the installation (maybe not necessary because everything is already
-installed), if you are using an Nvidia card substitute the default OpenCL
+Install your graphic card drivers (if not already installed), e.g.:
+  
+  sudo apt-get install nvidia-331-dev
+
+After the installation, if you are using an Nvidia card, substitute the default OpenCL
 libraries (old and not standards-compliant) with the working ones:
 
   sudo apt-get install ocl-icd-opencl-dev
