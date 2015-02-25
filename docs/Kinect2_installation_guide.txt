@@ -31,7 +31,7 @@ not set. To set those parameters run:
   sudo ./kinect2_bridge
 
 This step is just to perform some operations as super-user. After you
-launch the executable, the process will die, that is normal.
+launch the executable, an error will pop-up, that is normal.
 
 
 Step 5:
