@@ -143,7 +143,7 @@ enum { COLS = 176, ROWS = 144 };
 void
 camera_info_cb (const CameraInfo::ConstPtr & msg)
 {
-  intrinsics_matrix << msg->P[0], 0, msg->P[2], 0, msg->P[5], msg->P[6], 0, 0, 1;
+  intrinsics_matrix << msg->K[0], 0, msg->K[2], 0, msg->K[4], msg->K[5], 0, 0, 1;
   people_detector.setIntrinsics(intrinsics_matrix);
   camera_info_available_flag = true;
 }
