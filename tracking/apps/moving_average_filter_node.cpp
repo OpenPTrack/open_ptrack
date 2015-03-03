@@ -237,7 +237,8 @@ public:
 
       track_info.track_->addPosition(Eigen::Array2d(track_msg.x, track_msg.y), msg->header.stamp);
       track_info.last_msg_ = boost::make_shared<opt_msgs::Track>(track_msg);
-      track_info.last_msg_time_ = msg->header.stamp;
+      if (track_info.last_msg_->visibility < 2)
+        track_info.last_msg_time_ = msg->header.stamp;
     }
   }
 
