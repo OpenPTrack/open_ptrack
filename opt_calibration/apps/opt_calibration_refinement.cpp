@@ -81,7 +81,6 @@ double min_confidence;
 std::vector<cv::Vec3f> camera_colors;     // vector containing colors to use to identify cameras in the network
 std::map<std::string, int> color_map;     // map between camera frame_id and color
 double voxel_size;
-pcl::visualization::PCLVisualizer detection_viewer("Detection viewer");
 std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr > cloud_vector;
 std::vector<std::vector<double> > timestamp_vector;
 ros::Time start_time;
@@ -95,7 +94,6 @@ double time_bin_size;                   // bin size for the time variable
 double icp_max_correspondence_distance; // max correspondence distance for ICP
 int N_iter;
 bool doing_calibration_refinement;
-pcl::visualization::ImageViewer legend_viewer("Camera legend");
 
 void
 saveRegistrationMatrix (std::string filename, Eigen::Matrix4d transformation)
@@ -120,31 +118,9 @@ plotCameraLegend (std::map<std::string, int> curr_color_map)
     cv::putText(legend_image, colormap_iterator->first, cv::Point(110,y_coord), 1, 1, cv::Scalar(255, 255, 255), 1);
   }
 
-  // Transform legend to point cloud:
-  pcl::PointCloud<pcl::RGB>::Ptr legend_image_cloud(new pcl::PointCloud<pcl::RGB>);
-  pcl::RGB black_point;
-  black_point.r = 0;
-  black_point.g = 0;
-  black_point.b = 0;
-  legend_image_cloud->points.resize(legend_image.rows * legend_image.cols, black_point);
-  legend_image_cloud->width = legend_image.cols;
-  legend_image_cloud->height = legend_image.rows;
-  for (unsigned int i = 0; i < legend_image.rows; i++)
-  {
-    for (unsigned int j = 0; j < legend_image.cols; j++)
-    {
-      cv::Vec3b current_color = legend_image.at<cv::Vec3b>(i,j);
-      legend_image_cloud->at(j,i).r = current_color(2);
-      legend_image_cloud->at(j,i).g = current_color(1);
-      legend_image_cloud->at(j,i).b = current_color(0);
-    }
-  }
-
-  // Plot camera legend:
-  //pcl::visualization::ImageViewer legend_viewer("Camera legend");
-  legend_viewer.addRGBImage<pcl::RGB>(legend_image_cloud);
-  legend_viewer.spinOnce();
-  legend_viewer.spinOnce();
+  // Display the cv image
+  cv::imshow("Camera legend", legend_image);
+  cv::waitKey(1);
 }
 
 int
@@ -189,7 +165,13 @@ performCalibrationRefinement (std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr
   std::cout << "Calibration refinement finished. Press 'Ctrl+C' to exit." << std::endl;
 
   // Visualize input and output of registration:
-  registrator.visualizeFinalRegistration (curr_cloud_vector, registration_matrices, true);
+  pcl::visualization::PCLVisualizer final_viewer("Input clouds and final registration");
+  registrator.visualizeFinalRegistration (curr_cloud_vector, registration_matrices, final_viewer);
+  while (not final_viewer.wasStopped())
+  {
+    final_viewer.spinOnce();
+    cv::waitKey(1);
+  }
 
   doing_calibration_refinement = false;
 
@@ -400,39 +382,10 @@ detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
           detection_marker_pub.publish(marker_msg); // publish marker message
           detection_trajectory_pub.publish(detection_history_pointcloud); // publish trajectory message
 
-          // Detection cloud visualization:
-          detection_viewer.removeAllPointClouds();
-          //for (unsigned int k = 0; k < cloud_vector.size(); k++)
-          for(std::map<std::string, int>::iterator colormap_iterator = color_map.begin(); colormap_iterator != color_map.end(); colormap_iterator++)
-          {
-            std::stringstream ss;
-            ss << colormap_iterator->first;
-            std::string current_camera = ss.str();
-            if (strcmp(current_camera.substr(0,1).c_str(), "/") == 0)
-            {
-              current_camera = current_camera.substr(1, current_camera.size() - 1);
-            }
-//            replace(current_camera.begin(), current_camera.end(), '/', '_');
-            pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(cloud_vector[colormap_iterator->second]);
-            detection_viewer.addPointCloud<pcl::PointXYZRGB> (cloud_vector[colormap_iterator->second], rgb, current_camera);
-            detection_viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, current_camera);
-
-            if ((save_detection_clouds) & ((int(time_offset.toSec()) % 10) == 0))
-            {
-              if (cloud_vector[colormap_iterator->second]->points.size() > 0)
-              {
-                pcl::io::savePLYFileASCII ((ros::package::getPath("opt_calibration") + "/conf/detection_history_" + current_camera + ".ply").c_str(), *(cloud_vector[colormap_iterator->second]));
-                pcl::io::savePCDFileASCII ((ros::package::getPath("opt_calibration") + "/conf/detection_history_" + current_camera + ".pcd").c_str(), *(cloud_vector[colormap_iterator->second]));
-                saveTimestampFile (ros::package::getPath("opt_calibration") + "/conf/detection_timestamps_" + current_camera + ".txt", timestamp_vector[colormap_iterator->second]);
-              }
-            }
-
-            // Plot legend with camera names and colors:
-            plotCameraLegend (color_map);
+          // Plot legend with camera names and colors:
+          plotCameraLegend (color_map);
 
 //                      std::cout << colormap_iterator->first << " " << colormap_iterator->second << std::endl;
-          }
-          detection_viewer.spinOnce();
         }
       }
       else // if no detections have been received
@@ -464,12 +417,6 @@ main(int argc, char** argv)
   ros::init(argc, argv, "opt_calibration_refinement");
   ros::NodeHandle nh("~");
 
-  // Subscribers/Publishers:
-  ros::Subscriber input_sub = nh.subscribe("/detector/detections", 5, detection_cb);
-  ros::Subscriber action_sub = nh.subscribe("/opt_calibration/action", 1, actionCallback);
-  detection_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("/detector/markers_array", 1);
-  detection_trajectory_pub = nh.advertise<pcl::PointCloud<pcl::PointXYZRGBA> >("/detector/history", 1);
-
   tf_listener = new tf::TransformListener();
 
   // Read tracking parameters:
@@ -479,7 +426,6 @@ main(int argc, char** argv)
   nh.param("rate", rate, 30.0);
   nh.param("min_confidence_initialization", min_confidence, -3.0);
   nh.param("detection_debug", output_detection_results, true);
-  nh.param("detection_history_size", detection_history_size, 1000);
   bool debug_mode;
   nh.param("debug_active", debug_mode, false);
   nh.param("save_detection_clouds", save_detection_clouds, false);
@@ -489,7 +435,6 @@ main(int argc, char** argv)
   nh.param("calibration_refinement_iterations", N_iter, 4);
 
   doing_calibration_refinement = false;
-  detection_viewer.setCameraPosition(4.85038, 0.777564, 23.63, 0.0101831, 0.998897, -0.0458376);
 
   // Read number of sensors in the network:
   int num_cameras = 0;
@@ -500,6 +445,12 @@ main(int argc, char** argv)
   {
     num_cameras += network[i]["sensors"].size();
   }
+
+  // Subscribers/Publishers:
+  ros::Subscriber input_sub = nh.subscribe("/detector/detections", num_cameras, detection_cb);
+  ros::Subscriber action_sub = nh.subscribe("/opt_calibration/action", 1, actionCallback);
+  detection_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("/detector/markers_array", 1);
+  detection_trajectory_pub = nh.advertise<pcl::PointCloud<pcl::PointXYZRGBA> >("/detector/history", 1);
 
   // Create a detection point cloud for every sensor:
   std::vector<double> empty_vector;
@@ -516,6 +467,7 @@ main(int argc, char** argv)
   generateColors(num_cameras, camera_colors);
 
   // Initialize point cloud containing detections trajectory:
+  detection_history_size = 10000*num_cameras;
   pcl::PointXYZRGB nan_point;
   nan_point.x = std::numeric_limits<float>::quiet_NaN();
   nan_point.y = std::numeric_limits<float>::quiet_NaN();
@@ -531,7 +483,6 @@ main(int argc, char** argv)
   while (ros::ok)
   {
     ros::spinOnce();
-    detection_viewer.spinOnce();
     hz.sleep();
   }
 

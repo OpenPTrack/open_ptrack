@@ -10,4 +10,7 @@
     <rosparam command="load" file="$(find opt_calibration)/conf/calibration_refinement.yaml" /> 
   </node>
 
+  <!-- ROS visualizer -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find opt_calibration)/conf/calibration_refinement.rviz" /> 
+
 </launch>

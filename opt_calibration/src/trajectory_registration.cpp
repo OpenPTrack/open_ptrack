@@ -280,7 +280,7 @@ namespace open_ptrack
 
     void
     TrajectoryRegistration::visualizeFinalRegistration (std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr >& cloud_vector,
-        std::map<std::string, Eigen::Matrix4d>& registration_matrices, bool spin_flag)
+        std::map<std::string, Eigen::Matrix4d>& registration_matrices, pcl::visualization::PCLVisualizer& viewer_name)
     {
       std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr > registered_cloud_vector;
 
@@ -304,33 +304,30 @@ namespace open_ptrack
         }
       }
 
-      pcl::visualization::PCLVisualizer final_viewer("Input clouds and final registration");
       int v1(0);
-      final_viewer.createViewPort (0.0, 0.0, 0.5, 1.0, v1);
+      viewer_name.createViewPort (0.0, 0.0, 0.5, 1.0, v1);
       for(std::map<std::string, int>::iterator colormap_iterator = color_map_.begin(); colormap_iterator != color_map_.end(); colormap_iterator++)
       {
         pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb((cloud_vector[colormap_iterator->second]));
-        final_viewer.addPointCloud<pcl::PointXYZRGB> (cloud_vector[colormap_iterator->second], rgb, colormap_iterator->first, v1);
-        final_viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, colormap_iterator->first, v1);
-        final_viewer.spinOnce();
+        viewer_name.addPointCloud<pcl::PointXYZRGB> (cloud_vector[colormap_iterator->second], rgb, colormap_iterator->first, v1);
+        viewer_name.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, colormap_iterator->first, v1);
+        viewer_name.spinOnce();
       }
-      final_viewer.addText ("BEFORE CALIBRATION REFINEMENT", 10, 10, "v1 text", v1);
+      viewer_name.addText ("BEFORE CALIBRATION REFINEMENT", 10, 10, "v1 text", v1);
 
       int v2(0);
-      final_viewer.createViewPort (0.5, 0.0, 1.0, 1.0, v2);
+      viewer_name.createViewPort (0.5, 0.0, 1.0, 1.0, v2);
       for(std::map<std::string, int>::iterator colormap_iterator = color_map_.begin(); colormap_iterator != color_map_.end(); colormap_iterator++)
       {
         pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb((registered_cloud_vector[colormap_iterator->second]));
-        final_viewer.addPointCloud<pcl::PointXYZRGB> (registered_cloud_vector[colormap_iterator->second], rgb, colormap_iterator->first + "_registered", v2);
-        final_viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, colormap_iterator->first + "_registered", v2);
-        final_viewer.spinOnce();
+        viewer_name.addPointCloud<pcl::PointXYZRGB> (registered_cloud_vector[colormap_iterator->second], rgb, colormap_iterator->first + "_registered", v2);
+        viewer_name.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, colormap_iterator->first + "_registered", v2);
+        viewer_name.spinOnce();
       }
-      final_viewer.addText ("AFTER CALIBRATION REFINEMENT", 10, 10, "v2 text", v2);
+      viewer_name.addText ("AFTER CALIBRATION REFINEMENT", 10, 10, "v2 text", v2);
 
-      final_viewer.setCameraPosition(-2.40825,-0.54434,30.8287, 0.00352108,0.999943,0.0100698, v1);
-      final_viewer.setCameraPosition(-2.40825,-0.54434,30.8287, 0.00352108,0.999943,0.0100698, v2);
-
-      final_viewer.spin();
+      viewer_name.setCameraPosition(-2.40825,-0.54434,30.8287, 0.00352108,0.999943,0.0100698, v1);
+      viewer_name.setCameraPosition(-2.40825,-0.54434,30.8287, 0.00352108,0.999943,0.0100698, v2);
     }
 
     void

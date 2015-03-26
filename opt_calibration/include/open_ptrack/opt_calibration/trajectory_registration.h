@@ -191,13 +191,13 @@ namespace open_ptrack
         /**
          * \brief Visualize input and registered clouds in two separate viewports.
          *
-         * \param[in] cloud_vector Vector containing the points clouds to visualize.
-         * \param[in] registered_cloud_vector Vector containing the registered points clouds to visualize.
-         * \param[in] spin_flag If true, viewer.spin() is called after visualization.
+         * \param[in] cloud_vector Vector containing the points clouds before registration.
+         * \param[in] registration_matrices Map containing the final transformations obtained with the refinement.
+         * \param[in] viewer_name Viewer name.
          */
         void
         visualizeFinalRegistration (std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr >& cloud_vector,
-            std::map<std::string, Eigen::Matrix4d>& registration_matrices, bool spin_flag);
+            std::map<std::string, Eigen::Matrix4d>& registration_matrices, pcl::visualization::PCLVisualizer& viewer_name);
 
         /**
          * \brief Perform all computations of the trajectory registration method.
