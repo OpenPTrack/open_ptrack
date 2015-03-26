@@ -45,7 +45,6 @@
 #include <std_msgs/Bool.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/visualization/image_viewer.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
@@ -122,7 +121,6 @@ std::map<std::string, ros::Time> last_received_detection_;
 ros::Duration max_time_between_detections_;
 
 std::map<std::string, std::pair<double, int> > number_messages_delay_map_;
-pcl::visualization::ImageViewer legend_viewer("Camera legend for detections");
 
 /**
  * \brief Create marker to be visualized in RViz
@@ -172,31 +170,9 @@ plotCameraLegend (std::map<std::string, int> curr_color_map)
     cv::putText(legend_image, colormap_iterator->first, cv::Point(110,y_coord), 1, 1, cv::Scalar(255, 255, 255), 1);
   }
 
-  // Transform legend to point cloud:
-  pcl::PointCloud<pcl::RGB>::Ptr legend_image_cloud(new pcl::PointCloud<pcl::RGB>);
-  pcl::RGB black_point;
-  black_point.r = 0;
-  black_point.g = 0;
-  black_point.b = 0;
-  legend_image_cloud->points.resize(legend_image.rows * legend_image.cols, black_point);
-  legend_image_cloud->width = legend_image.cols;
-  legend_image_cloud->height = legend_image.rows;
-  for (unsigned int i = 0; i < legend_image.rows; i++)
-  {
-    for (unsigned int j = 0; j < legend_image.cols; j++)
-    {
-      cv::Vec3b current_color = legend_image.at<cv::Vec3b>(i,j);
-      legend_image_cloud->at(j,i).r = current_color(2);
-      legend_image_cloud->at(j,i).g = current_color(1);
-      legend_image_cloud->at(j,i).b = current_color(0);
-    }
-  }
-
-  // Plot camera legend:
-  //pcl::visualization::ImageViewer legend_viewer("Camera legend");
-  legend_viewer.addRGBImage<pcl::RGB>(legend_image_cloud);
-  legend_viewer.spinOnce();
-  legend_viewer.spinOnce();
+  // Display the cv image
+  cv::imshow("Camera legend", legend_image);
+  cv::waitKey(1);
 }
 
 Eigen::Matrix4d
@@ -797,6 +773,8 @@ main(int argc, char** argv)
   for (std::map<std::string, ros::Time>::const_iterator it = last_received_detection_.begin(); it != last_received_detection_.end(); ++it)
     last_message[it->first] = ros::Time::now();
 
+  ros::Time last_camera_legend_update = ros::Time::now();  // last time when the camera legend has been updated
+
   while (ros::ok())
   {
     ros::spinOnce();
@@ -816,6 +794,13 @@ main(int argc, char** argv)
           ROS_WARN_STREAM("[" << it->first << "] still waiting for detection messages...");
           last_message[it->first] = now;
         }
+      }
+
+      // Update camera legend every second:
+      if ((now - last_camera_legend_update) > ros::Duration(1.0))    // if more than one second passed since last update
+      { // update OpenCV image with a waitKey:
+        cv::waitKey(1);
+        last_camera_legend_update = now;
       }
     }
     hz.sleep();

@@ -52,7 +52,6 @@
 #include <fstream>
 #include <string.h>
 #include <pcl/visualization/pcl_visualizer.h>
-#include <pcl/visualization/image_viewer.h>
 #include <pcl/io/ply_io.h>
 #include <std_msgs/String.h>
 
