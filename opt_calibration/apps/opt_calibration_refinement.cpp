@@ -119,7 +119,6 @@ plotCameraLegend (std::map<std::string, int> curr_color_map)
 
   // Display the cv image
   cv::imshow("Camera legend", legend_image);
-  cv::waitKey(1);
 }
 
 int
@@ -479,9 +478,20 @@ main(int argc, char** argv)
   start_time_set = false;
 
   // Spin and execute callbacks:
+  ros::Time last_camera_legend_update = ros::Time::now();           // last time when the camera legend has been updated
+
   while (ros::ok)
   {
     ros::spinOnce();
+
+    // Update camera legend every second:
+    ros::Time now = ros::Time::now();
+    if ((now - last_camera_legend_update) > ros::Duration(1.0))     // if more than one second passed since last update
+    { // update OpenCV image with a waitKey:
+      cv::waitKey(1);
+      last_camera_legend_update = now;
+    }
+
     hz.sleep();
   }
 
