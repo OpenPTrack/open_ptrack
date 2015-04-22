@@ -79,10 +79,15 @@ target_link_libraries(opt_calibration_refinement
   ${catkin_LIBRARIES}
 )
 
-#add_executable(global_registration
-#  apps/global_registration.cpp
-#  src/trajectory_registration.cpp
-#)
-#target_link_libraries(global_registration
-#  ${catkin_LIBRARIES}
-#)
+add_executable(opt_define_reference_frame
+  src/opt_calibration.cpp              include/open_ptrack/opt_calibration/opt_calibration.h
+  src/opt_define_reference_frame.cpp   include/open_ptrack/opt_calibration/opt_define_reference_frame.h
+  src/ros_device.cpp                   include/open_ptrack/opt_calibration/ros_device.h
+  src/opt_checkerboard_extraction.cpp  include/open_ptrack/opt_calibration/opt_checkerboard_extraction.h
+)
+
+target_link_libraries(opt_define_reference_frame
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
+  ${OpenCV_LIBS}
+)

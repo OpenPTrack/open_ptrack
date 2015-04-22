@@ -49,7 +49,8 @@ class CalibrationInitializer :
     
     network = rospy.get_param('~network')
     self.checkerboard = rospy.get_param('~checkerboard')
-    self.file_name = rospy.get_param('~launch_file')
+    self.file_name = rospy.get_param('~network_calibration_launch_file')
+    self.frame_file_name = rospy.get_param('~frame_calibration_launch_file')
     
     self.sensor_list = []
     self.sensor_map = {}
@@ -151,9 +152,73 @@ class CalibrationInitializer :
     file.write('</launch>\n')
     
     file.close()
+
+    # Create launch file for defining user reference frame:
+    file = open(self.frame_file_name, 'w')
+    file.write('<?xml version="1.0"?>\n')
+    file.write('<!-- SESSION ID: ' + str(self.session_id) + ' -->\n')
+    file.write('<launch>\n\n')
+  
+    # Calibration parameters
+    file.write('  <!-- Calibration parameters -->\n')
+    file.write('  <rosparam command="load" file="$(find opt_calibration)/conf/camera_poses.yaml" />\n\n')
+    
+    # Network parameters
+    file.write('  <!-- Network parameters -->\n')
+    file.write('  <arg name="num_sensors"   default="' + str(len(self.sensor_list)) + '" />\n\n')
+    
+    index = 0
+    for sensor in self.sensor_list:
+#       if sensor['type'] == 'sr4500':
+#         sensor_name = "SR_" + sensor['id'].replace('.', '_');
+#         file.write('  <arg name="sensor_' + str(index) + '_id"   default="' + sensor_name  + '" />\n')
+#       else:
+#         file.write('  <arg name="sensor_' + str(index) + '_id"   default="' + sensor['id']  + '" />\n')
+      file.write('  <arg name="sensor_' + str(index) + '_id"   default="' + sensor['id']  + '" />\n')
+      file.write('  <arg name="sensor_' + str(index) + '_name" default="$(arg sensor_' + str(index) + '_id)" />\n\n')
+      index = index + 1
+      
+    # Calibration node
+    file.write('  <!-- Launching calibration -->\n')
+    file.write('  <node pkg="opt_calibration" type="opt_define_reference_frame" name="opt_define_reference_frame" output="screen">\n')
+    
+    file.write('    <rosparam command="load" file="$(find opt_calibration)/conf/camera_network.yaml" />\n\n')
+    
+    file.write('    <param name="num_sensors"           value="$(arg num_sensors)" />\n\n')
+    
+    index = 0
+    for sensor in self.sensor_list:
+      file.write('    <param name="sensor_' + str(index) + '/name"         value="/$(arg sensor_' + str(index) + '_name)" />\n')
+      if sensor['type'] == 'sr4500':
+        file.write('    <param name="sensor_' + str(index) + '/type"         value="pinhole_rgb" />\n')
+        file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/$(arg sensor_' + str(index) + '_name)/intensity/image_resized" />\n')
+        file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/$(arg sensor_' + str(index) + '_name)/intensity/camera_info" />\n\n')
+      elif sensor['type'] == 'kinect1':
+        file.write('    <param name="sensor_' + str(index) + '/type"         value="pinhole_rgb" />\n')
+        file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/$(arg sensor_' + str(index) + '_name)/rgb/image_color" />\n')
+        file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/$(arg sensor_' + str(index) + '_name)/rgb/camera_info" />\n\n')
+      elif sensor['type'] == 'kinect2':
+        file.write('    <param name="sensor_' + str(index) + '/type"         value="pinhole_rgb" />\n')
+        file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/$(arg sensor_' + str(index) + '_name)/rgb_rect/image" />\n')
+        file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/$(arg sensor_' + str(index) + '_name)/rgb_rect/camera_info" />\n\n')
+      elif sensor['type'] == 'stereo_pg':
+        file.write('    <param name="sensor_' + str(index) + '/type"         value="pinhole_rgb" />\n')
+        file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/$(arg sensor_' + str(index) + '_name)/left/image_color" />\n')
+        file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/$(arg sensor_' + str(index) + '_name)/left/camera_info" />\n\n')
+      else:
+        rospy.logfatal('Sensor type "' + sensor['type'] + '" not supported yet!');
+      index = index + 1
+  
+    file.write('  </node>\n\n')
+    file.write('</launch>\n')
+    
+    file.close()
     
   def fileName(self) :
     return self.file_name
+
+  def frameFileName(self) :
+    return self.frame_file_name
     
   def __invokeService(self, local_service_name) :
     
@@ -214,6 +279,7 @@ if __name__ == '__main__' :
     
     initializer.createMaster()
     rospy.loginfo(initializer.fileName() + ' created!');
+    rospy.loginfo(initializer.frameFileName() + ' created!');
     
     initializer.createSensorLaunch()
     initializer.createDetectorLaunch()
