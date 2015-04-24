@@ -381,7 +381,7 @@ private:
 
     marker.pose.position.x = track_msg.x;
     marker.pose.position.y = track_msg.y;
-    marker.pose.position.z = track_msg.height / 2;
+    marker.pose.position.z = 0; //track_msg.height / 2;
     marker.pose.orientation.x = 0.0;
     marker.pose.orientation.y = 0.0;
     marker.pose.orientation.z = 0.0;
@@ -447,7 +447,7 @@ private:
 
     p.x = float(track_msg.x);
     p.y = float(track_msg.y);
-    p.z = float(track_msg.height / 2);
+    p.z = 0; //float(track_msg.height / 2);
     uchar * rgb_ptr = reinterpret_cast<uchar *>(&p.rgb);
     *rgb_ptr++ = uchar(color_set_[track_msg.id % color_set_.size()](0) * 255.0f);
     *rgb_ptr++ = uchar(color_set_[track_msg.id % color_set_.size()](1) * 255.0f);
