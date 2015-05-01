@@ -45,6 +45,8 @@
 template <typename PointT>
 open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::GroundBasedPeopleDetectionApp ()
 {
+//  denoising_viewer_ = pcl::visualization::PCLVisualizer::Ptr (new pcl::visualization::PCLVisualizer("filtering_viewer"));
+
   rgb_image_ = pcl::PointCloud<pcl::RGB>::Ptr(new pcl::PointCloud<pcl::RGB>);
 
   // set default values for optional parameters:
@@ -93,6 +95,14 @@ template <typename PointT> void
 open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::setVoxelSize (float voxel_size)
 {
   voxel_size_ = voxel_size;
+}
+
+template <typename PointT> void
+open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::setDenoisingParameters (bool apply_denoising, int mean_k_denoising, float std_dev_denoising)
+{
+  apply_denoising_ = apply_denoising;
+  mean_k_denoising_ = mean_k_denoising;
+  std_dev_denoising_ = std_dev_denoising;
 }
 
 template <typename PointT> void
@@ -394,10 +404,38 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
     //    mean_luminance_ = 0.2126 * sumR/n_points + 0.7152 * sumG/n_points + 0.0722 * sumB/n_points;
   }
 
+  // Denoising with statistical filtering:
+  PointCloudPtr cloud_denoised(new PointCloud);
+  if (apply_denoising_)
+  {
+    pcl::StatisticalOutlierRemoval<PointT> sor;
+    sor.setInputCloud (cloud_);
+    sor.setMeanK (mean_k_denoising_);
+    sor.setStddevMulThresh (std_dev_denoising_);
+    sor.filter (*cloud_denoised);
+  }
+  else
+  {
+    cloud_denoised = cloud_;
+  }
+
+//  // Denoising viewer
+//  int v1(0);
+//  int v2(0);
+//  denoising_viewer_->removeAllPointClouds(v1);
+//  denoising_viewer_->removeAllPointClouds(v2);
+//  denoising_viewer_->createViewPort (0.0, 0.0, 0.5, 1.0, v1);
+//  pcl::visualization::PointCloudColorHandlerRGBField<PointT> rgb(cloud_);
+//  denoising_viewer_->addPointCloud<PointT> (cloud_, rgb, "original", v1);
+//  denoising_viewer_->createViewPort (0.5, 0.0, 1.0, 1.0, v2);
+//  pcl::visualization::PointCloudColorHandlerRGBField<PointT> rgb2(cloud_denoised);
+//  denoising_viewer_->addPointCloud<PointT> (cloud_denoised, rgb2, "denoised", v2);
+//  denoising_viewer_->spinOnce();
+
   // Voxel grid filtering:
   PointCloudPtr cloud_filtered(new PointCloud);
   pcl::VoxelGrid<PointT> voxel_grid_filter_object;
-  voxel_grid_filter_object.setInputCloud(cloud_);
+  voxel_grid_filter_object.setInputCloud(cloud_denoised);
   voxel_grid_filter_object.setLeafSize (voxel_size_, voxel_size_, voxel_size_);
   voxel_grid_filter_object.setFilterFieldName("z");
   voxel_grid_filter_object.setFilterLimits(0.0, max_distance_);

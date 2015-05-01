@@ -206,6 +206,8 @@ configCb(Config &config, uint32_t level)
   voxel_size = config.voxel_size;
   people_detector.setVoxelSize (config.voxel_size);
 
+  people_detector.setDenoisingParameters (config.apply_denoising, config.mean_k_denoising, config.std_dev_denoising);
+
   lock_ground = config.lock_ground;
 
   max_background_frames = int(config.background_seconds * rate_value);
@@ -280,15 +282,21 @@ main (int argc, char** argv)
   nh.param("valid_points_threshold", valid_points_threshold, 0.2);
   nh.param("background_subtraction", background_subtraction, false);
   nh.param("background_resolution", background_octree_resolution, 0.3);
-  double background_seconds; // Number of seconds used to acquire the background
+  double background_seconds;      // Number of seconds used to acquire the background
   nh.param("background_seconds", background_seconds, 3.0);
   std::string update_background_topic;  // Topic where the background update message is published/read
   nh.param("update_background_topic", update_background_topic, std::string("/background_update"));
-  double heads_minimum_distance; // Minimum distance between two persons' head
+  double heads_minimum_distance;  // Minimum distance between two persons' head
   nh.param("heads_minimum_distance", heads_minimum_distance, 0.3);
   nh.param("voxel_size", voxel_size, 0.06);
-  bool read_ground_from_file;    // Flag stating if the ground should be read from file, if present
+  bool read_ground_from_file;     // Flag stating if the ground should be read from file, if present
   nh.param("read_ground_from_file", read_ground_from_file, false);
+  bool apply_denoising;           // Denoising flag. If true, a statistical filter is applied to the point cloud to remove noise
+  nh.param("apply_denoising", apply_denoising, false);
+  int mean_k_denoising;           // MeanK for denoising (the higher it is, the stronger is the filtering)
+  nh.param("mean_k_denoising", mean_k_denoising, 5);
+  double std_dev_denoising;       // Standard deviation for denoising (the lower it is, the stronger is the filtering)
+  nh.param("std_dev_denoising", std_dev_denoising, 0.3);
 
   //	Eigen::Matrix3f intrinsics_matrix;
   intrinsics_matrix << 525, 0.0, 319.5, 0.0, 525, 239.5, 0.0, 0.0, 1.0; // Kinect RGB camera intrinsics
@@ -331,6 +339,7 @@ main (int argc, char** argv)
   people_detector.setUseRGB(use_rgb);                              // set if RGB should be used or not
   people_detector.setSensorTiltCompensation(sensor_tilt_compensation);      // enable point cloud rotation correction
   people_detector.setMinimumDistanceBetweenHeads (heads_minimum_distance);  // set minimum distance between persons' head
+  people_detector.setDenoisingParameters (apply_denoising, mean_k_denoising, std_dev_denoising); // set parameters for denoising the point cloud
 
   // Set up dynamic reconfiguration
   ReconfigureServer::CallbackType f = boost::bind(&configCb, _1, _2);

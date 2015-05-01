@@ -52,6 +52,7 @@
 #include <pcl/common/transforms.h>
 #include <pcl/octree/octree.h>
 #include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/filters/statistical_outlier_removal.h>
 
 #include <open_ptrack/detection/person_classifier.h>
 
@@ -115,6 +116,16 @@ namespace open_ptrack
          */
         void
         setVoxelSize (float voxel_size);
+
+        /**
+         * \brief Set denoising parameters.
+         *
+         * \param[in] apply_denoising Denoising flag. If true, a statistical filter is applied to the point cloud to remove noise
+         * \param[in] mean_k_denoising MeanK for denoising (the higher it is, the stronger is the filtering)
+         * \param[in] std_dev_denoising Standard deviation for denoising (the lower it is, the stronger is the filtering)
+         */
+        void
+        setDenoisingParameters (bool apply_denoising, int mean_k_denoising, float std_dev_denoising);
 
         /**
          * \brief Set points maximum distance from the sensor.
@@ -387,6 +398,17 @@ namespace open_ptrack
 
         /** \brief Frame counter */
         unsigned int frame_counter_;
+
+        /** \brief Denoising flag. If true, a statistical filter is applied to the point cloud to remove noise: */
+        bool apply_denoising_;
+
+        /** \brief MeanK for denoising (the higher it is, the stronger is the filtering): */
+        int mean_k_denoising_;
+
+        /** \brief Standard deviation for denoising (the lower it is, the stronger is the filtering): */
+        float std_dev_denoising_;
+
+//        pcl::visualization::PCLVisualizer::Ptr denoising_viewer_;
 
     };
   } /* namespace detection */

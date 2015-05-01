@@ -43,4 +43,10 @@ sensor_tilt_compensation: true
 heads_minimum_distance: 0.3
 # Voxel size used to downsample the point cloud (lower: detection slower but more precise; higher: detection faster but less precise):
 voxel_size: 0.06
+# Denoising flag. If true, a statistical filter is applied to the point cloud to remove noise:
+apply_denoising: false
+# MeanK for denoising (the higher it is, the stronger is the filtering):
+mean_k_denoising: 5
+# Standard deviation for denoising (the lower it is, the stronger is the filtering):
+std_dev_denoising: 0.3
 
