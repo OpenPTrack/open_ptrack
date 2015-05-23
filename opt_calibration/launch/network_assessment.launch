@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!-- Calibration parameters -->
+  <rosparam command="load" file="$(find opt_calibration)/conf/camera_poses.yaml" />
+
+  <!-- Network parameters -->
+
+  <!-- Launching calibration -->
+  <node pkg="opt_calibration" type="network_assessment" name="network_assessment" output="screen">
+    <rosparam command="load" file="$(find opt_calibration)/conf/camera_network.yaml" />   
+    <rosparam command="load" file="$(find detection)/conf/ground_based_people_detector_kinect1.yaml" ns="kinect1" /> 
+    <rosparam command="load" file="$(find detection)/conf/ground_based_people_detector_kinect2.yaml" ns="kinect2" /> 
+    <rosparam command="load" file="$(find detection)/conf/ground_based_people_detector_sr_multicamera.yaml" ns="sr4500" /> 
+    <rosparam command="load" file="$(find detection)/conf/ground_based_people_detector_stereo_pg.yaml" ns="stereo_pg" /> 
+
+  </node>
+
+</launch>
