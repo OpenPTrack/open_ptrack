@@ -2,6 +2,8 @@
 #include <camera_info_manager/camera_info_manager.h>
 #include <open_ptrack/opt_calibration/ros_device.h>
 
+#include <pcl_conversions/pcl_conversions.h>
+
 namespace open_ptrack
 {
 namespace opt_calibration
@@ -139,7 +141,7 @@ KinectDevice::Data::Ptr KinectDevice::convertMessages(const Messages & messages)
   return data;
 }
 
-void SwissRangerDevice::cloudCallback(const sensor_msgs::PointCloud2::ConstPtr & cloud_msg)
+/*void SwissRangerDevice::cloudCallback(const sensor_msgs::PointCloud2::ConstPtr & cloud_msg)
 {
   last_messages_.cloud_msg = cloud_msg;
   setHasNewMessages(last_messages_.intensity_msg and last_messages_.camera_info_msg);
@@ -201,7 +203,7 @@ SwissRangerDevice::Data::Ptr SwissRangerDevice::convertMessages(const Messages &
   data->cloud = sr_utility.cloud();
 
   return data;
-}
+}*/
 
 } /* namespace opt_calibration */
 } /* namespace open_ptrack */
