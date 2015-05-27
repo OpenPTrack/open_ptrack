@@ -106,7 +106,7 @@ private:
 
   std::vector<PinholeRGBDevice::Ptr> pinhole_vec_;
   std::vector<KinectDevice::Ptr> kinect_vec_;
-  std::vector<SwissRangerDevice::Ptr> swiss_ranger_vec_;
+  //std::vector<SwissRangerDevice::Ptr> swiss_ranger_vec_;
 
   std::vector<Sensor::Ptr> sensor_vec_;
 

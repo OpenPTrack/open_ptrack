@@ -40,7 +40,8 @@
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
 
-#include <swissranger_camera/utility.h>
+/*#include <swissranger_camera/utility.h>*/
+#include <sensor_msgs/PointCloud2.h>
 
 #include <calibration_common/pinhole/sensor.h>
 #include <kinect/depth/sensor.h>
@@ -316,7 +317,7 @@ private:
 
 };
 
-class SwissRangerDevice : public ROSDevice
+/*class SwissRangerDevice : public ROSDevice
 {
 
 public:
@@ -434,7 +435,7 @@ private:
   Data::Ptr last_data_;
   float confidence_threshold_;
 
-};
+};*/
 
 
 } /* namespace opt_calibration */

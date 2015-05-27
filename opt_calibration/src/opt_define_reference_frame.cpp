@@ -166,12 +166,12 @@ namespace opt_calibration
       kinect_vec_.push_back(device);
       ros_device = device;
     }
-    else if (type_s == "sr4500")
+    /*else if (type_s == "sr4500")
     {
       SwissRangerDevice::Ptr device = boost::make_shared<SwissRangerDevice>(frame_id);
       swiss_ranger_vec_.push_back(device);
       ros_device = device;
-    }
+    }*/
     else
     {
       ROS_FATAL_STREAM("\"" << ss.str() << "\" parameter value not valid. Please use \"pinhole_rgb\", \"kinect\" or \"swiss_ranger\".");
@@ -196,8 +196,8 @@ bool OPTDefineReferenceFrame::initialize()
       all_messages_received = pinhole_vec_[i]->hasNewMessages();
     for (size_t i = 0; all_messages_received and i < kinect_vec_.size(); ++i)
       all_messages_received = kinect_vec_[i]->hasNewMessages();
-    for (size_t i = 0; all_messages_received and i < swiss_ranger_vec_.size(); ++i)
-      all_messages_received = swiss_ranger_vec_[i]->hasNewMessages();
+    /*for (size_t i = 0; all_messages_received and i < swiss_ranger_vec_.size(); ++i)
+      all_messages_received = swiss_ranger_vec_[i]->hasNewMessages();*/
 
     if (not all_messages_received)
       ROS_WARN_THROTTLE(5, "Not all messages received. Waiting...");
@@ -227,7 +227,7 @@ bool OPTDefineReferenceFrame::initialize()
     images_acquired_map_[device->depthFrameId()] = 0;
   }
 
-  for (size_t i = 0; i < swiss_ranger_vec_.size(); ++i) // TODO Add flags
+  /*for (size_t i = 0; i < swiss_ranger_vec_.size(); ++i) // TODO Add flags
   {
     const SwissRangerDevice::Ptr & device = swiss_ranger_vec_[i];
     calibration_->addSensor(device->intensitySensor(), true);
@@ -235,7 +235,7 @@ bool OPTDefineReferenceFrame::initialize()
     sensor_vec_.push_back(device->intensitySensor());
     sensor_vec_.push_back(device->depthSensor());
     images_acquired_map_[device->frameId()] = 0;
-  }
+  }*/
 
   return true;
 }
