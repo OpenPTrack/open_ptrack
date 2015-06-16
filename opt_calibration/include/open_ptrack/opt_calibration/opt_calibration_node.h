@@ -119,6 +119,8 @@ private:
 
   std::vector<Sensor::Ptr> sensor_vec_;
 
+  std::map<std::string, std::pair<Pose, bool> > camera_poses_; ///< @brief Map associating camera pose and lock variable to each frame_id.
+
   int num_sensors_;                                         ///< @brief Number of sensors connected to the network.
 
   OPTCalibration::Ptr calibration_;                         ///< @brief Calibration object.

@@ -41,6 +41,8 @@
 import roslib; roslib.load_manifest('opt_calibration')
 import rospy
 import rospkg
+import os
+import os.path
 from opt_msgs.srv import *
 
 class CalibrationInitializer :
@@ -76,8 +78,12 @@ class CalibrationInitializer :
     file.write('  <arg name="lock_world_frame" default="false" />\n')
     file.write('  <group if="$(arg lock_world_frame)">\n')
     file.write('    <arg name="fixed_sensor_id" />\n')
-    file.write('    <rosparam command="load" file="$(find opt_calibration)/conf/camera_poses.yaml" />\n')
+    #file.write('    <rosparam command="load" file="$(find opt_calibration)/conf/camera_poses.yaml" />\n')
     file.write('  </group>\n\n')
+    
+    rospack = rospkg.RosPack()
+    if os.path.isfile(rospack.get_path('opt_calibration') + "/conf/camera_poses.yaml"):
+      file.write('  <rosparam command="load" file="$(find opt_calibration)/conf/camera_poses.yaml" />\n\n')
   
     # Network parameters
     file.write('  <!-- Network parameters -->\n')
@@ -128,6 +134,10 @@ class CalibrationInitializer :
     index = 0
     for sensor in self.sensor_list:
       file.write('    <param name="sensor_' + str(index) + '/name"         value="/$(arg sensor_' + str(index) + '_name)" />\n')
+      if 'lock' in sensor:
+		file.write('    <param name="sensor_' + str(index) + '/lock"         value="' + str(sensor['lock']) + '" />\n')
+      #else:
+	  #	file.write('    <param name="sensor_' + str(index) + '/lock"         value="False" />\n')
       if sensor['type'] == 'sr4500':
         file.write('    <param name="sensor_' + str(index) + '/type"         value="pinhole_rgb" />\n')
         file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/$(arg sensor_' + str(index) + '_name)/intensity/image_resized" />\n')
