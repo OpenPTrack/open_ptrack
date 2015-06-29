@@ -71,6 +71,14 @@ void OPTCalibration::addSensor(const cb::PinholeSensor::Ptr & sensor,
   TreeNode::Ptr node = boost::make_shared<TreeNode>(sensor, sensor_vec_.size() - 1, TreeNode::INTENSITY);
   node_map_[sensor] = node;
   node_vec_.push_back(node);
+
+  if (not estimate_pose)
+  {
+    node->setLevel(0);
+    ROS_INFO_STREAM(node->sensor()->frameId() << " added to the tree.");
+    tree_initialized_ = true;
+  }
+
   node->setEstimatePose(estimate_pose);
 }
 
@@ -721,7 +729,6 @@ void OPTCalibration::optimize()
     cb::AngleAxis rotation = cb::AngleAxis(checkerboard.pose().linear());
     cb_data.row(i).head<3>() = rotation.angle() * rotation.axis();
     cb_data.row(i).tail<3>() = checkerboard.pose().translation();
-
   }
 
 //  ROS_INFO("Before optimization:");
@@ -843,6 +850,16 @@ void OPTCalibration::optimize()
           //ROS_FATAL("FATAL");
         }
       }
+    }
+  }
+
+  for (size_t i = 0; i < node_vec_.size(); ++i)
+  {
+    const TreeNode & sensor_node = *node_vec_[i];
+    if (not sensor_node.estimatePose())
+    {
+      problem.SetParameterBlockConstant(sensor_data.row(sensor_node.id()).data());
+      ROS_INFO_STREAM(sensor_node.sensor()->frameId() << " pose is kept CONSTANT during optimization.");
     }
   }
 

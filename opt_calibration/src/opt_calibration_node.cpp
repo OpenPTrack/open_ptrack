@@ -270,7 +270,17 @@ bool OPTCalibrationNode::initialize()
   for (size_t i = 0; i < pinhole_vec_.size(); ++i)
   {
     const PinholeRGBDevice::Ptr & device = pinhole_vec_[i];
-    calibration_->addSensor(device->sensor(), true);
+    const std::pair<Pose, bool> & lock_pair = camera_poses_.at(device->sensor()->frameId());
+    if (lock_pair.second)
+    {
+      device->sensor()->transform(lock_pair.first);
+      device->sensor()->setParent(calibration_->world());
+      calibration_->addSensor(device->sensor(), false);
+    }
+    else
+    {
+      calibration_->addSensor(device->sensor(), true);
+    }
     sensor_vec_.push_back(device->sensor());
     images_acquired_map_[device->frameId()] = 0;
     status_msg_.sensor_ids.push_back(device->frameId());
