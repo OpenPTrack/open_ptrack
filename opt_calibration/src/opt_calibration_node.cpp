@@ -165,6 +165,9 @@ OPTCalibrationNode::OPTCalibrationNode(const ros::NodeHandle & node_handle)
       node_handle_.getParam(pose_s + "/rotation/y", q.y());
       node_handle_.getParam(pose_s + "/rotation/z", q.z());
       node_handle_.getParam(pose_s + "/rotation/w", q.w());
+
+      ROS_INFO_STREAM("Camera " << frame_id.c_str() << " is locked!");
+      world_computation_ = FIRST_SENSOR;
     }
     else
     {

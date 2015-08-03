@@ -74,7 +74,7 @@ void OPTCalibration::addSensor(const cb::PinholeSensor::Ptr & sensor,
 
   if (not estimate_pose)
   {
-    node->setLevel(0);
+    node->setLevel(1);
     ROS_INFO_STREAM(node->sensor()->frameId() << " added to the tree.");
     tree_initialized_ = true;
   }
@@ -856,10 +856,14 @@ void OPTCalibration::optimize()
   for (size_t i = 0; i < node_vec_.size(); ++i)
   {
     const TreeNode & sensor_node = *node_vec_[i];
-    if (not sensor_node.estimatePose())
+    if (not sensor_node.estimatePose() and problem.HasParameterBlock(sensor_data.row(sensor_node.id()).data()))
     {
       problem.SetParameterBlockConstant(sensor_data.row(sensor_node.id()).data());
       ROS_INFO_STREAM(sensor_node.sensor()->frameId() << " pose is kept CONSTANT during optimization.");
+    }
+    else if (sensor_node.estimatePose())
+    {
+      ROS_INFO_STREAM(sensor_node.sensor()->frameId() << " pose is VARIABLE during optimization.");
     }
   }
 
