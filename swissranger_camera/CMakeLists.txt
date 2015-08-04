@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(swissranger_camera)
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
+IF(EXISTS "/usr/lib/libmesasr.so")
+	set(SWISSRANGER_ENABLED 1)
+ELSE()
+	set(SWISSRANGER_ENABLED 0)
+ENDIF()
+LIST(APPEND CMAKE_CXXFLAGS "-DSWISSRANGER_ENABLED")
 find_package(catkin REQUIRED COMPONENTS cmake_modules roscpp tf camera_info_manager image_transport dynamic_reconfigure driver_base sensor_msgs cv_bridge)
 
 find_package(OpenCV REQUIRED)
@@ -33,12 +39,13 @@ catkin_package(
    CATKIN_DEPENDS roscpp tf camera_info_manager image_transport dynamic_reconfigure driver_base
 )
 
-add_executable(${PROJECT_NAME} src/sr.cpp src/dev_sr.cpp include/sr.h)
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} mesasr)
+IF(SWISSRANGER_ENABLED)
+	add_executable(${PROJECT_NAME} src/sr.cpp src/dev_sr.cpp include/sr.h)
+	target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} mesasr)
 
-add_library(swissranger_utility src/swissranger_camera/utility.cpp include/swissranger_camera/utility.h)
-target_link_libraries(swissranger_utility ${catkin_LIBRARIES})
+	add_library(swissranger_utility src/swissranger_camera/utility.cpp include/swissranger_camera/utility.h)
+	target_link_libraries(swissranger_utility ${catkin_LIBRARIES})
 
-add_executable(image_publisher_sr apps/main_image_publisher_sr.cpp)
-target_link_libraries(image_publisher_sr swissranger_utility ${catkin_LIBRARIES})
-
+	add_executable(image_publisher_sr apps/main_image_publisher_sr.cpp)
+	target_link_libraries(image_publisher_sr swissranger_utility ${catkin_LIBRARIES})
+ENDIF(SWISSRANGER_ENABLED)
