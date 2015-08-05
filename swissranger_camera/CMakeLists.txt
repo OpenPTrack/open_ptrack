@@ -38,13 +38,16 @@ catkin_package(
    LIBRARIES swissranger_utility
    CATKIN_DEPENDS roscpp tf camera_info_manager image_transport dynamic_reconfigure driver_base
 )
+add_library(swissranger_utility src/swissranger_camera/utility.cpp
+	include/swissranger_camera/utility.h)
+target_link_libraries(swissranger_utility ${catkin_LIBRARIES})
 
 IF(SWISSRANGER_ENABLED)
 	add_executable(${PROJECT_NAME} src/sr.cpp src/dev_sr.cpp include/sr.h)
 	target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} mesasr)
 
-	add_library(swissranger_utility src/swissranger_camera/utility.cpp include/swissranger_camera/utility.h)
-	target_link_libraries(swissranger_utility ${catkin_LIBRARIES})
+	#add_library(swissranger_utility src/swissranger_camera/utility.cpp include/swissranger_camera/utility.h)
+	#target_link_libraries(swissranger_utility ${catkin_LIBRARIES})
 
 	add_executable(image_publisher_sr apps/main_image_publisher_sr.cpp)
 	target_link_libraries(image_publisher_sr swissranger_utility ${catkin_LIBRARIES})
