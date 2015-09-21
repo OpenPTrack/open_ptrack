@@ -98,8 +98,9 @@ trackingCallback(const opt_msgs::TrackArray::ConstPtr& tracking_msg)
 //  std::cout << "String sent: " << json_string << std::endl;
 
   /// Copy string to message buffer:
-  char buf[udp_buffer_length];
-  for (unsigned int i = 0; i < udp_buffer_length; i++)
+  udp_data.si_num_byte_ = json_string.length()+1;
+  char buf[udp_data.si_num_byte_];
+  for (unsigned int i = 0; i < udp_data.si_num_byte_; i++)
   {
     buf[i] = 0;
   }
@@ -147,8 +148,10 @@ aliveIDsCallback(const opt_msgs::IDArray::ConstPtr& alive_ids_msg)
     //  std::cout << "String sent: " << json_string << std::endl;
 
     /// Copy string to message buffer:
-    char buf[udp_buffer_length];
-    for (unsigned int i = 0; i < udp_buffer_length; i++)
+    udp_data.si_num_byte_ = json_string.length()+1;
+    char buf[udp_data.si_num_byte_];
+    //for (unsigned int i = 0; i < udp_data.si_num_byte_; i++)
+    for (unsigned int i = 0; i < udp_data.si_num_byte_; i++)
     {
       buf[i] = 0;
     }
