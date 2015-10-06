@@ -5,7 +5,7 @@ http://openptrack.org/
 
 Please see the [wiki](https://github.com/OpenPTrack/open_ptrack/wiki) for installation instructions. 
 
-OpenPTrack is an open source project launched in 2013 to create a scalable, multi-camera solution for person tracking. It enables many people to be tracked over large areas in real time.It is designed for applications in education, arts, and culture.
+OpenPTrack is an open source project launched in 2013 to create a scalable, multi-camera solution for person tracking. It enables many people to be tracked over large areas in real time. It is designed both for applications in education, arts, and culture and for service and industrial robotics.
 
 Our objective is to enable “creative coders” to create body-based interfaces for large groups of people—for classrooms, art projects and beyond.
 
