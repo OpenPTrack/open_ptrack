@@ -156,7 +156,7 @@ If Protonect works, you can install the libraries in the system (always inside t
 
 
 
-INSTALL IAI_KINECT2 (currently not available)
+INSTALL IAI_KINECT2
 
 	cd /home/ubuntu/workspace/ros/catkin/src
 	git clone https://github.com/OpenPTrack/iai_kinect2
@@ -179,7 +179,7 @@ You should see 20-21 frame per second (which is much more than what the original
 
 
 
-INSTALL OPEN_PTRACK
+INSTALL OPEN_PTRACK (currently not available)
 
 	cd /home/ubuntu/workspace/ros/catkin/src
 	git clone https://github.com/OpenPTrack/open_ptrack
