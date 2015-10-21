@@ -111,7 +111,7 @@ You can done this using the scripts in the libfreenect2 repository. There are se
 *check Protonect*
 Kinect v2 connect instructions:
 1) Before connecting the Kinect, open a terminal and launch the following command:
-	sudo MaxPerformance
+	sudo MaxPerformance &> /dev/null
 Don’t care of the output and invoke this command:
 	sudo Status
 
@@ -167,6 +167,7 @@ INSTALL IAI_KINECT2
 	CatkinJ1
 
 You can check the installation by running:
+	sudo MaxPerformance &> /dev/null
 	roslaunch kinect2_bridge kinect2_bridge_ir.launch
 
 You should see output like these lines (after some initial messages):
