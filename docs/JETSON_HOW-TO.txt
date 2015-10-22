@@ -54,7 +54,7 @@ INSTALL&CONFIGURE ROS BASE SYSTEM & POINT CLOUD LIBRARY
 	sudo add-apt-repository -y ppa:v-launchpad-jochen-sprickerhof-de/pcl
 	sudo apt-get update
 	sudo apt-get install -y libpcl-1.7-all
-	sudo apt-get install -y ros-indigo-compressed-depth-image-transport ros-indigo-compressed-image-transport ros-indigo-pcl-ros
+	sudo apt-get install -y ros-indigo-compressed-depth-image-transport ros-indigo-compressed-image-transport ros-indigo-pcl-ros ros-indigo-camera-info-manager ros-indigo-driver-base ros-indigo-calibration
 	sudo rosdep init
 	rosdep update
 	echo "source /opt/ros/indigo/setup.bash" >> ~/.bashrc
@@ -186,6 +186,12 @@ INSTALL OPEN_PTRACK (currently not available)
 	git clone https://github.com/OpenPTrack/open_ptrack
 	cd open_ptrack
 	git checkout jetson-dev
+	cd scripts
+	chmod +x *
+	./calibration_toolkit_install.sh
+	catkin_make --pkg calibration_msgs
+	catkin_make --pkg opt_msgs
+	catkin_make
 	cd ~/workspace/ros/catkin/src/open_ptrack/scripts 
 	chmod +x *.sh 
 	./calibration_toolkit_install.sh

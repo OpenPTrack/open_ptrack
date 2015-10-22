@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(bayes)
-set(CMAKE_BUILD_TYPE RelWithDebInfo)
+set(CMAKE_BUILD_TYPE Release)#RelWithDebInfo)
 find_package(catkin REQUIRED COMPONENTS roscpp )
 
 link_libraries(/usr/lib/liblapack.so.3gf)
