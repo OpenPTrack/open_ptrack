@@ -189,13 +189,7 @@ INSTALL OPEN_PTRACK (currently not available)
 	cd scripts
 	chmod +x *
 	./calibration_toolkit_install.sh
+	cd /home/ubuntu/workspace/ros/catkin/
 	catkin_make --pkg calibration_msgs
 	catkin_make --pkg opt_msgs
-	catkin_make
-	cd ~/workspace/ros/catkin/src/open_ptrack/scripts 
-	chmod +x *.sh 
-	./calibration_toolkit_install.sh
-	cd ~/workspace/ros/catkin 
-	catkin_make --pkg calibration_msgs 
-	catkin_make --pkg opt_msgs 
-	catkin_make --force-cmake
+	CatkinJ1
