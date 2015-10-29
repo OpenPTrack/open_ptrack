@@ -180,7 +180,7 @@ You should see 20-21 frame per second (which is much more than what the original
 
 
 
-INSTALL OPEN_PTRACK (currently not available)
+INSTALL OPEN_PTRACK
 
 	cd /home/ubuntu/workspace/ros/catkin/src
 	git clone https://github.com/OpenPTrack/open_ptrack
