@@ -153,12 +153,9 @@ computeBackgroundCloud (int frames, float voxel_size, std::string frame_id, ros:
   background_cloud->points.clear();
   for (unsigned int i = 0; i < frames; i++)
   {
-    // Voxel grid filtering:
+    // Point cloud pre-processing (downsampling and filtering):
     PointCloudT::Ptr cloud_filtered(new PointCloudT);
-    pcl::VoxelGrid<PointT> voxel_grid_filter_object;
-    voxel_grid_filter_object.setInputCloud(cloud);
-    voxel_grid_filter_object.setLeafSize (voxel_size, voxel_size, voxel_size);
-    voxel_grid_filter_object.filter (*cloud_filtered);
+    cloud_filtered = people_detector.preprocessCloud (cloud);
 
     *background_cloud += *cloud_filtered;
     ros::spinOnce();
@@ -265,6 +262,7 @@ main (int argc, char** argv)
   nh.param("minimum_person_height", min_height, 1.3);
   double max_height;
   nh.param("maximum_person_height", max_height, 2.3);
+  // Point cloud sampling factor:
   int sampling_factor;
   nh.param("sampling_factor", sampling_factor, 1);
   std::string pointcloud_topic;
@@ -291,11 +289,14 @@ main (int argc, char** argv)
   nh.param("voxel_size", voxel_size, 0.06);
   bool read_ground_from_file;     // Flag stating if the ground should be read from file, if present
   nh.param("read_ground_from_file", read_ground_from_file, false);
-  bool apply_denoising;           // Denoising flag. If true, a statistical filter is applied to the point cloud to remove noise
+  // Denoising flag. If true, a statistical filter is applied to the point cloud to remove noise
+  bool apply_denoising;
   nh.param("apply_denoising", apply_denoising, false);
-  int mean_k_denoising;           // MeanK for denoising (the higher it is, the stronger is the filtering)
+  // MeanK for denoising (the higher it is, the stronger is the filtering)
+  int mean_k_denoising;
   nh.param("mean_k_denoising", mean_k_denoising, 5);
-  double std_dev_denoising;       // Standard deviation for denoising (the lower it is, the stronger is the filtering)
+  // Standard deviation for denoising (the lower it is, the stronger is the filtering)
+  double std_dev_denoising;
   nh.param("std_dev_denoising", std_dev_denoising, 0.3);
 
   //	Eigen::Matrix3f intrinsics_matrix;

@@ -150,7 +150,6 @@ aliveIDsCallback(const opt_msgs::IDArray::ConstPtr& alive_ids_msg)
     /// Copy string to message buffer:
     udp_data.si_num_byte_ = json_string.length()+1;
     char buf[udp_data.si_num_byte_];
-    //for (unsigned int i = 0; i < udp_data.si_num_byte_; i++)
     for (unsigned int i = 0; i < udp_data.si_num_byte_; i++)
     {
       buf[i] = 0;
