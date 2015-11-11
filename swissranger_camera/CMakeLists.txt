@@ -44,6 +44,7 @@ target_link_libraries(swissranger_utility ${catkin_LIBRARIES})
 
 IF(SWISSRANGER_ENABLED)
 	add_executable(${PROJECT_NAME} src/sr.cpp src/dev_sr.cpp include/sr.h)
+	add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
 	target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} mesasr)
 
 	#add_library(swissranger_utility src/swissranger_camera/utility.cpp include/swissranger_camera/utility.h)
