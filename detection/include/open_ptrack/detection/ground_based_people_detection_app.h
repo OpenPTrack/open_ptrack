@@ -310,6 +310,16 @@ namespace open_ptrack
         rotateGround (Eigen::VectorXf ground_coeffs, Eigen::Affine3f transform);
 
         /**
+         * \brief Perform pre-processing operations on the input cloud (downsampling, filtering).
+         *
+         * \param[in] input_cloud Input cloud.
+         *
+         * \return The cloud after pre-processing.
+         */
+        PointCloudPtr
+        preprocessCloud (PointCloudPtr& input_cloud);
+
+        /**
          * \brief Perform people detection on the input data and return people clusters information.
          *
          * \param[out] clusters Vector of PersonCluster.
