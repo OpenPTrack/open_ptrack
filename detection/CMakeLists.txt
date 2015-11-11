@@ -44,6 +44,7 @@ catkin_package(
 
 
 add_library(${PROJECT_NAME} src/detection_source.cpp src/detection.cpp)
+add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBS})
 
 add_executable(ground_based_people_detector apps/ground_based_people_detector_node.cpp)
