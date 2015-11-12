@@ -14,7 +14,7 @@ valid_points_threshold: 0.3
 ## Background subtraction ##
 ############################
 # Flag enabling/disabling background subtraction:
-background_subtraction: false
+background_subtraction: true
 # Resolution of the octree representing the background:
 background_resolution: 0.3
 # Seconds to use to learn the background:
