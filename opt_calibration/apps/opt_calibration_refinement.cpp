@@ -322,6 +322,11 @@ detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
       // If at least one detection has been received:
       if(detections_vector.size() > 0)
       {
+        if (detections_vector.size() > 1)
+        {
+          ROS_ERROR("More than one person detected!! Only one person has to be present during the refinement procedure. Try to use background subtraction.");
+        }
+
         // Create message for showing detection positions in RViz:
         if (output_detection_results)
         {
