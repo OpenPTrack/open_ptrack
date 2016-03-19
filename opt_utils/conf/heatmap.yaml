@@ -1,0 +1,10 @@
+########################
+## Heatmap parameters ##
+########################
+# Max size of the heatmap (in meters):
+map_real_size: 20.0
+# Max size of the heatmap (in pixels):
+map_pixel_size: 400
+# Heatmap publishing frame rate:
+rate: 30.0
+

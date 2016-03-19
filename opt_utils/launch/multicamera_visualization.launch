@@ -1,6 +1,9 @@
 <launch>
 
+  <!-- Heatmap builder -->
+  <include file="$(find opt_utils)/launch/heatmap_builder.launch"/>
+	
   <!-- ROS visualizer -->
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find tracking)/conf/multicamera_tracking.rviz" />  
-
+  
 </launch>

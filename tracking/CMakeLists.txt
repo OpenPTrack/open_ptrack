@@ -37,3 +37,4 @@ target_link_libraries(tracker ${PROJECT_NAME} ${catkin_LIBRARIES})
 add_executable(moving_average_filter apps/moving_average_filter_node.cpp)
 add_dependencies(moving_average_filter ${PROJECT_NAME}_gencfg)
 target_link_libraries(moving_average_filter ${PROJECT_NAME} ${catkin_LIBRARIES})
+

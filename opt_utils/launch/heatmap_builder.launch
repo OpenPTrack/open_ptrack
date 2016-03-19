@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<launch>
+  
+  <!-- Build a (point cloud) heatmap from tracking information -->
+  <node pkg="opt_utils" type="heatmap_builder" name="heatmap_builder" output="screen">
+    <remap from="~input"         to="/tracker/tracks_smoothed" />
+    <remap from="~heatmap"       to="/tracker/heatmap" />
+
+    <rosparam command="load" file="$(find opt_utils)/conf/heatmap.yaml" />
+  </node>
+
+</launch>
