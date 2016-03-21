@@ -18,7 +18,7 @@ background_subtraction: true
 # Resolution of the octree representing the background:
 background_resolution: 0.3
 # Seconds to use to learn the background:
-background_seconds: 3.0
+background_seconds: 0.4 
 
 ##############################################
 ## Ground based people detection parameters ##
