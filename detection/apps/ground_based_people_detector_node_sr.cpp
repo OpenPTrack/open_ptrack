@@ -406,6 +406,8 @@ main (int argc, char** argv)
 	nh.param("voxel_size", voxel_size, 0.06);
   bool read_ground_from_file;    // Flag stating if the ground should be read from file, if present
   nh.param("read_ground_from_file", read_ground_from_file, false);
+  bool remote_ground_selection;   // Flag enabling manual ground selection via ssh:
+  nh.param("remote_ground_selection", remote_ground_selection, false);
 
 //	Eigen::Matrix3f intrinsics_matrix;
 	//horizontal field of view = 2 atan(0.5 width / focallength)
@@ -475,7 +477,7 @@ main (int argc, char** argv)
 	reconfigure_server_->setCallback(f);
 
 	// Loop until a valid point cloud is found
-	open_ptrack::detection::GroundplaneEstimation<PointT> ground_estimator(ground_estimation_mode);
+	open_ptrack::detection::GroundplaneEstimation<PointT> ground_estimator(ground_estimation_mode, remote_ground_selection);
 	bool first_valid_frame = false;
 	while (!first_valid_frame)
 	{
