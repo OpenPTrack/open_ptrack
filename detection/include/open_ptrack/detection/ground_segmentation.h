@@ -32,7 +32,7 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * Author: Matteo Munaro [matteo.munaro@dei.unipd.it], Nicola Ristè
+ * Author: Matteo Munaro [matteo.munaro@dei.unipd.it], Nicola Rist��
  *
  */
 
@@ -73,7 +73,7 @@ namespace open_ptrack
         typedef boost::shared_ptr<const PointCloud> PointCloudConstPtr;
 
         /** \brief Constructor. */
-        GroundplaneEstimation (int ground_estimation_mode);
+        GroundplaneEstimation (int ground_estimation_mode, bool remote_ground_selection);
 
         /** \brief Destructor. */
         virtual ~GroundplaneEstimation ();
@@ -185,6 +185,12 @@ namespace open_ptrack
         pp_callback (const pcl::visualization::PointPickingEvent& event, void* args);
 
         /**
+         * \brief Mouse clicking callback on OpenCV images.
+         */
+        static void
+        click_cb (int event, int x, int y, int flags, void* args);
+
+        /**
          * \brief States which planar region is lower.
          *
          * \param[in] region1 First planar region.
@@ -211,6 +217,9 @@ namespace open_ptrack
         /** \brief Flag stating if ground should be estimated manually (0), semi-automatically (1) or automatically with validation (2) or fully automatically (3) */
         int ground_estimation_mode_;
 
+        /** \brief Flag enabling manual ground selection via ssh */
+        bool remote_ground_selection_;
+
         /** \brief pointer to the input cloud */
         PointCloudPtr cloud_;
 
@@ -224,6 +233,12 @@ namespace open_ptrack
         struct callback_args_color{
             pcl::PointCloud<pcl::PointXYZRGB>::Ptr clicked_points_3d;
             pcl::visualization::PCLVisualizer* viewerPtr;
+        };
+
+        /** \brief structure used to pass arguments to the callback function associated to an image */
+        struct callback_args_image{
+            std::vector<cv::Point> clicked_points_2d;
+            bool selection_finished;
         };
     };
   } /* namespace detection */
