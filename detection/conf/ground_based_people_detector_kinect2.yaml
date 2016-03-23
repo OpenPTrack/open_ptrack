@@ -4,7 +4,7 @@
 # Ground estimation mode - 0:manual, 1:semi-auto, 2:auto with user validation, 3:fully automatic (default 0) 
 ground_estimation_mode: 3
 # Flag enabling manual ground selection via ssh:
-remote_ground_selection: false
+remote_ground_selection: true
 # Flag stating if the ground should be read from file, if present:
 read_ground_from_file: false
 # Flag that locks the ground plane update:
