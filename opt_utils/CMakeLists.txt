@@ -46,3 +46,6 @@ target_link_libraries(udp_listener ${catkin_LIBRARIES})
 add_executable(heatmap_builder apps/heatmap_builder.cpp)
 add_dependencies(heatmap_builder ${PROJECT_NAME}_gencfg)
 target_link_libraries(heatmap_builder ${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBS} ${PCL_LIBRARIES})
+
+add_executable(cloud_refinement apps/cloud_refinement.cpp)
+target_link_libraries(cloud_refinement ${catkin_LIBRARIES} ${PCL_LIBRARIES})
