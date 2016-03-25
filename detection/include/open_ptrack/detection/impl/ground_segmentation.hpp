@@ -280,16 +280,20 @@ open_ptrack::detection::GroundplaneEstimation<PointT>::compute ()
     }
     else
     {
-      cv::Mat curr_image (cloud_xyzrgb->height, cloud_xyzrgb->width, CV_8UC3);
+      cv::Mat curr_image (cloud_xyzrgb->height, cloud_xyzrgb->width, CV_8UC1);
       for (int i=0;i<cloud_->height;i++)
       {
         for (int j=0;j<cloud_->width;j++)
         {
-          curr_image.at<cv::Vec3b>(i,j)[2] = cloud_->at(j,i).r;
-          curr_image.at<cv::Vec3b>(i,j)[1] = cloud_->at(j,i).g;
-          curr_image.at<cv::Vec3b>(i,j)[0] = cloud_->at(j,i).b;
+          curr_image.at<uchar>(i,j) = cloud_->at(j,i).r;
         }
       }
+
+      // Image equalization
+      cv::equalizeHist(curr_image, curr_image);
+
+      // Image conversion
+      cv::cvtColor(curr_image, curr_image, CV_GRAY2BGR);
 
       // Add point picking callback to viewer:
       std::vector<cv::Point> clicked_points_2d;
@@ -299,7 +303,7 @@ open_ptrack::detection::GroundplaneEstimation<PointT>::compute ()
       cb_args.selection_finished = selection_finished;
       cv::namedWindow("Pick 3 points");
       cv::setMouseCallback("Pick 3 points", click_cb, (void*)&cb_args);
-
+      cv::startWindowThread();
       // Select three points from the image:
       while(!cb_args.selection_finished)
       {
@@ -311,6 +315,9 @@ open_ptrack::detection::GroundplaneEstimation<PointT>::compute ()
         cv::imshow("Pick 3 points", curr_image);
         cv::waitKey(1);
       }
+      cv::destroyWindow("Pick 3 points");
+      cv::waitKey(1); // If the window does not have focus its closure 
+                      // is not guaranteed
 
       // Select the corresponding 3D points from the point cloud:
       for(unsigned int i = 0; i < cb_args.clicked_points_2d.size(); i++)
