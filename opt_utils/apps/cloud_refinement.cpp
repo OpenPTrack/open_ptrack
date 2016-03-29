@@ -41,6 +41,9 @@
 // ROS includes:
 #include <ros/ros.h>
 #include <ros/package.h>
+#include <tf/tf.h>
+#include <tf/transform_listener.h>
+#include <tf_conversions/tf_eigen.h>
 
 // PCL includes:
 #include <pcl/common/transforms.h>
@@ -48,34 +51,24 @@
 #include <pcl/point_types.h>
 
 #include <fstream>
+#include <string>
 
 typedef pcl::PointXYZRGB PointT;
 typedef pcl::PointCloud<PointT> PointCloudT;
 
 // Refinement matrix:
-Eigen::Matrix4d registration_matrix;
+Eigen::Affine3d registration_matrix;
+bool registration_matrix_read = false;
 // Output cloud:
 PointCloudT::Ptr refined_cloud(new PointCloudT);
 // Output publisher:
 ros::Publisher refined_cloud_pub;
+tf::TransformListener* tf_listener;
 
-void
-cloud_cb (const PointCloudT::ConstPtr& callback_cloud)
-{
-  *refined_cloud = *callback_cloud;
-  Eigen::Matrix4d trans = registration_matrix.inverse();
-  pcl::transformPointCloud (*refined_cloud, *refined_cloud, trans);
-  refined_cloud->header = callback_cloud->header;
-  //refined_cloud->header.stamp = ros::Time::now();
-  ros::Time curr_time = ros::Time::now();
-  refined_cloud->header.stamp = curr_time.toNSec() / 1000;
-  refined_cloud_pub.publish(*refined_cloud);
-}
-
-Eigen::Matrix4d
+Eigen::Affine3d
 readMatrixFromFile (std::string filename)
 {
-  Eigen::Matrix4d matrix;
+  Eigen::Affine3d matrix;
   std::string line;
   std::ifstream myfile (filename.c_str());
   if (myfile.is_open())
@@ -84,15 +77,70 @@ readMatrixFromFile (std::string filename)
     std::string number;
     while (myfile >> number)
     {
-      matrix(int(k/4), int(k%4)) = std::atof(number.c_str());
+      if (int(k/4) < matrix.Rows)
+      {
+        matrix(int(k/4), int(k%4)) = std::atof(number.c_str());
+      }
       k++;
     }
     myfile.close();
   }
 
-  std::cout << matrix << std::endl;
+  std::cout << matrix.matrix() << std::endl;
 
   return matrix;
+}
+
+void
+cloud_cb (const PointCloudT::ConstPtr& callback_cloud)
+{
+  if (not registration_matrix_read)
+  {
+    // Read registration matrix from calibration refinement:
+    std::string camera_name = callback_cloud->header.frame_id;
+    if (strcmp(camera_name.substr(0,1).c_str(), "/") == 0)  // Remove bar at the beginning
+    {
+      camera_name = camera_name.substr(1, camera_name.size() - 1);
+    }
+    std::cout << "Reading refinement matrix for " << camera_name << std::endl;
+    std::string refinement_filename = ros::package::getPath("opt_calibration") + "/conf/registration_" + camera_name + ".txt";
+    std::ifstream f(refinement_filename.c_str());
+    if (f.good()) // if the file exists
+    {
+      f.close();
+      registration_matrix = readMatrixFromFile (refinement_filename);
+    }
+    else  // if the file does not exist
+    {
+      // insert the identity matrix
+      std::cout << "Refinement file not found! Not doing refinement for this sensor." << std::endl;
+      registration_matrix = Eigen::Affine3d::Identity();
+    }
+
+    registration_matrix_read = true;
+  }
+
+  // Copy cloud data:
+  *refined_cloud = *callback_cloud;
+
+  tf::StampedTransform extrinsic_transform;
+  Eigen::Affine3d extrinsic_transform_matrix;
+  tf_listener->waitForTransform("world", callback_cloud->header.frame_id, ros::Time(0), ros::Duration(0.5));
+  tf_listener->lookupTransform("world", callback_cloud->header.frame_id, ros::Time(0), extrinsic_transform);
+  tf::transformTFToEigen(extrinsic_transform, extrinsic_transform_matrix);
+  Eigen::Affine3d final_transform = registration_matrix * extrinsic_transform_matrix;
+
+  pcl::transformPointCloud (*refined_cloud, *refined_cloud, final_transform);
+//  for (unsigned int i = 0; i < refined_cloud->size(); i++)
+//  {
+//    refined_cloud->points[i] = pcl::transformPoint(refined_cloud->points[i], final_transform);
+//  }
+
+  refined_cloud->header = callback_cloud->header;
+  ros::Time curr_time = ros::Time::now();
+  refined_cloud->header.stamp = curr_time.toNSec() / 1000;
+  refined_cloud->header.frame_id = "world";
+  refined_cloud_pub.publish(*refined_cloud);
 }
 
 int
@@ -106,27 +154,11 @@ main (int argc, char** argv)
   nh.param("input_topic", input_topic, std::string("input"));
   std::string output_topic;
   nh.param("output_topic", output_topic, std::string("output"));
-  std::string refinement_file;
-  nh.param("refinement_file", refinement_file, std::string("registration_kinect2_head_ir_optical_frame.txt"));
   // Main loop rate:
   double rate_value;
   nh.param("rate", rate_value, 30.0);
 
-  // Load refinement matrix:
-  std::cout << "Reading refinement matrix in " << refinement_file << std::endl;
-  std::string refinement_filename = ros::package::getPath("opt_calibration") + "/conf/" + refinement_file + ".txt";
-  std::ifstream f(refinement_filename.c_str());
-  if (f.good()) // if the file exists
-  {
-    f.close();
-    registration_matrix = readMatrixFromFile (refinement_filename);
-  }
-  else  // if the file does not exist
-  {
-    // insert the identity matrix
-    std::cout << "Refinement file not found! Not doing refinement for this sensor." << std::endl;
-    registration_matrix = Eigen::Matrix4d::Identity();
-  }
+  tf_listener = new tf::TransformListener();
 
   // Subscribers:
   ros::Subscriber sub = nh.subscribe(input_topic, 1, cloud_cb);

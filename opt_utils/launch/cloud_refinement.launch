@@ -7,7 +7,6 @@
   <node pkg="opt_utils" type="cloud_refinement" name="cloud_refinement_$(arg sensor_name)" output="screen">
     <remap from="~input"        		to="/$(arg sensor_name)/depth_ir/points" />
     <remap from="~output"       		to="/$(arg sensor_name)/depth_ir/points_refined" />
-    <param name="refinement_file" type="string" value="registration_$(arg sensor_name)_rgb_optical_frame" />
   </node>
 
 </launch>
