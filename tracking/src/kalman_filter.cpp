@@ -127,6 +127,9 @@ namespace open_ptrack
       this->position_variance_ = orig.position_variance_;
       this->depth_multiplier_ = orig.depth_multiplier_;
       this->acceleration_variance_ = orig.acceleration_variance_;
+      delete this->predict_model_;
+      delete this->observe_model_;
+      delete this->filter_;
       this->predict_model_ = new PredictModel(dt_, acceleration_variance_);
       this->observe_model_ = new ObserveModel(position_variance_, output_dimension_);
       this->filter_ = new Bayesian_filter::Unscented_scheme(4, 2);

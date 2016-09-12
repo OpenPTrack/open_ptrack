@@ -385,6 +385,23 @@ namespace open_ptrack
         }
       }
 
+      // Releasing the memory
+      for(int r = 0; r < max_dim; ++r)
+      {
+        delete []matrix[r];
+      }
+      delete []matrix;
+      delete []rowCover;
+      delete []colCover;
+      for (int i = 0; i < rows; i++) {
+        delete []m[i];
+      }
+      delete []m;
+      for (int i = 0; i < rows*cols; i++) {
+        delete []path[i];
+      }
+      delete []path;
+
       return matrix_out;
     }
 
