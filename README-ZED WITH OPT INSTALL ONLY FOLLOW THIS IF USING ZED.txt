@@ -83,9 +83,10 @@ $ printf '# OpenCV\nPKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/opencv3/lib/pkgc
 $ source ~/.bashrc  
 
 Now Time to Install ZED Camera Drivers:
+Download ZED v1.1.0 SDK from: https://www.stereolabs.com/developers/release/archives/
+It is very important v1.1.0 is downloaded and not any other version
+
 First make sure ZED Camera is plugged into a POWERED USB 3.0 Slot
-$ cd
-$ cd open_ptrack/scripts
 $ ./ZED_SDK_Linux_x86_64_v1.1.0.run
 Press q to exit license agreement and accept all defaults
 
