@@ -1,0 +1,28 @@
+#####################
+## Node parameters ##
+#####################
+# Tracking output frame rate:
+rate: 30.0
+# Time lapse (after last detection) before a track is removed:
+track_lifetime_with_no_detections: 1.0
+# Interval between two heartbeat messages:
+heartbeat_time: 5.0
+# Flag stating if empty tracking messages should be published or not:
+publish_empty: true
+
+##########################
+## Smoothing parameters ##
+##########################
+# Error of the measurements provided by the tracker (0.0 means no error, i.e. no smoothing will be applied):
+sigma_noise: 0.0 #0.30
+# How much the acceleration of a track can vary (small values = high smoothing):
+sigma_process: 0.05
+# Time lapse (after last detection) that a the position of a track is predicted and published:
+prediction_duration: 0.1
+
+###########
+## Debug ##
+###########
+# Max size of the history pointcloud:
+max_history_size: 1000
+

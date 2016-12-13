@@ -1,0 +1,74 @@
+#########################
+## Tracking parameters ##
+#########################
+# Mininum confidence for track initialization:
+min_confidence_initialization: 4.0
+# Tracking maximum frame rate per sensor:
+rate: 30
+# Tracking reference frame:
+world_frame_id: "/world"
+# Voxel size used for people detection:
+voxel_size: 0.06
+# Flag stating if extrinsic (multicamera) calibration has been performed or not:
+extrinsic_calibration: false
+
+########################
+## Sensor orientation ##
+########################
+# Flag stating if the sensor is vertically placed, or not:
+orientation:
+  vertical: false
+
+#######################
+## Motion parameters ##
+#######################
+# The higher is this, the higher motion variance is allowed
+# it can assume these values: 0.5 0.75 0.8 0.9 0.95 0.98 0.99 0.995 0.998 0.999
+gate_distance_probability: 0.999
+# Acceleration variance in people motion model:
+acceleration_variance: 100
+# Additional weight for position variance in people motion model:
+position_variance_weight: 30
+  
+#################################
+## Data association parameters ##
+#################################
+# Flag stating if detection likelihood should be used in data association:
+detector_likelihood: true
+# Flag stating if track velocity should be considered in data association:
+velocity_in_motion_term: true
+# Weight of detection likelihood in data association:
+detector_weight: -0.25
+# Weight of motion likelihood in data association:
+motion_weight: 0.25
+  
+################################
+## Tracking policy parameters ##
+################################
+# Track duration (seconds) after last valid detection:
+sec_before_old: 8
+# Seconds within which a track should be validated (otherwise it is discarded):
+sec_before_fake: 2.4
+# Seconds after which a visible track obtain NORMAL status:
+sec_remain_new: 1.2
+# Minimum number of detection<->track associations needed for validating a track:
+detections_to_validate: 3
+
+###########
+## Debug ##
+###########
+# Flag activating debug/visualization options:
+debug_active: true
+# Flag stating if a point cloud containing track trajectories (visible in RViz) should be created:
+history_pointcloud: true
+# Dimension of the point cloud containing track trajectories:
+history_size: 500
+# Flag stating if a spheric marker (with number) for every track (visible in RViz) should be created:
+markers: true
+# Flag stating if tracking results should be sent over the network:
+tracking_results: true
+# Flag stating if markers and a point cloud containing detection trajectories (visible in RViz) should be created:
+detection_debug: true
+# Dimension of the point cloud containing detection trajectories:
+detection_history_size: 500
+

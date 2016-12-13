@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<launch>
+  
+  <arg name="input_topic" value="/detector/detections" />
+    
+  <!-- Launch the tracking node -->
+  <node pkg="tracking" type="tracker" name="tracker_node" output="screen">
+    <remap from="~input" to="$(arg input_topic)" />
+    <rosparam command="load" file="$(find tracking)/conf/tracker_multicamera.yaml" /> 
+    <rosparam command="load" file="$(find detection)/conf/haar_disp_ada_detector.yaml" />
+    <rosparam command="load" file="$(find opt_calibration)/conf/camera_network.yaml" /> 
+  </node>
+  
+  <!-- Re-publishing at fixed rate / smoothing node -->
+  <node pkg="tracking" type="moving_average_filter" name="moving_average_filter_node" output="screen">
+    <remap from="~input"         to="/tracker/tracks" />
+    <remap from="~output"        to="/tracker/tracks_smoothed" />
+    <remap from="~markers_array" to="/tracker/markers_array_smoothed" />
+    <remap from="~history"       to="/tracker/history_smoothed" />
+    
+    <rosparam command="load" file="$(find tracking)/conf/moving_average_filter.yaml" /> 
+  </node>
+
+</launch>

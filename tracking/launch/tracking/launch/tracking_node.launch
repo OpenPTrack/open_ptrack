@@ -1,0 +1,15 @@
+<launch>
+
+  <!-- Load calibration results -->
+  <include file="$(find opt_calibration)/launch/opt_calibration_results.launch"/>
+
+  <!-- People tracking -->
+  <include file="$(find tracking)/launch/tracker_network.launch"/>
+
+  <!-- UDP messaging -->
+  <include file="$(find opt_utils)/launch/ros2udp_converter.launch"/>
+
+  <!-- Visualization -->
+  <include file="$(find opt_utils)/launch/multicamera_visualization.launch"/>
+
+</launch>
