@@ -454,7 +454,7 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
 
   // Point cloud pre-processing (downsampling and filtering):
   PointCloudPtr cloud_filtered(new PointCloud);
-  cloud_filtered = preprocessCloud (cloud_);//, publishBeforeVoxelFilterCloud);
+  cloud_filtered = preprocessCloud (cloud_, publishBeforeVoxelFilterCloud);
 
   //TODO publish here preProcessed
 	//(*publishPreProcessed)(cloud_filtered);

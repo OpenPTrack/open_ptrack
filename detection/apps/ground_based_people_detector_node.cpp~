@@ -208,7 +208,7 @@ computeBackgroundCloud (int frames, float voxel_size, std::string frame_id, ros:
   {
     // Point cloud pre-processing (downsampling and filtering):
     PointCloudT::Ptr cloud_filtered(new PointCloudT);
-    cloud_filtered = people_detector.preprocessCloud (cloud);//, &publishBeforeVoxelFilterDummyCloud);
+    cloud_filtered = people_detector.preprocessCloud (cloud, &publishBeforeVoxelFilterDummyCloud);
 
     *background_cloud += *cloud_filtered;
     ros::spinOnce();

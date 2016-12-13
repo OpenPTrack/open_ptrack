@@ -118,10 +118,7 @@ bool background_subtraction;
 // Threshold on the ratio of valid points needed for ground estimation
 double valid_points_threshold;
 
-//ros::Publisher extractedRGB_cloud;
-//ros::Publisher beforeVoxelFilter_cloud;
-//ros::Publisher preProcessed_cloud;
-//ros::Publisher groundRemoval_cloud;
+bool camera_info_available_flag = false;
 
 void
 cloud_cb (const PointCloudT::ConstPtr& callback_cloud)
@@ -135,10 +132,11 @@ cameraInfoCallback (const sensor_msgs::CameraInfo::ConstPtr & msg)
 {
   if (!intrinsics_already_set)
   {
-    intrinsics_matrix << msg->K.elems[0], msg->K.elems[1], msg->K.elems[2],
-        msg->K.elems[3], msg->K.elems[4], msg->K.elems[5],
-        msg->K.elems[6], msg->K.elems[7], msg->K.elems[8];
+    intrinsics_matrix << msg->K[0], 0, msg->K[2], 0, msg->K[4], msg->K[5], 0, 0, 1;
+    people_detector.setIntrinsics(intrinsics_matrix);
+    camera_info_available_flag = true;
     intrinsics_already_set = true;
+    camera_info_available_flag = true;
   }
 }
 
@@ -150,51 +148,6 @@ updateBackgroundCallback (const std_msgs::String::ConstPtr & msg)
     update_background = true;
   }
 }
-
-/*
-//Publish Intermediate Point Cloud Calls
-void
-publishExtractRGBCloud(PointCloudT::Ptr& cloud)
-{
-  sensor_msgs::PointCloud2 output;
-  pcl::toROSMsg(*cloud, output); // Convert the point cloud to a ROS message
-  extractedRGB_cloud.publish(output);
-}
-
-void
-publishpreProcessedCloud(PointCloudT::Ptr& cloud)
-{
-  sensor_msgs::PointCloud2 output;
-  pcl::toROSMsg(*cloud, output); // Convert the point cloud to a ROS message
-  preProcessed_cloud.publish(output);
-}
-
-
-void
-publishBeforeVoxelFilterCloud(PointCloudT::Ptr& cloud)
-{
-  sensor_msgs::PointCloud2 output;
-  pcl::toROSMsg(*cloud, output); // Convert the point cloud to a ROS message
-  beforeVoxelFilter_cloud.publish(output);
-}
-
-void
-publishBeforeVoxelFilterDummyCloud(PointCloudT::Ptr& cloud)
-{
-  //sensor_msgs::PointCloud2 output;
-  //pcl::toROSMsg(*cloud, output); // Convert the point cloud to a ROS message
-  //beforeVoxelFilter_cloud.publish(output);
-}
-
-
-void
-publishgroundRemovalCloud(PointCloudT::Ptr& cloud)
-{
-  sensor_msgs::PointCloud2 output;
-  pcl::toROSMsg(*cloud, output); // Convert the point cloud to a ROS message
-  groundRemoval_cloud.publish(output);
-}
-*/
 
 void
 computeBackgroundCloud (int frames, float voxel_size, std::string frame_id, ros::Rate rate, PointCloudT::Ptr& background_cloud)
@@ -208,7 +161,7 @@ computeBackgroundCloud (int frames, float voxel_size, std::string frame_id, ros:
   {
     // Point cloud pre-processing (downsampling and filtering):
     PointCloudT::Ptr cloud_filtered(new PointCloudT);
-    cloud_filtered = people_detector.preprocessCloud (cloud);//, &publishBeforeVoxelFilterDummyCloud);
+    cloud_filtered = people_detector.preprocessCloud (cloud);
 
     *background_cloud += *cloud_filtered;
     ros::spinOnce();
@@ -369,11 +322,6 @@ main (int argc, char** argv)
   ros::Publisher detection_pub;
   detection_pub= nh.advertise<DetectionArray>(output_topic, 3);
 
-	//extractedRGB_cloud = nh.advertise<sensor_msgs::PointCloud2> (pointcloud_topic + "/extractedRGB", 3);
-	//preProcessed_cloud = nh.advertise<sensor_msgs::PointCloud2> (pointcloud_topic + "/preProcessed", 3);
-	//groundRemoval_cloud = nh.advertise<sensor_msgs::PointCloud2> (pointcloud_topic + "/groundRemoval", 3);
-	//beforeVoxelFilter_cloud = nh.advertise<sensor_msgs::PointCloud2> (pointcloud_topic + "/beforeVoxelFilter", 3);
-
   Rois output_rois_;
   open_ptrack::opt_utils::Conversions converter;
 
@@ -487,7 +435,7 @@ main (int argc, char** argv)
     
       people_detector.setInputCloud(cloud);
       people_detector.setGround(ground_coeffs);                    // set floor coefficients
-      people_detector.compute(clusters);//, &publishExtractRGBCloud, &publishpreProcessedCloud , &publishgroundRemovalCloud, &publishBeforeVoxelFilterCloud);                // perform people detection
+      people_detector.compute(clusters);                           // perform people detection
 
       // If not lock_ground, update ground coefficients:
       if (not lock_ground)
