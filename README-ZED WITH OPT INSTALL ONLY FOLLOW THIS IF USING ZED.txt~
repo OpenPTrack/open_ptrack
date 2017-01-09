@@ -112,7 +112,7 @@ $ roslaunch tracking detection_and_tracking_zed.launch
 In a 2nd terminal, tracking can be fine tuned using:
 $ rosrun rqt_reconfigure rqt_reconfigure
 
-ALSO ZED Camera Settings Can Be Adjusted in workspace/ros/catkin/src/zed_ros_wrapper_OPT_update/launch/zed.launch:
+ALSO ZED Camera Settings Can Be Adjusted in open_ptrack/zed_ros_wrapper/launch/zed.launch:
 Resolution Parameter: 0 = 2K, 1 = 1080HD, 2 = 720HD, 3 = VGA
 Quality Parameter (Disparity Map Quality): 0 = none, 1 = performance, 2 = medium, 3 = high
 Frame Rate: 2K has max frame rate of 15fps, 1080 - 30fps and 720 - 60fps
