@@ -319,7 +319,7 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::rotateGround(Eige
 }
 
 template <typename PointT> typename open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::PointCloudPtr
-open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::preprocessCloud (PointCloudPtr& input_cloud)//, void (*publishBeforeVoxelFilterCloud)(PointCloudPtr&))
+open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::preprocessCloud (PointCloudPtr& input_cloud)
 {
   // Downsample of sampling_factor in every dimension:
   PointCloudPtr cloud_downsampled(new PointCloud);
@@ -370,38 +370,31 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::preprocessCloud (
   PointCloudPtr cloud_filtered(new PointCloud);
   pcl::VoxelGrid<PointT> voxel_grid_filter_object;
   if (apply_denoising_)
-	{
-		//std::cout << "APPLY DENOISING" << std::endl;
+  {
     voxel_grid_filter_object.setInputCloud(cloud_denoised);
-	}
+  }
   else
   {
     if (sampling_factor_ != 1)
-		{
-			//std::cout << "APPLY DownSampled" << std::endl;
+    {
       voxel_grid_filter_object.setInputCloud(cloud_downsampled);
-		}
+    }
     else
-		{
-			//std::cout << "Use Input Cloud" << std::endl;
+    {
       voxel_grid_filter_object.setInputCloud(input_cloud);
-		}
+    }
   }
-
-	//std::cout << "Voxel Size " << voxel_size_ << " Max Distance " << max_distance_ << std::endl;
 
   voxel_grid_filter_object.setLeafSize (voxel_size_, voxel_size_, voxel_size_);
   voxel_grid_filter_object.setFilterFieldName("z");
   voxel_grid_filter_object.setFilterLimits(0.0, max_distance_);
   voxel_grid_filter_object.filter (*cloud_filtered);
-	
-	//(*publishBeforeVoxelFilterCloud)(cloud_filtered);
 
   return cloud_filtered;
 }
 
 template <typename PointT> bool
-open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vector<pcl::people::PersonCluster<PointT> >& clusters)//, void (*publishExtractRGB)(PointCloudPtr&), void (*publishPreProcessed)(PointCloudPtr&), void (*publishGroundRemoval)(PointCloudPtr&), void (*publishBeforeVoxelFilterCloud)(PointCloudPtr&))
+open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vector<pcl::people::PersonCluster<PointT> >& clusters)
 {
   frame_counter_++;
 
@@ -448,16 +441,10 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
   // Fill rgb image:
   rgb_image_->points.clear();                            // clear RGB pointcloud
   extractRGBFromPointCloud(cloud_, rgb_image_);          // fill RGB pointcloud
-  
-  //TODO publish here extractedRGB
-	//(*publishExtractRGB)(cloud_);
 
   // Point cloud pre-processing (downsampling and filtering):
   PointCloudPtr cloud_filtered(new PointCloud);
-  cloud_filtered = preprocessCloud (cloud_);//, publishBeforeVoxelFilterCloud);
-
-  //TODO publish here preProcessed
-	//(*publishPreProcessed)(cloud_filtered);
+  cloud_filtered = preprocessCloud (cloud_);
 
   if (use_rgb_)
   {
@@ -497,8 +484,6 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
     }
   }
   
-  //TODO publish here groundRemoval
-	//(*publishGroundRemoval)(no_ground_cloud_);
 
   // Background Subtraction (optional):
   if (background_subtraction_)
