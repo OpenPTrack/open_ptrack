@@ -52,9 +52,9 @@ add_executable(ground_based_people_detector apps/ground_based_people_detector_no
 SET_TARGET_PROPERTIES(ground_based_people_detector PROPERTIES LINK_FLAGS -L${PCL_LIBRARY_DIRS})
 target_link_libraries(ground_based_people_detector ${PROJECT_NAME} ${catkin_LIBRARIES} ${PCL_LIBRARIES} vtkHybrid vtkRendering)
 
-#add_executable(ground_based_people_detector_sr apps/ground_based_people_detector_node_sr.cpp)
-#SET_TARGET_PROPERTIES(ground_based_people_detector_sr PROPERTIES LINK_FLAGS -L${PCL_LIBRARY_DIRS})
-#target_link_libraries(ground_based_people_detector_sr ${PROJECT_NAME} ${catkin_LIBRARIES} ${PCL_LIBRARIES} vtkHybrid vtkRendering)
+add_executable(ground_based_people_detector_sr apps/ground_based_people_detector_node_sr.cpp)
+SET_TARGET_PROPERTIES(ground_based_people_detector_sr PROPERTIES LINK_FLAGS -L${PCL_LIBRARY_DIRS})
+target_link_libraries(ground_based_people_detector_sr ${PROJECT_NAME} ${catkin_LIBRARIES} ${PCL_LIBRARIES} vtkHybrid vtkRendering)
 
 add_library(haar_disp_ada src/haardispada.cpp apps/haardispada_nodelet.cpp)
 target_link_libraries(haar_disp_ada ${catkin_LIBRARIES})
