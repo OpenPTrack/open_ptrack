@@ -67,7 +67,8 @@ $ sudo mkdir /usr/local/opencv3
 
 $ mkdir OpenCV  
 $ cd OpenCV  
-$ git clone https://github.com/Itseez/opencv.git
+$ git clone https://github.com/opencv/opencv.git
+$ git checkout tags/3.1.0
 
 $ cd opencv  
 $ mkdir release  
