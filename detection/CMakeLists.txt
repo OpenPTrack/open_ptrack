@@ -1,15 +1,30 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(detection)
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
-find_package(catkin REQUIRED COMPONENTS cmake_modules roscpp rospy pcl_ros pcl_conversions nodelet rosconsole image_transport opt_utils opt_msgs dynamic_reconfigure)
+
+
+# Check for c++11 support
+INCLUDE(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+IF(COMPILER_SUPPORTS_CXX11)
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+ELSEIF(COMPILER_SUPPORTS_CXX0X)
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+ELSE()
+  MESSAGE(ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+ENDIF()
+
+find_package(catkin REQUIRED COMPONENTS cmake_modules roscpp rospy pcl_ros pcl_conversions nodelet rosconsole image_transport opt_utils opt_msgs dynamic_reconfigure std_msgs rostime sensor_msgs message_filters compressed_image_transport compressed_depth_image_transport kinect2_bridge)
+find_package(cv_bridge )
 
 find_package(VTK REQUIRED)
 if(VTK_FOUND)
-	include_directories(${VTK_INCLUDE_DIRS})
-	link_directories(${VTK_LIBRARY_DIRS})
-	add_definitions(${VTK_DEFINITIONS})
-	include (${VTK_USE_FILE})
-endif() 
+        include_directories(${VTK_INCLUDE_DIRS})
+        link_directories(${VTK_LIBRARY_DIRS})
+        add_definitions(${VTK_DEFINITIONS})
+        include (${VTK_USE_FILE})
+endif()
 
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
@@ -32,8 +47,7 @@ if (NOT PCL_FOUND)
 endif (NOT PCL_FOUND)
 
 # Dynamic reconfigure support
-generate_dynamic_reconfigure_options(cfg/HaarDispAdaDetector.cfg cfg/GroundBasedPeopleDetector.cfg)
-
+generate_dynamic_reconfigure_options(cfg/HaarDispAdaDetector.cfg cfg/GroundBasedPeopleDetector.cfg cfg/multiple_objects_detection.cfg)
 include_directories(cfg/cpp)
 
 catkin_package(
@@ -43,9 +57,15 @@ catkin_package(
 )
 
 
-add_library(${PROJECT_NAME} src/detection_source.cpp src/detection.cpp)
+add_library(${PROJECT_NAME} src/detection_source.cpp src/detection.cpp src/multiple_objects_detection/object_detector.cpp src/multiple_objects_detection/roi_zz.cpp)
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBS})
+
+
+
+add_executable(multiple_objects_detection_node apps/multiple_objects_detection_node.cpp)
+target_link_libraries(multiple_objects_detection_node ${PROJECT_NAME} ${OpenCV_LIBRARIES} ${PCL_LIBRARIES} ${catkin_LIBRARIES})
+
 
 add_executable(ground_based_people_detector apps/ground_based_people_detector_node.cpp)
 SET_TARGET_PROPERTIES(ground_based_people_detector PROPERTIES LINK_FLAGS -L${PCL_LIBRARY_DIRS})

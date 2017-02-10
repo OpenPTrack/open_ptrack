@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <launch>
+  <!-- tracking options-->
 
   <!-- Camera parameters -->
   <arg name="sensor_id"               default="" />
@@ -14,7 +15,7 @@
     <arg name="sensor_name"         value="$(arg sensor_name)" />
     <arg name="publish_frame"       value="true" />
   </include>
-  
+		  
   <!-- Launch ground based people detection node -->
   <node pkg="detection" type="ground_based_people_detector"
         name="ground_based_people_detector_$(arg sensor_name)" output="screen" respawn="true">
@@ -27,7 +28,17 @@
     <param name="camera_info_topic"                 value="/$(arg sensor_name)/ir_rect/camera_info"/>
     <param name="rate"                              value="60.0"/>  
     <param name="ground_from_extrinsic_calibration" value="$(arg ground_from_calibration)"/>  
-    
-  </node>
+   </node> 
 
+  <!-- Launch objects detection node -->
+   <node pkg="detection" type="multiple_objects_detection_node" name="multiple_objects_detection_$(arg sensor_name)" output="screen" required="true">
+   
+     <rosparam command="load"                        file="$(find detection)/conf/multiple_objects_detection.yaml" />    
+     
+     <remap from="/kinect2_head/rgb_lowres/image" to="/$(arg sensor_name)/rgb_lowres/image" />
+     <remap from="/kinect2_head/depth_lowres/image" to="/$(arg sensor_name)/depth_lowres/image" />
+     <remap from="/kinect2_head/depth_lowres/camera_info" to="/$(arg sensor_name)/depth_lowres/camera_info" />
+     <remap from="/kinect2_head/rgb_lowres/camera_info" to="/$(arg sensor_name)/rgb_lowres/camera_info" />
+   </node>
+  
 </launch>

@@ -1,0 +1,73 @@
+############################
+## multiple_objects_detection ##
+############################
+
+sensor_name: kinect2_head
+show_2D_track: false
+output_detection_topic: /objects_detector/detections
+
+
+
+
+
+
+
+
+
+
+
+############################
+## Background removal ##
+############################
+
+use_background_removal: false
+
+#use how many frame to calculate the background
+background_calculate_frames: 100
+
+#threshold of depth difference,use the difference to ditinguish the background and foreground
+threshold_4_detecting_foreground: 100
+
+
+
+##############################################
+## object_detector parameters ##
+##############################################
+
+
+########for the HSV mask######
+HMin: 0
+SMin: 80
+VMin: 100
+HMax: 360
+SMax: 256
+VMax: 256
+########for the HSV mask#######
+
+
+###########For camshift########
+# if  use_hs==true, use hue and s to generate the hitograme to do the bacprojection , if not, just used the hue image
+use_hs: true
+
+#for the hue backrojection hist ,divide (HMin,HMax) to h_bins parts
+h_bins: 36
+s_bins: 18
+###########For camshift#########
+
+
+
+###########For camshift recover from occlusion###########
+
+##for camshift, for the window in backproject image,the value represent the similirity with the ROI. the value of the pixel is equal to 255*percentage ,the percentage come from the histogram(problility)
+## QUALITY_TOLERANCE here means the TOLERANCE of sum of the window in backproject image,it represent the quality of the window.
+## DENSITY_TOLORENCE here means the TOLERANCE of the DENSITY,DENSITY=QUALITY/window.area();
+## AREA_TOLERANCE here means the TOLERANCE of the x,y ,window.it means the objects maybe apprear in the next frame ,in the window which increase it's size by AREA_TOLERANCE every frame.so the bigger AREA_TOLERANCE,the objects can move faster.
+## if the QUALITY<QUALITY_TOLERANCE, the object is "totally occluded",
+## then when QUALITY<QUALITY_TOLERANCE, it will appeare, but at first ,not totaly appear,the window may be much bigger then the size of object,
+## then we calculate the DENSITY,if DENSITY<DENSITY_TOLORENCE.it means the window not just included the object,and the objects are "half occluded"
+## then the camshift will decrese the size of the window,untill DENSITY>DENSITY_TOLORENCE,it will be "not occluded";
+AREA_TOLERANCE: 20  ##AREA_TOLERANCE is also used to create the position_maks
+QUALITY_TOLERANCE: 20000
+DENSITY_TOLORENCE: 2.0
+###########For camshift recover from occlusion###########
+
