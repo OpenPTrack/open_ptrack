@@ -2,19 +2,10 @@
 ## multiple_objects_detection ##
 ############################
 
-sensor_name: kinect2_head
-show_2D_track: false
 output_detection_topic: /objects_detector/detections
 
-
-
-
-
-
-
-
-
-
+#if you want to see the tracks result on the image, set show_2D_track to true
+show_2D_track: false
 
 ############################
 ## Background removal ##
@@ -36,22 +27,29 @@ threshold_4_detecting_foreground: 100
 
 
 ########for the HSV mask######
+#set a mask(filter) to gain a better performance(set SMin or VMin smaller to get a larger range, also more noise)
 HMin: 0
-SMin: 80
-VMin: 100
 HMax: 360
+
+SMin: 80
 SMax: 256
+
+VMin: 100
 VMax: 256
 ########for the HSV mask#######
 
 
 ###########For camshift########
-# if  use_hs==true, use hue and s to generate the hitograme to do the bacprojection , if not, just used the hue image
-use_hs: true
-
-#for the hue backrojection hist ,divide (HMin,HMax) to h_bins parts
+#for the hue backrojection hist ,divide (HMin,HMax) to "h_bins" parts,
 h_bins: 36
 s_bins: 18
+
+#for the depth, transfer the depth from (1000,9000) into (0, 255), than divide them into "d_bins" parts
+d_bins: 100
+
+# Three options : H HS HSD : 
+# if the objects are in different color, choose HS which is faster, or choose HSD.
+Backprojection_Mode: HS
 ###########For camshift#########
 
 

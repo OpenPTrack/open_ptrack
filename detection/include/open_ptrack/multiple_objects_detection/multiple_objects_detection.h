@@ -75,7 +75,7 @@ private:
 
     ////////////For receiving color and depth////////////
     std::mutex lock;
-    std::string cameraName;
+    //    std::string cameraName;
     std::string topicColor, topicDepth;
     const bool useExact, useCompressed;
     bool updateImage;
@@ -122,8 +122,6 @@ private:
     ///////////For generating 3d position///////////
 
 
-
-
     ///////////For publish detection topic///////////
     std::string output_detection_topic;
     ros::Publisher detection_pub;
@@ -136,10 +134,8 @@ private:
     //  cv::Mat color, depth;
     std::vector<Object_Detector> Object_Detectors;
     std::vector<Rect> current_detected_boxes;
-    cv::Mat main_color,main_depth;
+    cv::Mat main_color,main_depth_16,main_depth_8;
     ///////////For main detection///////////
-
-
 
 
     ///////////For display///////////
@@ -148,16 +144,20 @@ private:
     ///////////For display///////////
 
 
+    //test time cost
+    //    std::chrono::time_point<std::chrono::high_resolution_clock> start, now;
+
 public:
-    Multiple_Objects_Detection(const std::string _cameraName, const std::string &output_detection_topic,const bool useExact, const bool useCompressed,
+    Multiple_Objects_Detection(const std::string &output_detection_topic,const bool useExact, const bool useCompressed,
                                const bool use_background_removal, const int background_calculate_frames,const int threshold_4_detecting_foreground,const bool show_2D_tracks)
-        : cameraName(_cameraName), output_detection_topic(output_detection_topic),useExact(useExact), useCompressed(useCompressed),updateImage(false), running(false),
+        : output_detection_topic(output_detection_topic),useExact(useExact), useCompressed(useCompressed),updateImage(false), running(false),
           use_background_removal(use_background_removal), objects_selected(false),paused(false),background_calculate_frames(background_calculate_frames),threshold_4_detecting_foreground(threshold_4_detecting_foreground), queueSize(5),
           nh(), spinner(0), it(nh) ,show_2D_tracks(show_2D_tracks)
     {
+        std::string cameraName = "kinect2_head";
+        topicColor = "/" + cameraName + "/" + K2_TOPIC_LORES_COLOR K2_TOPIC_RAW;
+        topicDepth = "/" + cameraName + "/" + K2_TOPIC_LORES_DEPTH K2_TOPIC_RAW;
 
-        topicColor = "/" + _cameraName + "/" + K2_TOPIC_LORES_COLOR K2_TOPIC_RAW;
-        topicDepth = "/" + _cameraName + "/" + K2_TOPIC_LORES_DEPTH K2_TOPIC_RAW;
         cameraMatrixColor = cv::Mat::zeros(3, 3, CV_64F);
         cameraMatrixDepth = cv::Mat::zeros(3, 3, CV_64F);
         detection_pub=nh.advertise<DetectionArray>(output_detection_topic,3);
@@ -166,7 +166,6 @@ public:
     ~Multiple_Objects_Detection()
     {
     }
-
 
 
     void run_detection(){
@@ -180,7 +179,7 @@ public:
 
                 lock.lock();
                 main_color = this->color;
-                main_depth = this->depth;
+                main_depth_16 = this->depth;
                 updateImage = false;
                 lock.unlock();
 
@@ -203,20 +202,28 @@ public:
                     if(!objects_selected&&paused)// pause to select object
                     {
                         multiple_objects_detector_initialization();
+                        cv::destroyWindow("Press P to pause and select objects:");
                     }
 
                     //!!!!!!!!!!!!!!!!!!!!!!!main loop!!!!!!!!!!!!!!!!!!!!!!!
                     else if(objects_selected&&!paused)// start to track after selecting objects
                     {
+
+                        //                        start = std::chrono::high_resolution_clock::now();
                         multiple_objects_detection_main();
+                        //                        now = std::chrono::high_resolution_clock::now();
+                        //                        double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() / 1000.0;
+                        //                        std::cout<<elapsed<<std::endl;
+
+
                         //draw tracks_2D (cotinuely 10 detections)
                         if(show_2D_tracks)
                         {
                             show_2D_tracks_on_image();
                         }
                     }
-
-                    cv::imshow( "Object_Detector", main_color );
+                    if(!objects_selected)
+                        cv::imshow("Press P to pause and select objects:", main_color );
                     char c = (char)cv::waitKey(10);
                     if( c == 27 )
                         break;
@@ -292,9 +299,9 @@ private:
         {
             printf("use background removal but background can't be read from file, being calculated......\n");
             if(depth_max.empty())
-                depth_max=Mat::zeros(main_depth.size(),CV_16UC1);
+                depth_max=Mat::zeros(main_depth_16.size(),CV_16UC1);
             else
-                depth_max=cv::max(depth_max,main_depth);
+                depth_max=cv::max(depth_max,main_depth_16);
             background_calculate_frames--;
             if(background_calculate_frames==0)//save background file
             {
@@ -312,7 +319,7 @@ private:
 
     void background_removal()
     {
-        Mat depth_diff=depth_max-main_depth;
+        Mat depth_diff=depth_max-main_depth_16;
 
         int nr=depth_diff.rows;
         int nc=depth_diff.cols;
@@ -388,14 +395,27 @@ private:
 
 
 
-//main_detection
+    //main_detection
     void multiple_objects_detection_main()
     {
 
         if( main_color.empty() )
             return;
         Object_Detector::setMainColor(main_color);
-        Object_Detector::setMainDepth(main_depth);
+
+        if(Object_Detector::Backprojection_Mode=="HSD")
+        {
+            //          //devide (1000mm~9000mm) into 255 parts
+            ushort Max=9000,Min=1000;
+            main_depth_16.convertTo(main_depth_8, CV_8U,255.0/(Max-Min),-255.0*Min/(Max-Min));
+            Object_Detector::setMainDepth(main_depth_8);
+        }
+
+        else
+        {
+            Object_Detector::setMainDepth(main_depth_16);
+        }
+
 
         //detection_array_msg!!!!!!!!!!!!!!!!!!!!!!!
         /// Write detection message:
@@ -416,9 +436,12 @@ private:
 
 
         //detect one by one
+
         for(size_t i=0; i<Object_Detectors.size(); i++)
         {
+
             RotatedRect current_trackBox=Object_Detectors[i].detectCurrentRect(i);
+
             occludes[i]=Object_Detectors[i].occluded;
             if(occludes[i]==false)
             {
@@ -436,7 +459,7 @@ private:
                 // genearate detection msg!!!!!!!!!!!!!!!!!!!!!!!!!!
                 Detection detection_msg;
                 Point2d current_center2D_d(cvFloor(current_trackBox.center.x),cvFloor(current_trackBox.center.y));
-                double current_center_depth=main_depth.at<ushort>(current_center2D_d.y,current_center2D_d.x)/1000.0;//meter ,not mm
+                double current_center_depth=main_depth_16.at<ushort>(current_center2D_d.y,current_center2D_d.x)/1000.0;//meter ,not mm
 
                 detection_msg.box_3D.p1.z=current_center_depth;
                 detection_msg.box_3D.p1.x=(current_center2D_d.x-cx)*fx*current_center_depth;
@@ -479,7 +502,6 @@ private:
         }
 
         detection_pub.publish(detection_array_msg);		 // publish message
-
     }
 
 
@@ -491,11 +513,15 @@ private:
 
             for( std::list<Rect> ::iterator it = current_track.begin(); it!=current_track.end(); it++)
             {
-                Rect test_Rect=*it;
+                Rect test_Rect((*it).x+((*it).width)/2,(*it).y+((*it).height)/2,1,1);
+                test_Rect=test_Rect&Rect(0,0,main_color.size().width,main_color.size().height);
                 cv::rectangle(main_color, test_Rect, cv::Scalar(250*(i), 250*(i-1), 250*(i-2)), 2, CV_AA);
             }
         }
+        cv::imshow( "show_2D_tracks", main_color );
     }
+
+
 
 
     void callback(const sensor_msgs::Image::ConstPtr imageColor, const sensor_msgs::Image::ConstPtr imageDepth,
@@ -552,6 +578,5 @@ private:
 
 
 };
-
 
 

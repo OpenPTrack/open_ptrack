@@ -46,6 +46,175 @@ std::vector<Rect> Object_Detector::getcurrent_detected_boxes()
     return current_detected_boxes;
 }
 
+void Object_Detector::H_backprojection()
+{
+    float h_ranges[] = {0,(float)HMax};
+    const float* ph_ranges = h_ranges;
+    int h_channels[] = {0, 0};
+    hue.create(hsv.size(), hsv.depth());
+    cv::mixChannels(&hsv, 1, &hue, 1, h_channels, 1);
+
+    if( firstRun )
+    {
+        cv::Mat roi(hue, selection), maskroi(hsv_mask, selection);
+        cv::calcHist(&roi, 1, 0, maskroi, h_hist, 1, &h_bins, &ph_ranges);
+        cv::normalize(h_hist, h_hist, 0, 255, CV_MINMAX);
+        detectWindow = selection;
+        firstRun = false;
+        //        std::cout<<"H mode"<<std::endl;
+
+    }
+    cv::calcBackProject(&hue, 1, 0, h_hist, backproj, &ph_ranges,1,true);
+}
+
+void Object_Detector::HS_backprojection()
+{
+    int hs_size[] = { h_bins, s_bins };
+    float h_range[] = {(float)HMin,(float)HMax};
+    float s_range[] = { (float)SMin, (float)SMax };
+    const float* phs_ranges[] = { h_range, s_range };
+    int hs_channels[] = { 0, 1 };
+
+    if( firstRun )
+    {
+        cv::Mat roi(hsv, selection), maskroi(hsv_mask, selection);
+        cv::calcHist(&roi, 1, hs_channels, maskroi, hs_hist_for_HS, 2, hs_size, phs_ranges, true, false);
+        cv::normalize(hs_hist_for_HS, hs_hist_for_HS, 0, 255, CV_MINMAX);
+        detectWindow = selection;
+        firstRun = false;
+        //std::cout<<"HS mode"<<std::endl;
+
+    }
+    cv::calcBackProject( &hsv, 1, hs_channels, hs_hist_for_HS, backproj, phs_ranges, 1, true );
+
+}
+
+void Object_Detector::HSD_backprojection()
+{
+
+    const int hsd_size[] = { h_bins, s_bins ,d_bins};
+    const int hs_size[] =  { h_bins, s_bins };
+
+    float h_range[] = { (float)HMin, (float)HMax };
+    float s_range[] = { (float)SMin, (float)SMax };
+    float d_range[] = { 0, 255 };
+
+    const float* pd_ranges= d_range;
+    const float* phs_ranges[] = { h_range, s_range };
+    const float* phsd_ranges[] = {h_range, s_range ,d_range };
+
+    int hs_channels[] = { 0, 1 };
+    int hsd_channels[] = {0,1,2};
+    int hsd_channels_formix[] = {0, 2};
+
+    cv::mixChannels(&Depth, 1, &hsv, 3, hsd_channels_formix, 1);//hsv-->hsd
+
+
+    if( firstRun )
+    {
+        cv::Mat roi(hsv, selection), maskroi(hsv_mask, selection);
+        cv::calcHist(&roi, 1, hs_channels, maskroi, hs_hist_for_HSD, 2, hs_size, phs_ranges, true, false);
+        cv::normalize(hs_hist_for_HSD , hs_hist_for_HSD , 0, 255, CV_MINMAX);
+
+        double sum_hs_hist=sum(hs_hist_for_HSD)[0];
+        hs_hist_pdf=hs_hist_for_HSD/sum_hs_hist;
+
+        //used to generate the initial hsd_hist(use this just for the right data format )
+        cv::calcHist(&roi, 1, hsd_channels, maskroi, hsd_hist, 3, hsd_size, phsd_ranges, true, false);
+
+        cv::Mat roi_depth(Depth, selection);
+
+        //calculate the the current_trackBox(rotatedrect) mask,named depth_mask(in this mask ,just the the value in the area :current_detectBox(rotatedrect) is 255)
+        Point2f vertices[4];
+        current_detectedBox.points(vertices);
+        std::vector< std::vector<Point> >  co_ordinates;
+        co_ordinates.push_back(std::vector<Point>());
+        co_ordinates[0].push_back(vertices[0]);
+        co_ordinates[0].push_back(vertices[1]);
+        co_ordinates[0].push_back(vertices[2]);
+        co_ordinates[0].push_back(vertices[3]);
+        depth_mask=Mat::zeros(Color.size(),CV_8UC1);
+        drawContours( depth_mask,co_ordinates,0, Scalar(255),CV_FILLED, 8 );
+        depth_mask&=hsv_mask;
+        cv::Mat  depth_mask_roi(depth_mask, detectWindow);
+
+        cv::calcHist(&roi_depth, 1, 0, depth_mask_roi, tmp_depth_hist_pdf, 1, &d_bins, &pd_ranges);
+        double sum_tmp_depth_hist_pdf=sum(tmp_depth_hist_pdf)[0];
+        tmp_depth_hist_pdf=tmp_depth_hist_pdf/sum_tmp_depth_hist_pdf;
+
+        for (int i=0; i<hsd_size[0]; i++) {
+            for (int j=0; j<hsd_size[1]; j++) {
+                for (int k=0; k<hsd_size[2]; k++) {
+                    hsd_hist.at<float>(i,j,k)=255*hs_hist_pdf.at<float>(i,j)*tmp_depth_hist_pdf.at<float>(k);
+                }
+            }
+        }
+        //normalize hsd_hist
+        double hMin,hMax;
+        minMaxIdx(hsd_hist, &hMin, &hMax);
+        hsd_hist = 255 * hsd_hist / hMax;
+
+        detectWindow = selection;
+        firstRun = false;
+    }
+
+    else
+    {
+        if(!occluded&&!half_occluded)
+        {
+            cv::Mat roi_depth(Depth, detectWindow);
+
+            //calculate the the current_trackBox(rotatedrect) mask,named depth_mask(in this mask ,just the the value in the area :current_detectBox(rotatedrect) is 255)
+            Point2f vertices[4];
+            current_detectedBox.points(vertices);
+            std::vector< std::vector<Point> >  co_ordinates;
+            co_ordinates.push_back(std::vector<Point>());
+            co_ordinates[0].push_back(vertices[0]);
+            co_ordinates[0].push_back(vertices[1]);
+            co_ordinates[0].push_back(vertices[2]);
+            co_ordinates[0].push_back(vertices[3]);
+            depth_mask=Mat::zeros(Color.size(),CV_8UC1);
+            drawContours( depth_mask,co_ordinates,0, Scalar(255),CV_FILLED, 8 );
+            depth_mask&=hsv_mask;
+
+            cv::Mat  depth_mask_roi(depth_mask, detectWindow);
+
+            cv::calcHist(&roi_depth, 1, 0, depth_mask_roi, tmp_depth_hist_pdf, 1, &d_bins, &pd_ranges);
+            double sum_tmp_depth_hist_pdf=sum(tmp_depth_hist_pdf)[0];
+            tmp_depth_hist_pdf=tmp_depth_hist_pdf/sum_tmp_depth_hist_pdf;
+
+
+            //////////////////////cost a lot of time  //////////////////////
+            for (int i=0; i<hsd_size[0]; i++) {
+                for (int j=0; j<hsd_size[1]; j++) {
+                    for (int k=0; k<hsd_size[2]; k++) {
+                        hsd_hist.at<float>(i,j,k)=255*hs_hist_pdf.at<float>(i,j)*tmp_depth_hist_pdf.at<float>(k);
+                    }
+                }
+            }
+            //////////////////////rcost a lot of time  //////////////////////
+
+            double hMin,hMax;
+            minMaxIdx(hsd_hist, &hMin, &hMax);
+            hsd_hist = 255 * hsd_hist / hMax;
+        }
+    }
+
+
+
+
+
+
+    if(!occluded&&!half_occluded)
+    {
+        cv::calcBackProject( &hsv, 1, hsd_channels, hsd_hist, backproj, phsd_ranges, 1, true );
+    }
+    else{
+        cv::calcBackProject( &hsv, 1, hs_channels, hs_hist_for_HSD, backproj, phs_ranges, 1, true );
+    }
+
+}
+
 cv::RotatedRect Object_Detector::object_shift(InputArray _probColor,Rect& window, TermCriteria criteria)
 {
     //  CV_INSTRUMENT_REGION();
@@ -53,9 +222,8 @@ cv::RotatedRect Object_Detector::object_shift(InputArray _probColor,Rect& window
     Size size;
     Mat mat;
     mat = _probColor.getMat(), size = mat.size();
-
     cv::meanShift( _probColor, window, criteria );
-
+    //    std::cout<<"real QUALITY_TOLERANCE"<<QUALITY_TOLERANCE<<std::endl;
     window.x -= AREA_TOLERANCE;
     window.y -= AREA_TOLERANCE;
     window.width += 2 * AREA_TOLERANCE;
@@ -65,27 +233,21 @@ cv::RotatedRect Object_Detector::object_shift(InputArray _probColor,Rect& window
     // Calculating moments in new center mass
     //    Moments m = isUMat ? moments(umat(window)) : moments(mat(window));
     Moments m = moments(mat(window));
-
-
     double m00 = m.m00, m10 = m.m10, m01 = m.m01;
     double mu11 = m.mu11, mu20 = m.mu20, mu02 = m.mu02;
 
 
 
-    //    // use 1 as the qulity to calculate the percentage of the object to the window
-    //    Mat hsv_mask_window=hsv_mask(window);
-    //    Moments m_hsv_mask_window = moments(hsv_mask_window);
-    //    double m_hsv_mask_window00 = m_hsv_mask_window.m00;
-
-
-
     ////////////difference from cv::camshift//////////
     // occluded process
+    //    QUALITY_TOLERANCE=3000;
     if( fabs(m00) < QUALITY_TOLERANCE )
     {
         occluded=true;
+        //        std::cout<<"totally occluded: window QUALITY:  "<<fabs(m00)<<std::endl;
+
         //        std::cout<<"totally occluded: window density "<<fabs(m_hsv_mask_window00)/window.area()<<std::endl;
-        //        std::cout<<"totally occluded: window density "<<fabs(m00)/window.area()<<std::endl;
+        //                std::cout<<"totally occluded: window density "<<fabs(m00)/window.area()<<std::endl;
         //        std::cout<<"occluded: half_occluded_frames: "<<half_occluded_frames<<std::endl;
 
         return RotatedRect();
@@ -96,8 +258,9 @@ cv::RotatedRect Object_Detector::object_shift(InputArray _probColor,Rect& window
 
     {
         occluded=true;
+        half_occluded=true;
         //        std::cout<<"half occluded: window density "<<fabs(m_hsv_mask_window00)/window.area()<<std::endl;
-//        std::cout<<"half occluded: window density "<<fabs(m00)/window.area()<<std::endl;
+        //        std::cout<<"half occluded: window density "<<fabs(m00)/window.area()<<std::endl;
         //        std::cout<<"half occluded: half_occluded_frames: "<<half_occluded_frames<<std::endl;
 
         //half occlude means when the detecteor detected the similar background ,but the desity is not big enough ,or just a little part of the object appears
@@ -110,17 +273,16 @@ cv::RotatedRect Object_Detector::object_shift(InputArray _probColor,Rect& window
         {
             half_occluded_frames=10;
             window=Rect(0,0,size.width,size.height);
-            //            std::cout<<"set window to the whole image: half_occluded_frames: "<<half_occluded_frames<<std::endl;
+            //          std::cout<<"set window to the whole image: half_occluded_frames: "<<half_occluded_frames<<std::endl;
             return RotatedRect();
         }
-
     }
     else{
         occluded=false;
+        half_occluded=false;
         half_occluded_frames=10;
         //        std::cout<<"not occluded: window density "<<fabs(m_hsv_mask_window00)/window.area()<<std::endl;
-
-//        std::cout<<"not occluded: window density "<<fabs(m00)/window.area()<<std::endl;
+        //        std::cout<<"not occluded: window density "<<fabs(m00)/window.area()<<std::endl;
     }
     ////////////difference from cv::camshift////////////
 
@@ -194,64 +356,29 @@ cv::RotatedRect Object_Detector::object_shift(InputArray _probColor,Rect& window
 cv::RotatedRect Object_Detector::detectCurrentRect(int id)
 {
 
-
-    //  cv::Mat Color;
     mainColor.copyTo(Color);
+    mainDepth.copyTo(Depth);
 
     cv::cvtColor(Color, hsv, CV_BGR2HSV);
 
     cv::inRange(hsv, cv::Scalar(HMin, SMin, MIN(VMin,VMax)),
                 cv::Scalar(HMax, SMax, MAX(VMin, VMax)), hsv_mask);
 
-    //used for just hue
-    float h_ranges[] = {0,HMax};
-    const float* ph_ranges = h_ranges;
-    int h_channels[] = {0, 0};
-    if(use_hs==false)
+
+    if(Backprojection_Mode=="H")
     {
-        hue.create(hsv.size(), hsv.depth());
-        cv::mixChannels(&hsv, 1, &hue, 1, h_channels, 1);
+        H_backprojection();
     }
-    //used for just hue
-
-
-    //used for  h s
-    int hs_size[] = { h_bins, s_bins };
-    float h_range[] = {HMin,HMax};
-    float s_range[] = { SMin, SMax };
-    const float* phs_ranges[] = { h_range, s_range };
-    int channels[] = { 0, 1 };
-    //used for  h s
-
-
-    if( firstRun )
+    else if(Backprojection_Mode=="HS")
     {
-        if(use_hs)
-        {
-            //h s rather than h
-            cv::Mat roi(hsv, selection), maskroi(hsv_mask, selection);
-            cv::calcHist(&roi, 1, channels, maskroi, hist, 2, hs_size, phs_ranges, true, false);
-            cv::normalize(hist, hist, 0, 255, CV_MINMAX);
-        }
-        else{
-            //just hue
-            cv::Mat roi(hue, selection), maskroi(hsv_mask, selection);
-            cv::calcHist(&roi, 1, 0, maskroi, hist, 1, &h_bins, &ph_ranges);
-            cv::normalize(hist, hist, 0, 255, CV_MINMAX);
-        }
-
-        detectWindow = selection;
-        firstRun = false;
+        HS_backprojection();
     }
-
-
-    if(use_hs)
-        cv::calcBackProject( &hsv, 1, channels, hist, backproj, phs_ranges, 1, true );
     else
-        cv::calcBackProject(&hue, 1, 0, hist, backproj, &ph_ranges);
+    {
+        HSD_backprojection();
+    }
 
 
-//     imshow("backproj first",backproj);
     // calculate the other_object_mask //where to put this ,slove bling bling
     other_object_mask=Mat::ones(Color.size(), CV_8U)*255;
     for (int i=0; i<current_detected_boxes.size(); i++)
@@ -260,14 +387,11 @@ cv::RotatedRect Object_Detector::detectCurrentRect(int id)
         {
             uchar tmp =0;
             Rect current_tracked_box =current_detected_boxes[i];
-            //                current_tracked_box.x=current_tracked_box.x-10;
-            //                current_tracked_box.y=current_tracked_box.y-10;
-            //                current_tracked_box.width=current_tracked_box.width+20;
-            //                current_tracked_box.height=current_tracked_box.height+20;
             current_tracked_box=current_tracked_box&Rect(0,0,Color.size().width,Color.size().height);
             other_object_mask(current_tracked_box)=tmp;
         }
     }
+
 
     detectWindow=detectWindow&Rect(0,0,hsv.size().width,hsv.size().height);
     if(occluded==false&&detectWindow.area()>1)
@@ -279,23 +403,6 @@ cv::RotatedRect Object_Detector::detectCurrentRect(int id)
         int detectWindow_YT=detectWindow.y-AREA_TOLERANCE,detectWindow_YB=detectWindow.y+detectWindow.height+AREA_TOLERANCE;
         Rect search_window=Rect(detectWindow_XL,detectWindow_YT,detectWindow_XR-detectWindow_XL,detectWindow_YB-detectWindow_YT)&Rect(0,0,Color.size().width,Color.size().height);
         position_mask(search_window)=255;
-
-//        // calculate the other_object_mask
-//        other_object_mask=Mat::ones(Color.size(), CV_8U)*255;
-//        for (int i=0; i<current_detected_boxes.size(); i++)
-//        {
-//            if(i!=id)
-//            {
-//                uchar tmp =0;
-//                Rect current_tracked_box =current_detected_boxes[i];
-//                //                current_tracked_box.x=current_tracked_box.x-10;
-//                //                current_tracked_box.y=current_tracked_box.y-10;
-//                //                current_tracked_box.width=current_tracked_box.width+20;
-//                //                current_tracked_box.height=current_tracked_box.height+20;
-//                current_tracked_box=current_tracked_box&Rect(0,0,Color.size().width,Color.size().height);
-//                other_object_mask(current_tracked_box)=tmp;
-//            }
-//        }
         position_mask &= hsv_mask;
         backproj &= position_mask;
         backproj &= other_object_mask;
@@ -305,12 +412,13 @@ cv::RotatedRect Object_Detector::detectCurrentRect(int id)
         backproj &= other_object_mask;
     }
 
-    cv::RotatedRect tmp_detectedBox;
     if(detectWindow.area()>1)
-        tmp_detectedBox = object_shift(backproj, detectWindow,
-                                       cv::TermCriteria( CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 10, 1 ));
-//    cv::rectangle(backproj, detectWindow, cv::Scalar(255, 0, 0), 2, CV_AA);
-//    imshow("backproj final",backproj);
-    return tmp_detectedBox;
+        current_detectedBox = object_shift(backproj, detectWindow,
+                                           cv::TermCriteria( CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 10, 1 ));
+    //   cv::rectangle(backproj, detectWindow, cv::Scalar(255, 0, 0), 2, CV_AA);
+    //   imshow("backproj final",backproj);
+
+    return current_detectedBox;
 
 }
+

@@ -11,6 +11,7 @@ class Object_Detector
 {
 public:
     bool occluded;
+    bool half_occluded;
     double half_occluded_frames;
 
     //    ///////////For hsv mask///////////
@@ -19,9 +20,23 @@ public:
     //    ///////////For hsv mask///////////
 
     //    ///////////For camshift///////////
-    static bool use_hs;//if  use_hs==true, use hue and s to generate the hitograme to do the bacprojection , if not, just used the hue image
+
+
+   static std::string Backprojection_Mode;
+   //    Backprojection_Mode{
+   //        H ,//just use hue of select roi to do calhist for one time, then use the permenet hue hist to do the backproject on every hue frame
+   //        HS,//use hue and saturation of select roi to do calhist(named:HS_hist) for one time, then use the permenet hs hist to do the backproject on every hue&saturation frame
+   //        HSD//use hue and saturation of select roi to do calhist for one time(got :hs_hist_for_HSD,it is just used under occlusion), calculate the pdf of this hist(got hs_hist_pdf),
+   //        //then use the roi of depth data to do calhist and pdf(got :tmp_depth_hist_pdf) for every frame,
+   //        //then combine the permenet hs hist pdf (named:hs_hist_pdf) and tmp depth hist(named: tmp_depth_hist_pdf) to do the backproject on every hsd frame,when occluded
+   //    };
+
+
     static int h_bins,s_bins;//for the hue backrojection hist ,divide (HMin,HMax) to h_bins parts
+    static int d_bins;
     //    ///////////For camshift///////////
+
+
 
 
 
@@ -40,7 +55,6 @@ public:
     ///////////For camshift recover from occlusion///////////
 
     static std::vector<Rect> current_detected_boxes;//this one come from class:multiple_objects_detection, every time of every object's detection ,multiple_objects_detection will update this varable ,we use it to generate the other_object_mask
-
 private:
     static cv::Mat mainColor;
     static cv::Mat mainDepth;
@@ -48,10 +62,17 @@ private:
 
     bool firstRun;
     cv::Rect currentRect;
+    cv::RotatedRect current_detectedBox;
 
     cv::Rect detectWindow;
-    cv::Mat hsv, hue, hsv_mask, hist, backproj; //, histimg;
+    cv::Mat hsv, hue, hsv_mask,backproj; //, histimg;
 
+    cv::Mat h_hist;//H mode
+    cv::Mat hs_hist_for_HS;//HS mode
+    cv::Mat hs_hist_for_HSD,//just used under occlusion,because ,when oclluded ,can't use depth infomation to detect the objects
+    hs_hist_pdf,//use hs_hist_for_HSD to get pdf ,use it as the permnet part
+    tmp_depth_hist_pdf,//use every depth frame to get this ,use it as the tmp part
+    hsd_hist;//combine hs_hist_pdf(perment) and  tmp_depth_hist_pdf(tmp,every frame) to get this
 
     cv::Rect selection;
     cv::Mat Color,Depth;
@@ -61,8 +82,9 @@ private:
 
 public:
     Object_Detector()
-        :firstRun(true),occluded(false),half_occluded_frames(10)
+        :firstRun(true),occluded(false),half_occluded(false),half_occluded_frames(10)
     {
+//        hsd_hist=cv::zeros()
     }
 
     static void setMainColor(const cv::Mat _mainColor);
@@ -77,6 +99,12 @@ public:
     void setcurrent_detected_boxes(std::vector<Rect> _current_detected_boxes);
     std::vector<Rect>  getcurrent_detected_boxes();
 
+
+
+    void H_backprojection();
+    void HS_backprojection();
+    void HSD_backprojection();
+
     cv::RotatedRect object_shift(InputArray _probColor,Rect& window, TermCriteria criteria);
 
     cv::RotatedRect detectCurrentRect(int id);
@@ -90,13 +118,15 @@ int Object_Detector::HMin;
 int Object_Detector::SMin;
 int Object_Detector::VMin;
 
-bool Object_Detector::use_hs;
 int Object_Detector::h_bins;
 int Object_Detector::s_bins;
+int Object_Detector::d_bins;
 
 int Object_Detector::AREA_TOLERANCE;
 int Object_Detector::QUALITY_TOLERANCE;
 double Object_Detector::DENSITY_TOLORENCE;
 
 std::vector<Rect> Object_Detector::current_detected_boxes;
+
+std::string Object_Detector::Backprojection_Mode;
 #endif // Object_Detector_H
