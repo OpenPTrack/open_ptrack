@@ -24,7 +24,7 @@ bool use_background_removal;
 int background_calculate_frames;
 int threshold_4_detecting_foreground;//threshold of depth difference,use the difference to ditinguish the background and foreground
 bool show_2D_tracks;
-
+bool publish_world3D_rois;
 
 void configCb(detection::multiple_objects_detectionConfig &config, uint32_t level)
 {
@@ -61,6 +61,7 @@ int main(int argc, char** argv){
     nh.param("show_2D_track",show_2D_tracks,false);
     nh.param("output_detection_topic",output_detection_topic,std::string("/objects_detector/detections"));
 
+    nh.param("publish_world3D_rois",publish_world3D_rois,true);
 
     //set the stastic varables of object_detector class,the instruction of the varable can be found in the header of the class
     nh.param("HMin",Object_Detector::HMin,0);
@@ -78,8 +79,6 @@ int main(int argc, char** argv){
     nh.param("DENSITY_TOLORENCE",Object_Detector::DENSITY_TOLORENCE,4.0);
 
     nh.param("Backprojection_Mode",Object_Detector::Backprojection_Mode,std::string("HSD"));
-
-
 
     //  std::cout << "output detection topic: " << output_detection_topic << std::endl;
 
@@ -107,7 +106,7 @@ int main(int argc, char** argv){
 
 
     Multiple_Objects_Detection _multiple_objects_detection(output_detection_topic,useExact, useCompressed,
-                                                           use_background_removal,background_calculate_frames,threshold_4_detecting_foreground,show_2D_tracks);
+                                                           use_background_removal,background_calculate_frames,threshold_4_detecting_foreground,show_2D_tracks,publish_world3D_rois);
 
     std::cout << "start detecting..." << std::endl;
     _multiple_objects_detection.run_detection();

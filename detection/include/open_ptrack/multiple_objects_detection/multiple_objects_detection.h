@@ -34,10 +34,17 @@
 #include <opencv2/opencv.hpp>
 
 
+
 #include <ros/ros.h>
 #include <ros/spinner.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/Image.h>
+#include <tf/tf.h>
+#include <tf/transform_listener.h>
+#include <tf/transform_broadcaster.h>
+#include <Eigen/Eigen>
+#include <boost/foreach.hpp>
+
 
 #include <cv_bridge/cv_bridge.h>
 
@@ -60,6 +67,11 @@
 #include <opt_msgs/BoundingBox3D.h>
 #include <opt_msgs/TrackArray.h>
 #include <visualization_msgs/MarkerArray.h>
+
+#include <opt_msgs/Image2D_roi.h>
+#include <opt_msgs/Image2D_roi_array.h>
+#include <opt_msgs/World3D_roi.h>
+#include <opt_msgs/World3D_roi_array.h>
 
 using namespace opt_msgs;
 using namespace sensor_msgs;
@@ -91,14 +103,24 @@ private:
     image_transport::SubscriberFilter *subImageColor, *subImageDepth;
     message_filters::Subscriber<sensor_msgs::CameraInfo> *subCameraInfoColor, *subCameraInfoDepth;
 
+
     message_filters::Synchronizer<ExactSyncPolicy> *syncExact;
     message_filters::Synchronizer<ApproximateSyncPolicy> *syncApproximate;
     ////////////For receiving color and depth//////////////
 
 
-
     ////////////For roi selection////////////
-    bool objects_selected,paused;
+    bool objects_selected;
+    //    std::vector<Rect> objects;
+    //for roi projection
+    tf::TransformListener tf_listener;
+    ros::Subscriber sub_image2D_rois;
+    ros::Subscriber sub_world3D_rois;
+    ros::Publisher world3D_rois_pub;
+    World3D_roi current_World3D_roi_msg;
+    World3D_roi_array World3D_rois_msg;
+    bool publish_world3D_rois;
+    int numberofrois=0;
     ///////////For roi selection/////////////
 
 
@@ -110,11 +132,9 @@ private:
     ///////////For background removal///////////
 
 
-
     ///////////For camshift recover from occlusion///////////
     std::vector<bool> occludes;
     ///////////For camshift recover from occlusion///////////
-
 
 
     ///////////For generating 3d position///////////
@@ -127,7 +147,6 @@ private:
     ros::Publisher detection_pub;
     std::string color_header_frameId;
     ///////////For publish detection topic///////////
-
 
 
     ///////////For main detection///////////
@@ -143,16 +162,17 @@ private:
     std::vector<std::list<Rect>> tracks_2D;
     ///////////For display///////////
 
-
     //test time cost
-    //    std::chrono::time_point<std::chrono::high_resolution_clock> start, now;
+    std::chrono::time_point<std::chrono::high_resolution_clock> start, now;
+
+
 
 public:
     Multiple_Objects_Detection(const std::string &output_detection_topic,const bool useExact, const bool useCompressed,
-                               const bool use_background_removal, const int background_calculate_frames,const int threshold_4_detecting_foreground,const bool show_2D_tracks)
+                               const bool use_background_removal, const int background_calculate_frames,const int threshold_4_detecting_foreground,const bool show_2D_tracks, const bool publish_world3D_rois)
         : output_detection_topic(output_detection_topic),useExact(useExact), useCompressed(useCompressed),updateImage(false), running(false),
-          use_background_removal(use_background_removal), objects_selected(false),paused(false),background_calculate_frames(background_calculate_frames),threshold_4_detecting_foreground(threshold_4_detecting_foreground), queueSize(5),
-          nh(), spinner(0), it(nh) ,show_2D_tracks(show_2D_tracks)
+          use_background_removal(use_background_removal), objects_selected(false),background_calculate_frames(background_calculate_frames),threshold_4_detecting_foreground(threshold_4_detecting_foreground), queueSize(5),
+          nh(), spinner(0), it(nh) ,show_2D_tracks(show_2D_tracks) ,publish_world3D_rois(publish_world3D_rois)
     {
         std::string cameraName = "kinect2_head";
         topicColor = "/" + cameraName + "/" + K2_TOPIC_LORES_COLOR K2_TOPIC_RAW;
@@ -161,12 +181,14 @@ public:
         cameraMatrixColor = cv::Mat::zeros(3, 3, CV_64F);
         cameraMatrixDepth = cv::Mat::zeros(3, 3, CV_64F);
         detection_pub=nh.advertise<DetectionArray>(output_detection_topic,3);
+
+        std::string output_World3D_roi_topic = "/World3D_rois";
+        world3D_rois_pub=nh.advertise<World3D_roi_array>(output_World3D_roi_topic,3);
     }
 
     ~Multiple_Objects_Detection()
     {
     }
-
 
     void run_detection(){
 
@@ -192,28 +214,26 @@ public:
                     }
                     else//after get the bakground (depth_max),using it to do background removal,generate new color
                     {
+                        //                        start = std::chrono::high_resolution_clock::now();
                         background_removal();
+                        //                        now = std::chrono::high_resolution_clock::now();
+                        //                        double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count();
+                        //                        std::cout<<elapsed<<std::endl;
                     }
                 }
 
                 // if don't accept background_removal ||  background is already removed
                 if(!use_background_removal||(use_background_removal&&background_calculate_frames==0))
                 {
-                    if(!objects_selected&&paused)// pause to select object
-                    {
-                        multiple_objects_detector_initialization();
-                        cv::destroyWindow("Press P to pause and select objects:");
-                    }
-
                     //!!!!!!!!!!!!!!!!!!!!!!!main loop!!!!!!!!!!!!!!!!!!!!!!!
-                    else if(objects_selected&&!paused)// start to track after selecting objects
+                    if(objects_selected)// start to track after selecting objects
                     {
 
-                        //                        start = std::chrono::high_resolution_clock::now();
+                        //                                             start = std::chrono::high_resolution_clock::now();
                         multiple_objects_detection_main();
-                        //                        now = std::chrono::high_resolution_clock::now();
-                        //                        double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() / 1000.0;
-                        //                        std::cout<<elapsed<<std::endl;
+                        //                                                now = std::chrono::high_resolution_clock::now();
+                        //                                                double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count();
+                        //                                                std::cout<<elapsed<<std::endl;
 
 
                         //draw tracks_2D (cotinuely 10 detections)
@@ -222,31 +242,18 @@ public:
                             show_2D_tracks_on_image();
                         }
                     }
-                    if(!objects_selected)
-                        cv::imshow("Press P to pause and select objects:", main_color );
-                    char c = (char)cv::waitKey(10);
-                    if( c == 27 )
-                        break;
-                    switch(c)
-                    {
-                    case 'p':
-                        paused = !paused;
-                        break;
-                    case 'k':
-                        Object_Detectors.clear();
-                        break;
-                    default:
-                        ;
-                    }
                 }
             }
         }
     }
 
-
 private:
     void start_reciver()
     {
+
+        sub_image2D_rois = nh.subscribe("/kinect2_head/rgb_lowres/image2D_rois", 5, &Multiple_Objects_Detection::image2D_rois_Callback, this);
+        sub_world3D_rois=  nh.subscribe("/World3D_rois", 5, &Multiple_Objects_Detection::world3D_rois_Callback, this);
+
         running = true;
         std::string topicCameraInfoColor = topicColor.substr(0, topicColor.rfind('/')) + "/camera_info";
         std::string topicCameraInfoDepth = topicDepth.substr(0, topicDepth.rfind('/')) + "/camera_info";
@@ -261,13 +268,14 @@ private:
         if(useExact)
         {
             syncExact = new message_filters::Synchronizer<ExactSyncPolicy>(ExactSyncPolicy(queueSize), *subImageColor, *subImageDepth, *subCameraInfoColor, *subCameraInfoDepth);
-            syncExact->registerCallback(boost::bind(&Multiple_Objects_Detection::callback, this, _1, _2, _3, _4));
+            syncExact->registerCallback(boost::bind(&Multiple_Objects_Detection::image_callback, this, _1, _2, _3, _4));
         }
         else
         {
             syncApproximate = new message_filters::Synchronizer<ApproximateSyncPolicy>(ApproximateSyncPolicy(queueSize), *subImageColor, *subImageDepth, *subCameraInfoColor, *subCameraInfoDepth);
-            syncApproximate->registerCallback(boost::bind(&Multiple_Objects_Detection::callback, this, _1, _2, _3, _4));
+            syncApproximate->registerCallback(boost::bind(&Multiple_Objects_Detection::image_callback, this, _1, _2, _3, _4));
         }
+
 
         spinner.start();
 
@@ -280,9 +288,7 @@ private:
             }
             std::this_thread::sleep_for(duration);
         }
-
     }
-
 
     void background_calculation()
     {
@@ -293,7 +299,6 @@ private:
             background_calculate_frames=0;
             printf("use background removal and background is successfully read from file......\n");
             printf("please press P to select ROIs......\n");
-
         }
         else//background can't be read from file, being calculated
         {
@@ -309,7 +314,6 @@ private:
                 compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
                 compression_params.push_back(0);
                 //  pcl::io::savePCDFileASCII ("/tmp/background_" + frame_id.substr(1, frame_id.length()-1) + ".pcd", *background_cloud);
-
                 cv::imwrite("/tmp/depth_background.png", depth_max, compression_params);
                 printf("background is sucessfully calculated and saved......\n");
                 printf("please press P to select ROIs......\n");
@@ -352,53 +356,9 @@ private:
         }
     }
 
-
-    void multiple_objects_detector_initialization()
-    {
-        printf("please press P to select ROIs......\n");
-        std::vector<Rect> objects;
-        roi_zz select_roi;
-        select_roi.select("selectroi",main_color,objects,false);
-        cv::destroyWindow("selectroi");
-
-        //quit when the tracked object(s) is not provided
-        if(objects.size()<1)
-            return;
-
-
-        for(std::vector<Rect>::iterator it =objects.begin();it!=objects.end();it++)
-        {
-
-            Object_Detector newDetector;
-            cv::Rect selection=*it;
-            selection=selection&Rect(0,0,main_color.size().width,main_color.size().height);
-
-            newDetector.setCurrentRect(selection);
-            Object_Detectors.push_back(newDetector);
-
-            current_detected_boxes.push_back(selection);
-
-            std::list<Rect> tracks_2D_(10);
-            tracks_2D.push_back(tracks_2D_);
-
-            bool occlude_=false;
-            occludes.push_back(occlude_);
-
-        }
-
-        Object_Detector::current_detected_boxes=current_detected_boxes;
-
-        objects_selected=true;
-        paused=false;
-        std::cout<<Object_Detectors.size()<<" objects are selected,start tracking"<<std::endl;
-    }
-
-
-
     //main_detection
     void multiple_objects_detection_main()
     {
-
         if( main_color.empty() )
             return;
         Object_Detector::setMainColor(main_color);
@@ -416,7 +376,6 @@ private:
             Object_Detector::setMainDepth(main_depth_16);
         }
 
-
         //detection_array_msg!!!!!!!!!!!!!!!!!!!!!!!
         /// Write detection message:
         DetectionArray::Ptr detection_array_msg(new DetectionArray);
@@ -432,8 +391,6 @@ private:
         detection_array_msg->confidence_type = std::string("hog+svm");
         detection_array_msg->image_type = std::string("rgb");
         //detection_array_msg msg!!!!!!!!!!!!!!!!!!!!!!!
-
-
 
         //detect one by one
 
@@ -451,10 +408,8 @@ private:
                 //cv::rectangle(color, current_trackBox.boundingRect(), cv::Scalar(255, 0, 0), 2, CV_AA);
                 Object_Detector::current_detected_boxes=current_detected_boxes;
 
-
                 tracks_2D[i].push_back(current_detected_boxes[i]);
                 tracks_2D[i].pop_front();
-
 
                 // genearate detection msg!!!!!!!!!!!!!!!!!!!!!!!!!!
                 Detection detection_msg;
@@ -504,13 +459,11 @@ private:
         detection_pub.publish(detection_array_msg);		 // publish message
     }
 
-
     void show_2D_tracks_on_image()
     {
         for(size_t i=0; i<tracks_2D.size(); i++)
         {
             std::list<Rect> current_track=tracks_2D[i];
-
             for( std::list<Rect> ::iterator it = current_track.begin(); it!=current_track.end(); it++)
             {
                 Rect test_Rect((*it).x+((*it).width)/2,(*it).y+((*it).height)/2,1,1);
@@ -519,13 +472,11 @@ private:
             }
         }
         cv::imshow( "show_2D_tracks", main_color );
+        cv::waitKey(10);
     }
 
-
-
-
-    void callback(const sensor_msgs::Image::ConstPtr imageColor, const sensor_msgs::Image::ConstPtr imageDepth,
-                  const sensor_msgs::CameraInfo::ConstPtr cameraInfoColor, const sensor_msgs::CameraInfo::ConstPtr cameraInfoDepth)
+    void image_callback(const sensor_msgs::Image::ConstPtr imageColor, const sensor_msgs::Image::ConstPtr imageDepth,
+                        const sensor_msgs::CameraInfo::ConstPtr cameraInfoColor, const sensor_msgs::CameraInfo::ConstPtr cameraInfoDepth)
     {
         cv::Mat _color, _depth;
 
@@ -559,6 +510,159 @@ private:
         lock.unlock();
     }
 
+    void image2D_rois_Callback(const opt_msgs::Image2D_roi_array::ConstPtr& image2D_roi_msg)
+    {
+
+        for( std::vector<opt_msgs::Image2D_roi>::const_iterator it = image2D_roi_msg->Rois.begin();
+             it != image2D_roi_msg->Rois.end(); it++)
+        {
+            cv::Rect selection((*it).x,(*it).y,(*it).width,(*it).height);
+            selection=selection&Rect(0,0,main_color.size().width,main_color.size().height);
+
+            //////////////initialize one detector with one selection//////////////
+            if(selection.area()>1)
+            {
+                Object_Detector newDetector;
+                newDetector.setCurrentRect(selection);
+                Object_Detectors.push_back(newDetector);
+                current_detected_boxes.push_back(selection);
+                std::list<Rect> tracks_2D_(10);
+                tracks_2D.push_back(tracks_2D_);
+                bool occlude_=false;
+                occludes.push_back(occlude_);
+                Object_Detector::current_detected_boxes=current_detected_boxes;
+                //////////////~~initialize one detector with one selection//////////////
+
+
+                //////////////project theselection from current_frame to other cameras//////////////
+                //1. project from currentframe to world
+                std::string world_frame_id="/world";
+                std::string current_frame_id=color_header_frameId;
+                tf::StampedTransform transform_current2world;
+                try{
+                    tf_listener.lookupTransform(world_frame_id, current_frame_id, ros::Time(0), transform_current2world);
+                }
+                catch(tf::TransformException ex){
+                    ROS_ERROR("%s",ex.what());
+                    ros::Duration(1.0).sleep();
+                }
+                Point2d current_frame_image2D_1(cvFloor(selection.x),cvFloor(selection.y));
+                Point2d current_frame_image2D_2(cvFloor(selection.x+selection.width),cvFloor(selection.y+selection.height));
+                std::cout<<"current_frame_image2D_11111111111111111: "<<current_frame_image2D_1.x<<"  "<<current_frame_image2D_1.y<<std::endl;
+                std::cout<<"current_frame_image2D_22222222222222222: "<<current_frame_image2D_2.x<<"  "<<current_frame_image2D_2.y<<std::endl;
+
+                double current_frame_depth_1=main_depth_16.at<ushort>(current_frame_image2D_1.y,current_frame_image2D_1.x)/1000.0;//meter ,not mm
+                double current_frame_depth_2=main_depth_16.at<ushort>(current_frame_image2D_2.y,current_frame_image2D_2.x)/1000.0;//meter ,not mm
+
+                tf::Vector3 world3D_1=image2D_to_world3D(current_frame_image2D_1,current_frame_depth_1,transform_current2world);
+                tf::Vector3 world3D_2=image2D_to_world3D(current_frame_image2D_2,current_frame_depth_2,transform_current2world);
+
+                //publish
+                current_World3D_roi_msg.no=numberofrois++;
+                current_World3D_roi_msg.x1=world3D_1.getX();
+                current_World3D_roi_msg.y1=world3D_1.getY();
+                current_World3D_roi_msg.z1=world3D_1.getZ();
+                current_World3D_roi_msg.x2=world3D_2.getX();
+                current_World3D_roi_msg.y2=world3D_2.getY();
+                current_World3D_roi_msg.z2=world3D_2.getZ();
+                World3D_rois_msg.Rois.push_back(current_World3D_roi_msg);
+
+                //                cv::rectangle(main_color, selection, cv::Scalar(255, 0, 0), 2, CV_AA);
+            }
+        }
+        cv::imwrite("/tmp/show_the_set_recs.png",main_color);
+        objects_selected=true;
+        std::cout<<Object_Detectors.size()<<" objects are selected"<<std::endl;
+
+
+        world3D_rois_pub.publish(World3D_rois_msg);
+        std::cout<<World3D_rois_msg.Rois.size()<<" World3D_rois are published"<<std::endl;
+        World3D_rois_msg.Rois.clear();
+    }
+
+
+    //project form image2D coordinate of currentframe to world3D coordinate,
+    // the intrisinc martrix comes from the "cameraMatrixColor"
+    //two steps : image2D--camera3D--world3D
+    tf::Vector3 image2D_to_world3D(Point2d i, double depth_, tf::StampedTransform transform_)
+    {
+        tf::Vector3 v;
+        v.setX((i.x-cx)*fx*depth_);
+        v.setY((i.y-cy)*fy*depth_);
+        v.setZ(depth_);
+        v = transform_(v);
+        std::cout<<"world3D"<<v.getX()<<" "<<v.getY()<<" "<<v.getZ()<<std::endl;
+        return v;
+    }
+
+
+    void world3D_rois_Callback(const opt_msgs::World3D_roi_array::ConstPtr& world3D_rois_msg)
+    {
+        if(publish_world3D_rois)
+        {
+            sub_world3D_rois.shutdown();
+            return;
+        }
+        for( std::vector<opt_msgs::World3D_roi>::const_iterator it = world3D_rois_msg->Rois.begin();
+             it != world3D_rois_msg->Rois.end(); it++)
+        {
+            tf::Vector3 world3D_1,world3D_2;
+            world3D_1.setX((*it).x1);
+            world3D_1.setY((*it).y1);
+            world3D_1.setZ((*it).z1);
+            world3D_2.setX((*it).x2);
+            world3D_2.setY((*it).y2);
+            world3D_2.setZ((*it).z2);
+
+            tf::StampedTransform transform_world2projectedframe;
+            std::string projected_frame_id=color_header_frameId;
+            std::string world_frame_id= "/world";
+            try{
+                tf_listener.lookupTransform(projected_frame_id, world_frame_id, ros::Time(0), transform_world2projectedframe);
+            }
+            catch(tf::TransformException ex){
+                ROS_ERROR("%s",ex.what());
+                ros::Duration(1.0).sleep();
+            }
+            Point2d projected_frame_image2D_1=world3D_to_image2D(world3D_1,transform_world2projectedframe);
+            Point2d projected_frame_image2D_2=world3D_to_image2D(world3D_2,transform_world2projectedframe);
+            std::cout<<"projected_frame_image2D_11111111111111111: "<<projected_frame_image2D_1.x<<"  "<<projected_frame_image2D_1.y<<std::endl;
+            std::cout<<"projected_frame_image2D_22222222222222222: "<<projected_frame_image2D_2.x<<"  "<<projected_frame_image2D_2.y<<std::endl;
+
+            cv::Rect selection(projected_frame_image2D_1,projected_frame_image2D_2);////////
+            selection=selection&Rect(0,0,main_color.size().width,main_color.size().height);
+
+            //////////////initialize one detector with one selection//////////////
+            /// \brief newDetector
+            if(selection.area()>1)
+            {
+                Object_Detector newDetector;
+                newDetector.setCurrentRect(selection);
+                Object_Detectors.push_back(newDetector);
+                current_detected_boxes.push_back(selection);
+                std::list<Rect> tracks_2D_(10);
+                tracks_2D.push_back(tracks_2D_);
+                bool occlude_=false;
+                occludes.push_back(occlude_);
+                Object_Detector::current_detected_boxes=current_detected_boxes;
+                cv::rectangle(main_color, selection, cv::Scalar(255, 0, 0), 2, CV_AA);
+            }
+
+        }
+        cv::imwrite("/tmp/show_the_project_recs.png",main_color);
+        objects_selected=true;
+        std::cout<<Object_Detectors.size()<<" objects are selected"<<std::endl;
+    }
+    Point2d world3D_to_image2D(tf::Vector3 v,tf::StampedTransform inverse_transform_)
+    {
+        v = inverse_transform_(v);
+        //        std::cout<<"cam3D"<<v.getX()<<" "<<v.getY()<<" "<<v.getZ()<<std::endl;
+        double depth_=v.getZ();
+        Point2d i;
+        i.x=cx+ (v.getX())/(fx*depth_);
+        i.y=cy+ (v.getY())/(fy*depth_);
+        return i;
+    }
 
     void readImage(const sensor_msgs::Image::ConstPtr msgImage, cv::Mat &image) const
     {
@@ -575,8 +679,6 @@ private:
             *itC = cameraInfo->K[i];
         }
     }
-
-
 };
 
 

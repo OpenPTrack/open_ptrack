@@ -39,6 +39,9 @@
      <remap from="/kinect2_head/depth_lowres/image" to="/$(arg sensor_name)/depth_lowres/image" />
      <remap from="/kinect2_head/depth_lowres/camera_info" to="/$(arg sensor_name)/depth_lowres/camera_info" />
      <remap from="/kinect2_head/rgb_lowres/camera_info" to="/$(arg sensor_name)/rgb_lowres/camera_info" />
+     <remap from="/kinect2_head/rgb_lowres/image2D_rois" to="/$(arg sensor_name)/rgb_lowres/image2D_rois" />
+
+
    </node>
   
 </launch>

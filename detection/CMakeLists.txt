@@ -62,7 +62,6 @@ add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBS})
 
 
-
 add_executable(multiple_objects_detection_node apps/multiple_objects_detection_node.cpp)
 target_link_libraries(multiple_objects_detection_node ${PROJECT_NAME} ${OpenCV_LIBRARIES} ${PCL_LIBRARIES} ${catkin_LIBRARIES})
 

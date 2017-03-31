@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<!-- CALIBRATION ID: 1490893680 -->
+<launch>
+
+  <!-- Network parameters -->
+
+  <!-- pc: yongheng2 -->
+  <!-- sensor: kinect2_lenovo -->
+  <node pkg="tf" type="static_transform_publisher" name="kinect2_lenovo_broadcaster"
+        args="-1.97663 2.46092 2.67391 0.00874486 0.899538 -0.436721 -0.00548032 /world /kinect2_lenovo 100" />
+  <node pkg="tf" type="static_transform_publisher" name="kinect2_lenovo_broadcaster_2"
+        args="0 0 0 1.57 -1.57 0 /kinect2_lenovo /kinect2_lenovo_link 100" />
+
+  <!-- pc: yongheng0 -->
+  <!-- sensor: kinect2_head -->
+  <node pkg="tf" type="static_transform_publisher" name="kinect2_head_broadcaster"
+        args="-3.80285 -3.28904 2.84699 0.875696 -0.136273 0.0710624 -0.457752 /world /kinect2_head 100" />
+  <node pkg="tf" type="static_transform_publisher" name="kinect2_head_broadcaster_2"
+        args="0 0 0 1.57 -1.57 0 /kinect2_head /kinect2_head_link 100" />
+
+  <!-- pc: yongheng1 -->
+  <!-- sensor: kinect2_far -->
+  <node pkg="tf" type="static_transform_publisher" name="kinect2_far_broadcaster"
+        args="0.119017 -3.05484 2.8118 0.824791 0.244797 -0.133158 -0.492 /world /kinect2_far 100" />
+  <node pkg="tf" type="static_transform_publisher" name="kinect2_far_broadcaster_2"
+        args="0 0 0 1.57 -1.57 0 /kinect2_far /kinect2_far_link 100" />
+
+</launch>

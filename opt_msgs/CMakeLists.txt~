@@ -3,7 +3,7 @@ project(opt_msgs)
 find_package(catkin REQUIRED COMPONENTS roscpp message_generation geometry_msgs sensor_msgs)
 
 add_message_files(FILES Rois.msg RoiRect.msg HumanEntry.msg HumanEntries.msg BoundingBox2D.msg BoundingBox3D.msg Detection.msg DetectionArray.msg Track.msg TrackArray.msg CalibrationStatus.msg IDArray.msg
-    Image2D_roi.msg Image2D_roi_array.msg World3D_roi.msg World3D_roi_array.msg)
+    Image2D_roi.msg Image2D_roi_array.msg World3D_roi.msg World3D_roi_arra.msg)
 
 add_service_files(FILES OPTSensor.srv OPTTransform.srv)
 

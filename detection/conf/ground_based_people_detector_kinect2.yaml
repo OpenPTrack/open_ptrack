@@ -14,7 +14,7 @@ valid_points_threshold: 0.3
 ## Background subtraction ##
 ############################
 # Flag enabling/disabling background subtraction:
-background_subtraction: false
+background_subtraction: true
 # Resolution of the octree representing the background:
 background_resolution: 0.3
 # Seconds to use to learn the background:
@@ -44,7 +44,7 @@ heads_minimum_distance: 0.3
 # Voxel size used to downsample the point cloud (lower: detection slower but more precise; higher: detection faster but less precise):
 voxel_size: 0.06
 # Denoising flag. If true, a statistical filter is applied to the point cloud to remove noise:
-apply_denoising: false
+apply_denoising: true
 # MeanK for denoising (the higher it is, the stronger is the filtering):
 mean_k_denoising: 5
 # Standard deviation for denoising (the lower it is, the stronger is the filtering):

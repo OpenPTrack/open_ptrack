@@ -14,7 +14,7 @@ extrinsic_calibration: true
 # Maximum delay that a detection message can have in order to be considered for tracking:
 max_detection_delay: 2.0
 # Flag stating if the results of a calibration refinement procedure should be used to correct detection positions: 
-calibration_refinement: true
+calibration_refinement: false
 
 ########################
 ## Sensor orientation ##
