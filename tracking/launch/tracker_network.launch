@@ -63,7 +63,7 @@
   </node>
 
   <node pkg="opt_gui" type="opt_gui" name="opt_gui" output="screen">
-
+     <rosparam command="load"                        file="$(find opt_gui)/conf/opt_gui.yaml" /> 
   </node>
 
 </launch>

@@ -471,6 +471,7 @@ private:
                 cv::rectangle(main_color, test_Rect, cv::Scalar(250*(i), 250*(i-1), 250*(i-2)), 2, CV_AA);
             }
         }
+        cv::namedWindow("show_2D_tracks");
         cv::imshow( "show_2D_tracks", main_color );
         cv::waitKey(10);
     }
