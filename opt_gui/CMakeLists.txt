@@ -19,8 +19,7 @@ project(opt_gui)
 ##############################################################################
 
 # qt_build provides the qt cmake glue, roscpp the comms for a default talker
-find_package(catkin REQUIRED COMPONENTS qt_build roscpp sensor_msgs image_transport cv_bridge)
-
+find_package(catkin REQUIRED COMPONENTS qt_build roscpp sensor_msgs image_transport cv_bridge opt_msgs)
 
 set(QML_IMPORT_PATH "${QML_IMPORT_PATH};${CATKIN_GLOBAL_LIB_DESTINATION}" )
 set(QML_IMPORT_PATH2 "${QML_IMPORT_PATH};${CATKIN_GLOBAL_LIB_DESTINATION}" )
@@ -31,7 +30,10 @@ include_directories(${catkin_INCLUDE_DIRS} include)
 #add_message_files(FILES Roi_object.msg Roi_object_array.msg)
 #generate_messages(DEPENDENCIES std_msgs geometry_msgs sensor_msgs)
 
-catkin_package()
+catkin_package(
+
+   CATKIN_DEPENDS qt_build roscpp sensor_msgs image_transport cv_bridge
+)
 
 #generate_messages()
 ##############################################################################

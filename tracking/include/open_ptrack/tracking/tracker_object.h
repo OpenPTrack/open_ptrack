@@ -37,14 +37,16 @@
  *
  */
 
-#ifndef OPEN_PTRACK_TRACKING_TRACKER_H_
-#define OPEN_PTRACK_TRACKING_TRACKER_H_
+#ifndef OPEN_PTRACK_TRACKING_TRACKER_OBJECT_H_
+#define OPEN_PTRACK_TRACKING_TRACKER_OBJECT_H_
 
 #include <open_ptrack/detection/detection.h>
-#include <open_ptrack/tracking/track.h>
+#include <open_ptrack/tracking/track_object.h>
 #include <open_ptrack/tracking/munkres.h>
 #include <opt_msgs/TrackArray.h>
 #include <opt_msgs/IDArray.h>
+#include <opt_msgs/ObjectName.h>
+#include <opt_msgs/ObjectNameArray.h>
 #include <visualization_msgs/MarkerArray.h>
 
 namespace open_ptrack
@@ -52,17 +54,17 @@ namespace open_ptrack
 namespace tracking
 {
 /** \brief Tracker performs tracking-by-detection */
-class Tracker
+class Tracker_object
 {
 protected:
     /** \brief List of all active tracks */
-    std::list<open_ptrack::tracking::Track*> tracks_;
+    std::list<open_ptrack::tracking::Track_object*> tracks_;
 
     /** \brief List of lost tracks */
-    std::list<open_ptrack::tracking::Track*> lost_tracks_;
+    std::list<open_ptrack::tracking::Track_object*> lost_tracks_;
 
     /** \brief List of tracks with Status = NEW */
-    std::list<open_ptrack::tracking::Track*> new_tracks_;
+    std::list<open_ptrack::tracking::Track_object*> new_tracks_;
 
     /** \brief List of current detections */
     std::vector<open_ptrack::detection::Detection> detections_;
@@ -156,17 +158,20 @@ protected:
     updateLostTracks();
 
 
+public:
+    //for object tracking
+    std::vector <int> association_for_initialize_objectnames_;
 
 
 public:
     /** \brief Constructor */
-    Tracker(double gate_distance, bool detector_likelihood, std::vector<double> likelihood_weights, bool velocity_in_motion_term,
+    Tracker_object(double gate_distance, bool detector_likelihood, std::vector<double> likelihood_weights, bool velocity_in_motion_term,
             double min_confidence, double min_confidence_detections, double sec_before_old, double sec_before_fake,
             double sec_remain_new, int detections_to_validate, double period, double position_variance,
             double acceleration_variance, std::string world_frame_id, bool debug_mode, bool vertical);
 
     /** \brief Destructor */
-    virtual ~Tracker();
+    virtual ~Tracker_object();
 
     /**
          * \brief Initialization when a new set of detections arrive.
@@ -214,6 +219,13 @@ public:
          */
     void
     toMsg(opt_msgs::TrackArray::Ptr& msg, std::string& source_frame_id);
+
+
+    void
+    to_object_name_Msg(opt_msgs::ObjectNameArray::Ptr& msg);
+
+
+
 
     /**
          * \brief Writes the ID of each alive track into an IDArray message.
@@ -332,4 +344,4 @@ public:
 } /* namespace tracking */
 } /* namespace open_ptrack */
 
-#endif /* OPEN_PTRACK_TRACKING_TRACKER_H_ */
+#endif /* OPEN_PTRACK_TRACKING_TRACKER_OBJECT_H_ */

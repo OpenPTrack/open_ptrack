@@ -56,11 +56,15 @@
 #include <open_ptrack/opt_utils/conversions.h>
 #include <open_ptrack/detection/detection.h>
 #include <open_ptrack/detection/detection_source.h>
-#include <open_ptrack/tracking/tracker.h>
+#include <open_ptrack/tracking/tracker_object.h>
 #include <opt_msgs/Detection.h>
 #include <opt_msgs/DetectionArray.h>
 #include <opt_msgs/TrackArray.h>
 #include <opt_msgs/IDArray.h>
+#include <opt_msgs/ObjectName.h>
+#include <opt_msgs/ObjectNameArray.h>
+
+
 //#include <open_ptrack/opt_utils/ImageConverter.h>
 
 // Dynamic reconfigure:
@@ -83,6 +87,8 @@ bool output_tracking_results;
 bool output_detection_results;  // Enables/disables the publishing of detection positions to be visualized in RViz
 bool vertical;
 ros::Publisher results_pub;
+ros::Publisher object_names_pub;
+
 ros::Publisher marker_pub_tmp;
 ros::Publisher marker_pub;
 ros::Publisher pointcloud_pub;
@@ -95,7 +101,7 @@ tf::Transform camera_frame_to_world_transform;
 tf::Transform world_to_camera_frame_transform;
 bool extrinsic_calibration;
 double period;
-open_ptrack::tracking::Tracker* tracker;
+open_ptrack::tracking::Tracker_object* tracker_object;
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr history_pointcloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr detection_history_pointcloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 bool swissranger;
@@ -155,7 +161,6 @@ createMarker (int id, std::string frame_id, ros::Time stamp, Eigen::Vector3d pos
   marker.color.b = color(2);
   marker.color.a = 1.0;
   marker.lifetime = ros::Duration(0.2);
-
   return marker;
 }
 
@@ -297,7 +302,7 @@ detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
         new_confidence = (new_confidence - (-3)) / 3 * 4 + 2;
         detections_vector[i].setConfidence(new_confidence);
 
-        //std::cout << detections_vector[i].getConfidence() << std::endl;
+//        std::cout<< detections_vector[i].getConfidence() << std::endl;
       }
     }
 
@@ -358,13 +363,14 @@ detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
     // If at least one detection has been received:
     if((detections_vector.size() > 0) && (time_delay < max_detection_delay))
     {
-      // Perform detection-track association:
-      tracker->newFrame(detections_vector);
-      tracker->updateTracks();
 
+      // Perform detection-track association:
+      tracker_object->newFrame(detections_vector);
+      tracker_object->updateTracks();
 
       //for object tracking
-//      association_for_initialize_objectnames=tracker->association_for_initialize_objectnames_;
+//      association_for_initialize_objectnames=tracker_object->association_for_initialize_objectnames_;
+
       //write the corresponding names??????????
 
 
@@ -374,10 +380,18 @@ detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
         opt_msgs::TrackArray::Ptr tracking_results_msg(new opt_msgs::TrackArray);
         tracking_results_msg->header.stamp = ros::Time::now();//frame_time;
         tracking_results_msg->header.frame_id = world_frame_id;
-        tracker->toMsg(tracking_results_msg);
+        tracker_object->toMsg(tracking_results_msg);
         // Publish tracking message:
         results_pub.publish(tracking_results_msg);
       }
+
+
+      opt_msgs::ObjectNameArray::Ptr object_names_msg(new opt_msgs::ObjectNameArray);
+      object_names_msg->header.stamp = ros::Time::now();
+      object_names_msg->header.frame_id=frame_id;
+      tracker_object->to_object_name_Msg(object_names_msg);
+      object_names_pub.publish(object_names_msg);
+
 
 //      //Show the tracking process' results as an image
 //      if(output_image_rgb)
@@ -407,14 +421,14 @@ detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
       opt_msgs::IDArray::Ptr alive_ids_msg(new opt_msgs::IDArray);
       alive_ids_msg->header.stamp = ros::Time::now();
       alive_ids_msg->header.frame_id = world_frame_id;
-      tracker->getAliveIDs (alive_ids_msg);
+      tracker_object->getAliveIDs (alive_ids_msg);
       alive_ids_pub.publish (alive_ids_msg);
 
       // Show the pose of each tracked object with a 3D marker (to be visualized with ROS RViz)
       if(output_markers)
       {
         visualization_msgs::MarkerArray::Ptr marker_msg(new visualization_msgs::MarkerArray);
-        tracker->toMarkerArray(marker_msg);
+        tracker_object->toMarkerArray(marker_msg);
         marker_pub.publish(marker_msg);
       }
 
@@ -423,7 +437,7 @@ detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
       {
         history_pointcloud->header.stamp = frame_time.toNSec() / 1e3;  // Convert from ns to us
         history_pointcloud->header.frame_id = world_frame_id;
-        starting_index = tracker->appendToPointCloud(history_pointcloud, starting_index,
+        starting_index = tracker_object->appendToPointCloud(history_pointcloud, starting_index,
             output_history_size);
         pointcloud_pub.publish(history_pointcloud);
       }
@@ -555,15 +569,15 @@ fillChiMap(std::map<double, double>& chi_map, bool velocity_in_motion_term)
 void
 configCb(Config &config, uint32_t level)
 {
-  tracker->setMinConfidenceForTrackInitialization (config.min_confidence_initialization);
+  tracker_object->setMinConfidenceForTrackInitialization (config.min_confidence_initialization);
   max_detection_delay = config.max_detection_delay;
   calibration_refinement = config.calibration_refinement;
-  tracker->setSecBeforeOld (config.sec_before_old);
-  tracker->setSecBeforeFake (config.sec_before_fake);
-  tracker->setSecRemainNew (config.sec_remain_new);
-  tracker->setDetectionsToValidate (config.detections_to_validate);
-  tracker->setDetectorLikelihood (config.detector_likelihood);
-  tracker->setLikelihoodWeights (config.detector_weight*chi_map[0.999]/18.467, config.motion_weight);
+  tracker_object->setSecBeforeOld (config.sec_before_old);
+  tracker_object->setSecBeforeFake (config.sec_before_fake);
+  tracker_object->setSecRemainNew (config.sec_remain_new);
+  tracker_object->setDetectionsToValidate (config.detections_to_validate);
+  tracker_object->setDetectorLikelihood (config.detector_likelihood);
+  tracker_object->setLikelihoodWeights (config.detector_weight*chi_map[0.999]/18.467, config.motion_weight);
 
 //  if (config.velocity_in_motion_term != velocity_in_motion_term)
 //  {
@@ -577,18 +591,18 @@ configCb(Config &config, uint32_t level)
 //  {
     if (config.acceleration_variance != acceleration_variance)
     {
-      tracker->setAccelerationVariance (config.acceleration_variance);
+      tracker_object->setAccelerationVariance (config.acceleration_variance);
     }
 
     if (config.position_variance_weight != position_variance_weight)
     {
       double position_variance = config.position_variance_weight*std::pow(2 * voxel_size, 2) / 12.0;
-      tracker->setPositionVariance (position_variance);
+      tracker_object->setPositionVariance (position_variance);
     }
 //  }
 
   gate_distance = chi_map.find(config.gate_distance_probability) != chi_map.end() ? chi_map[config.gate_distance_probability] : chi_map[0.999];
-  tracker->setGateDistance (config.gate_distance_probability);
+  tracker_object->setGateDistance (config.gate_distance_probability);
 }
 
 int
@@ -604,6 +618,7 @@ main(int argc, char** argv)
   marker_pub = nh.advertise<visualization_msgs::MarkerArray>("/tracker/markers_array", 1);
   pointcloud_pub = nh.advertise<pcl::PointCloud<pcl::PointXYZRGBA> >("/tracker/history", 1);
   results_pub = nh.advertise<opt_msgs::TrackArray>("/tracker/tracks", 100);
+  object_names_pub=nh.advertise<opt_msgs::ObjectNameArray>("/tracker/object_names", 100);
   detection_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("/detector/markers_array", 1);
   detection_trajectory_pub = nh.advertise<pcl::PointCloud<pcl::PointXYZRGBA> >("/detector/history", 1);
   alive_ids_pub = nh.advertise<opt_msgs::IDArray>("/tracker/alive_ids", 1);
@@ -739,7 +754,7 @@ main(int argc, char** argv)
 //  cv::namedWindow("TRACKER ", CV_WINDOW_NORMAL);
 
   // Initialize an instance of the Tracker object:
-  tracker = new open_ptrack::tracking::Tracker(
+  tracker_object = new open_ptrack::tracking::Tracker_object(
       gate_distance,
       detector_likelihood,
       likelihood_weights,

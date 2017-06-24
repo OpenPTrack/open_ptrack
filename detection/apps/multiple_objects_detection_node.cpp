@@ -12,19 +12,23 @@
 using namespace std;
 using namespace cv;
 
-//typedef dynamic_reconfigure::Server<Config> ReconfigureServer;
 
+//Parms for receiving color and depth image
 std::string cameraName;
 bool useExact = false;
 bool useCompressed = false;
 
+
 std::string output_detection_topic;
 
+bool set_object_names;//if to use this detector to set the object names
+
+//Parms for use_background_removal
 bool use_background_removal;
 int background_calculate_frames;
 int threshold_4_detecting_foreground;//threshold of depth difference,use the difference to ditinguish the background and foreground
-bool show_2D_tracks;
-bool publish_world3D_rois;
+
+bool show_2D_tracks;//show 2d tracks or not
 
 void configCb(detection::multiple_objects_detectionConfig &config, uint32_t level)
 {
@@ -54,14 +58,13 @@ int main(int argc, char** argv){
         return 0;
     }
 
-//    nh.param("sensor_name", cameraName, std::string("kinect2_head"));
     nh.param("use_background_removal",use_background_removal,false);
     nh.param("background_calculate_frames",background_calculate_frames,100);
     nh.param("threshold_4_detecting_foreground",threshold_4_detecting_foreground,100);
     nh.param("show_2D_track",show_2D_tracks,false);
     nh.param("output_detection_topic",output_detection_topic,std::string("/objects_detector/detections"));
+    nh.param("set_object_names",set_object_names,false);
 
-    nh.param("publish_world3D_rois",publish_world3D_rois,true);
 
     //set the stastic varables of object_detector class,the instruction of the varable can be found in the header of the class
     nh.param("HMin",Object_Detector::HMin,0);
@@ -79,6 +82,7 @@ int main(int argc, char** argv){
     nh.param("DENSITY_TOLORENCE",Object_Detector::DENSITY_TOLORENCE,4.0);
 
     nh.param("Backprojection_Mode",Object_Detector::Backprojection_Mode,std::string("HSD"));
+
 
     //  std::cout << "output detection topic: " << output_detection_topic << std::endl;
 
@@ -105,8 +109,9 @@ int main(int argc, char** argv){
     server.setCallback(f);
 
 
-    Multiple_Objects_Detection _multiple_objects_detection(output_detection_topic,useExact, useCompressed,
-                                                           use_background_removal,background_calculate_frames,threshold_4_detecting_foreground,show_2D_tracks,publish_world3D_rois);
+    // main class for detection
+    Multiple_Objects_Detection _multiple_objects_detection(output_detection_topic,set_object_names,useExact, useCompressed,
+                                                           use_background_removal,background_calculate_frames,threshold_4_detecting_foreground,show_2D_tracks);
 
     std::cout << "start detecting..." << std::endl;
     _multiple_objects_detection.run_detection();

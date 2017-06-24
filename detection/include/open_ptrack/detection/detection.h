@@ -153,6 +153,13 @@ namespace open_ptrack
         double
         getDistance();
 
+
+        //get the object name from msg
+        std::string
+        getObjectName();
+
+
+
         /**
          * \brief Returns if the detection corresponds to an occluded person or not.
          *

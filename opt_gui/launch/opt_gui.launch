@@ -5,7 +5,7 @@
 
   <node pkg="opt_gui" type="opt_gui" name="opt_gui" output="screen" respawn="true">
         
-    <rosparam command="load"                        file="$(find opt_gui)/conf/opt_gui.yaml" /> 
+    <rosparam command="load"                        file="$(find opt_calibration)/conf/camera_network.yaml" /> 
     
   </node> 
 

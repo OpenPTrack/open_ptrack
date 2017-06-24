@@ -112,6 +112,13 @@ namespace open_ptrack
       return detection_msg_.distance;
     }
 
+    std::string
+     Detection::getObjectName()
+    {
+      return detection_msg_.object_name;
+    }
+
+
     bool
     Detection::isOccluded()
     {

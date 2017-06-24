@@ -3,286 +3,31 @@ import QtQuick.Window 2.1
 import OPT_Streaming_Component 1.0
 import QtQuick.Controls 1.1
 import QtQuick.Layouts 1.1
-
+import Qt.labs.folderlistmodel 2.1
 Window {
     id: main_window
-    visibility: Window.FullScreen
+    //visibility: Window.FullScreen
     width: Screen.width
     height: Screen.height
     title: "MOT"
     visible: true
 
-//    property string sensor_topic1:"/kinect2_head/rgb_lowres/image"
-//    property string sensor_topic2:"/kinect2_far/rgb_lowres/image"
-//    property string sensor_topic3:"/kinect2_lenovo/rgb_lowres/image"
-//    property string sensor_topic4:"/kinect2_head/rgb_lowres/image"
-//    property string sensor_topic5:"/kinect2_head/rgb_lowres/image"
-//    property string sensor_topic6:"/kinect2_head/rgb_lowres/image"
-
-    RowLayout{
+    RowLayout{//Main row, 3 items: Multi-Streaming_listview; main_view; rois_view
         spacing: 10
-        ColumnLayout {
-            spacing: 10
-            Rectangle{
-                id:sensor_01
-                property int number_rois : 0
-                width: (Screen.height-40)*16/54
-                height: (Screen.height-40)/6
-                color: "#c92c2c"
-                OptStreamingComponent {
-                    id: videoStream1
-                    anchors.fill: parent
-                    objectName: "videoStream1"
-//                    topic: topic1.text
-                }
-                TextInput {
-                    id: topic1
-                    anchors.left: parent.left
-                    anchors.top: parent.top
-                    color: "lime"
-                    text: videoStream1.topic
-                    font.pixelSize: 16
-                    font.bold: true
-                }
-                MouseArea{
-                    anchors.top: parent.top
-                    anchors.topMargin: 20
-                    anchors.bottom: parent.bottom
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    onClicked:
-                    {
-                        main_videoStream.topic= videoStream1.topic
-                        main_view.current_camera=1
-                        main_view.no_roi=sensor_01.number_rois
-                        roiblock.model=roiModel1
-                        topic1.font.bold=true
-                        topic2.font.bold=false
-                        topic3.font.bold=false
-                        topic4.font.bold=false
-                        topic5.font.bold=false
-                        topic6.font.bold=false
-                    }
-                }
-            }
-            Rectangle{
-                id:sensor_02
-                property int number_rois : 0
-                width: sensor_01.width
-                height: sensor_01.height
-                color: "#c92c2c"
-                OptStreamingComponent {
-                    anchors.fill: parent
-                    objectName: "videoStream2"
-                    id: videoStream2
-//                    topic: topic2.text
-                }
-                TextInput {
-                    id: topic2
-                    anchors.left: parent.left
-                    anchors.top: parent.top
-                    color: "lime"
-                    text: videoStream2.topic
-                    font.pixelSize: 16
-                    font.bold: false
-                }
-                MouseArea{
-                    anchors.top: parent.top
-                    anchors.topMargin: 20
-                    anchors.bottom: parent.bottom
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    onClicked:
-                    {
-                        main_videoStream.topic= videoStream2.topic
-                        main_view.current_camera=2
-                        main_view.no_roi=sensor_02.number_rois
-                        roiblock.model=roiModel2
-                        topic1.font.bold=false
-                        topic2.font.bold=true
-                        topic3.font.bold=false
-                        topic4.font.bold=false
-                        topic5.font.bold=false
-                        topic6.font.bold=false
-                    }
-                }
-            }
-            Rectangle{
-                id:sensor_03
-                property int number_rois : 0
 
-                width: sensor_01.width
-                height: sensor_01.height
-                color: "#c92c2c"
-                OptStreamingComponent {
-                    anchors.fill: parent
-                    objectName: "videoStream3"
-                    id: videoStream3
-//                    topic: topic3.text
-                }
-                TextInput {
-                    id: topic3
-                    anchors.left: parent.left
-                    anchors.top: parent.top
-                    color: "lime"
-                    text: videoStream3.topic
-                    font.pixelSize: 16
-                    font.bold: false
-                }
-                MouseArea{
-                    anchors.top: parent.top
-                    anchors.topMargin: 20
-                    anchors.bottom: parent.bottom
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    onClicked:
-                    {
-                        main_videoStream.topic= videoStream3.topic
-                        main_view.current_camera=3
-                        main_view.no_roi=sensor_03.number_rois
-                        roiblock.model=roiModel3
-                        topic1.font.bold=false
-                        topic2.font.bold=false
-                        topic3.font.bold=true
-                        topic4.font.bold=false
-                        topic5.font.bold=false
-                        topic6.font.bold=false
-
-                    }
-                }
-            }
-            Rectangle{
-                id:sensor_04
-                property int number_rois : 0
-                width: sensor_01.width
-                height: sensor_01.height
-                color: "#c92c2c"
-                OptStreamingComponent {
-                    anchors.fill: parent
-                    objectName: "videoStream4"
-                    id: videoStream4
-//                    topic: topic4.text
-                }
-                TextInput {
-                    id: topic4
-                    anchors.left: parent.left
-                    anchors.top: parent.top
-                    color: "lime"
-                    text: videoStream4.topic
-                    font.pixelSize: 16
-                    font.bold: false
-                }
-                MouseArea{
-                    anchors.top: parent.top
-                    anchors.topMargin: 20
-                    anchors.bottom: parent.bottom
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    onClicked:
-                    {
-                        main_videoStream.topic= videoStream4.topic
-                        main_view.current_camera=4
-                        main_view.no_roi=sensor_04.number_rois
-                        roiblock.model=roiModel4
-                        topic1.font.bold=false
-                        topic2.font.bold=false
-                        topic3.font.bold=false
-                        topic4.font.bold=true
-                        topic5.font.bold=false
-                        topic6.font.bold=false
-
-                    }
-                }
-            }
-            Rectangle{
-                id:sensor_05
-                property int number_rois : 0
-                width: sensor_01.width
-                height: sensor_01.height
-                color: "#c92c2c"
-                OptStreamingComponent {
-                    anchors.fill: parent
-                    objectName: "videoStream5"
-                    id: videoStream5
-//                    topic: topic5.text
-                }
-                TextInput {
-                    id: topic5
-                    anchors.left: parent.left
-                    anchors.top: parent.top
-                    color: "lime"
-                    text: videoStream5.topic
-                    font.pixelSize: 16
-                    font.bold: false
-                }
-                MouseArea{
-                    anchors.top: parent.top
-                    anchors.topMargin: 20
-                    anchors.bottom: parent.bottom
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    onClicked:
-                    {
-                        main_videoStream.topic= videoStream5.topic
-                        main_view.current_camera=5
-                        main_view.no_roi=sensor_05.number_rois
-                        roiblock.model=roiModel5
-                        topic1.font.bold=false
-                        topic2.font.bold=false
-                        topic3.font.bold=false
-                        topic4.font.bold=false
-                        topic5.font.bold=true
-                        topic6.font.bold=false
-
-                    }
-                }
-            }
-            Rectangle{
-                id:sensor_06
-                property int number_rois : 0
-                width: sensor_01.width
-                height: sensor_01.height
-                color: "#c92c2c"
-                OptStreamingComponent {
-                    anchors.fill: parent
-                    objectName: "videoStream6"
-                    id: videoStream6
-//                    topic: topic6.text
-                }
-                TextInput {
-                    id: topic6
-                    anchors.left: parent.left
-                    anchors.top: parent.top
-                    color: "lime"
-                    text: videoStream6.topic
-                    font.pixelSize: 16
-                    font.bold: false
-                }
-                MouseArea{
-                    anchors.top: parent.top
-                    anchors.topMargin: 20
-                    anchors.bottom: parent.bottom
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    onClicked:
-                    {
-                        main_videoStream.topic= videoStream6.topic
-                        main_view.current_camera=6
-                        main_view.no_roi=sensor_06.number_rois
-                        roiblock.model=roiModel6
-                        topic1.font.bold=false
-                        topic2.font.bold=false
-                        topic3.font.bold=false
-                        topic4.font.bold=false
-                        topic5.font.bold=false
-                        topic6.font.bold=true
-                    }
-                }
-            }
+        // Multi-Streaming_listview
+        ListView {
+            spacing: 20
+            width: (Screen.height-40)*16/54
+            height: (Screen.height-40)
+            model: topic_model// this model comes from c++ in :"main_application.cpp"
+            delegate: Streaming_listview_delegate{}
         }
-        ColumnLayout {
+
+        //Main_view
+        ColumnLayout {//main_view
             spacing: 50
-            Image {
+            Image {//logo
                 id: openptrack_logo
                 source: "/images/openptrack-logo.png"
                 width: 244
@@ -290,27 +35,25 @@ Window {
                 anchors.horizontalCenter: parent.horizontalCenter
                 fillMode: Image.PreserveAspectFit
             }
-            Rectangle{
+
+            //main_view  where to select rois
+            Rectangle {
                 width: 960
                 height:540
                 color: "#c92c2c"
                 focus: true
                 id: main_view
-                property int current_camera : 1
                 property int no_roi : 0
                 property int rect_X
                 property int rect_Y
                 property int rect_width
                 property int rect_height
-
-                //  property string roi_name_s
-                OptStreamingComponent {
+                OptStreamingComponent {//main stream
                     id:main_videoStream
                     anchors.fill: parent
-                    objectName: "main_videoStream"
-//                    topic: main_topic.text
+                    Component.onCompleted: main_videoStream.setup()
                 }
-                TextInput {
+                Text {//display the text of the topic name
                     id: main_topic
                     anchors.left: parent.left
                     anchors.top: parent.top
@@ -321,7 +64,7 @@ Window {
                     font.bold: true
                     font.italic: true
                 }
-                 MouseArea {
+                MouseArea {// area to draw the bounding boxes
                     id: selectArea;
                     property bool ready2add : false
                     z:0
@@ -330,6 +73,7 @@ Window {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     onPressed: {
+                        selectArea.focus=true
                         if (highlightItem !== null)
                         {
                             // if there is already a selection, delete it
@@ -364,117 +108,174 @@ Window {
                         }
                     }
                 }
-                Keys.onSpacePressed:{
+                Keys.onSpacePressed:{//press space to confirm your BB, save the rois as images , add them to the model
                     if(selectArea.ready2add)
                     {
-                        no_roi++
                         var topic_name_list = main_topic.text.split('/');
                         var sensor_name=topic_name_list[1];
                         var roi_name=sensor_name+"_roi_"+no_roi.toString();
-                        var roiSourceUrl="file:/tmp/"+sensor_name+"_roi_"+no_roi.toString()+".png"
-
-                        switch(current_camera)
-                        {
-                        case 1:
-                            videoStream1.save_ROI(sensor_name,no_roi,roi_name,rect_X,rect_Y,rect_width,rect_height)
-                            roiModel1.append({"roiNo": no_roi ,"roiName": roi_name, "roiSource": roiSourceUrl });
-                            (sensor_01.number_rois)++;//use the the number of the models
-                            selectArea.highlightItem.destroy ();
-                            break;
-                        case 2:
-                            videoStream2.save_ROI(sensor_name,no_roi,roi_name,rect_X,rect_Y,rect_width,rect_height)
-                            roiModel2.append({"roiNo": no_roi ,"roiName": roi_name, "roiSource": roiSourceUrl });
-                            (sensor_02.number_rois)++;
-                            selectArea.highlightItem.destroy ();
-                            break;
-                        case 3:
-                            videoStream3.save_ROI(sensor_name,no_roi,roi_name,rect_X,rect_Y,rect_width,rect_height)
-                            roiModel3.append({"roiNo": no_roi ,"roiName": roi_name, "roiSource": roiSourceUrl });
-                            (sensor_03.number_rois)++;
-                            selectArea.highlightItem.destroy ();
-                            break;
-                        case 4:
-                            videoStream4.save_ROI(sensor_name,no_roi,roi_name,rect_X,rect_Y,rect_width,rect_height)
-                            roiModel4.append({"roiNo": no_roi ,"roiName": roi_name, "roiSource": roiSourceUrl });
-                            (sensor_04.number_rois)++;
-                            selectArea.highlightItem.destroy ();
-                            break;
-                        case 5:
-                            videoStream5.save_ROI(sensor_name,no_roi,roi_name,rect_X,rect_Y,rect_width,rect_height)
-                            roiModel5.append({"roiNo": no_roi ,"roiName": roi_name, "roiSource": roiSourceUrl });
-                            (sensor_05.number_rois)++;
-                            selectArea.highlightItem.destroy ();
-                            break;
-                        case 6:
-                            videoStream6.save_ROI(sensor_name,no_roi,roi_name,rect_X,rect_Y,rect_width,rect_height)
-                            roiModel6.append({"roiNo": no_roi ,"roiName": roi_name, "roiSource": roiSourceUrl });
-                            (sensor_06.number_rois)++;
-                            selectArea.highlightItem.destroy ();
-                            break;
-                        }
+                        var roiSourceUrl=main_videoStream.all_rois_dir_path+sensor_name+"_roi_"+no_roi.toString()+".png"
+                        main_videoStream.save_ROI(sensor_name,no_roi,rect_X,rect_Y,rect_width,rect_height);//save the roi as image
+                        roiModel.append({"roiNo": no_roi ,"sensorName":sensor_name, "roiName": roi_name,"rectX":rect_X,"rectY":rect_Y,"rectWidth":rect_width,"rectHeight":rect_height,"roiSource": roiSourceUrl ,"showConfirmbutton":true, "published":false});
+                        roi_visual_Model.append({"roiNo": no_roi ,"sensorName":sensor_name, "roiName": roi_name,"rectX":rect_X,"rectY":rect_Y,"rectWidth":rect_width,"rectHeight":rect_height,"roiSource": roiSourceUrl ,"showConfirmbutton":true, "published":false});
+                        selectArea.highlightItem.destroy ();
+                        no_roi++;
                     }
                     selectArea.ready2add=false
                 }
             }
         }
+
+        //Rois_view
         Rectangle{
             id: show_rois
             width:Screen.width-(Screen.height-40)*16/54-980
             height: Screen.height
-            ListView {
-                id: roiblock
-                anchors.top: parent.top
-                width: parent.width
-                height: parent.height-50
-                spacing: 20
-                clip: true
-                model: roiModel1
-                delegate: Rois_listview_delegate{}
-                ListModel{
-                    id: roiModel1
-                }
-                ListModel{
-                    id: roiModel2
-                }
-                ListModel{
-                    id: roiModel3
-                }
-                ListModel{
-                    id: roiModel4
-                }
-                ListModel{
-                    id: roiModel5
-                }
-                ListModel{
-                    id: roiModel6
-                }
-            }
-            Button{
-                id: publish_rois
-                anchors.top: roiblock.bottom
-                anchors.topMargin: 20
-                anchors.left: roiblock.left
-                anchors.leftMargin: 40
-                height: 20
-                width: 100
-                text: qsTr("Start Detection")
+            RowLayout{//One Row who has two items:: show roi_from_gui; shwo roi_form_file
+                anchors.fill: parent
 
-                onClicked:
-                {
-                    switch(main_view.current_camera)
-                    {
-                    case 1: videoStream1.publish_rois();
-                        break;
-                    case 2: videoStream2.publish_rois();
-                        break;
-                    case 3: videoStream3.publish_rois();
-                        break;
-                    case 4: videoStream4.publish_rois();
-                        break;
-                    case 5: videoStream5.publish_rois();
-                        break;
-                    case 6: videoStream6.publish_rois();
-                        break;
+                //show roi_from_gui
+                ListView {
+                    id: roiblock
+                    width: parent.width/2
+                    height: parent.height
+                    spacing: 20
+                    clip: true
+                    model: roi_visual_Model
+                    delegate: Rois_listview_delegate{}
+                    header: header_roiblock
+                    footer: footer_roiblock
+                    ListModel{
+                        id: roiModel//list model for all the rois in all the cameras
+                    }
+                    ListModel{
+                        id: roi_visual_Model// list model for the rois of the current camera
+                    }
+
+                    Component {//header of the list view: Text and Button
+                        id: header_roiblock
+                        Rectangle
+                        {
+                            width: parent.width/2
+                            height: 50
+                            ColumnLayout{
+                                anchors.fill: parent
+                                spacing: 10
+                                Text {
+                                    id: header_roiblock_text
+                                    width: parent.width
+                                    height: 20
+                                    color: "blue"
+                                    font.pixelSize: 20
+                                    text: "ROIs_from_ <b><i>marking</i></b>"
+                                }
+                                Button{
+                                    id: publish_rois_from_gui
+                                    anchors.top:header_roiblock_text.bottom
+                                    height: 20
+                                    width: parent.width
+                                    text: qsTr("Publish_rois_from_gui")
+                                    onClicked:
+                                    {// add all the rois in the roi_visual_Model to the msg ,and publish the msg(all in c++)
+                                        for( var i = 0; i< roi_visual_Model.count; i++ )
+                                        {
+                                            if(roi_visual_Model.get(i).published===false)
+                                            {
+                                                main_videoStream.add_roi(roi_visual_Model.get(i).roiNo,roi_visual_Model.get(i).roiName, roi_visual_Model.get(i).rectX,roi_visual_Model.get(i).rectY, roi_visual_Model.get(i).rectWidth, roi_visual_Model.get(i).rectHeight);//add roi to the msg
+                                                roi_visual_Model.setProperty(i, "published", true)//set flag in the model
+                                                var no_ROI_=roi_visual_Model.get(i).roiNo;
+                                                roiModel.setProperty(no_ROI_, "published", true)//set flag in the model
+                                            }
+                                        }
+                                        main_videoStream.publish_rois_from_gui();//publish the msg
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Component {//footer of the list view:empty rectangle
+                        id: footer_roiblock
+                        Rectangle
+                        {
+                            width: parent.width/2
+                            height: 50
+                        }
+                    }
+                }
+
+
+
+                //show roi_form_file
+                ListView {
+                    id:roi_folder
+                    width: parent.width/2
+                    height: parent.height
+                    spacing: 20
+                    model: roi_model_file
+                    delegate: roifileDelegate
+                    header: roi_folder_header
+
+                    FolderListModel {//model from folder file list
+                        id:roi_model_file
+                        nameFilters: ["*.png"]
+                        folder: main_videoStream.rois_dir_path
+                    }
+                    Component {////header of the list view: Text and Button
+                        id: roi_folder_header
+                        Rectangle
+                        {
+                            width: parent.width/2
+                            height: 50
+                            ColumnLayout{
+                                anchors.fill: parent
+                                spacing: 10
+                                Text {
+                                    id: header_roiblock_text2
+                                    height: 20
+                                    text: "ROIs_from_ <b><i>folder</i></b>"
+                                    color: "green"
+                                    font.pixelSize: 20
+                                }
+                                Button{
+                                    id: publish_rois_from_file
+                                    anchors.top:header_roiblock_text2.bottom
+                                    height: 20
+                                    width: parent.width
+                                    text: qsTr("publish_rois_from_file")
+                                    onClicked:
+                                    {
+                                        main_videoStream.publish_rois_from_file();// call the c++ fuction
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Component {//delegate of the list view:show the image and text(roi file name)
+                        id: roifileDelegate
+                        Rectangle {
+                            width: show_rois.width/3
+                            height:show_rois.width/3+20
+                            Image {
+                                id:roi_folder_image
+                                anchors.top: parent.top
+                                width: show_rois.width/3
+                                height:show_rois.width/3
+                                z:1
+                                fillMode: Image.Stretch
+                                source: roi_model_file.folder+fileName
+                            }
+                            Text {
+                                id:roi_name
+                                anchors.top: roi_folder_image.bottom
+                                anchors.left: roi_folder_image.left
+                                height: 20
+                                width: show_rois.width/3
+                                color: "lime"
+                                text:fileName.substring(0,fileName.indexOf('.'))
+                                font.pixelSize: 16
+                            }
+                        }
                     }
                 }
             }

@@ -38,7 +38,7 @@ position_variance_weight: 100
 ## Data association parameters ##
 #################################
 # Flag stating if detection likelihood should be used in data association:
-detector_likelihood: true
+detector_likelihood: false
 # Flag stating if track velocity should be considered in data association:
 velocity_in_motion_term: false
 # Weight of detection likelihood in data association:

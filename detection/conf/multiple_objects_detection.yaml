@@ -5,17 +5,12 @@
 output_detection_topic: /objects_detector/detections
 
 #if you want to see the tracks result on the image, set show_2D_track to true
-show_2D_track: false
+show_2D_track: true
 
 
-
-#if this camera is used to mark the ROIs and publish them, set it to true, or set it into false
-#Two options:
-#1, Mark in one camera, and project the rois to others: then set  publish_world3D_rois to true in the marking camera, other cameras should be set into false.
-#2, Mark in all cameras, then set publish_world3D_rois in every camera to true
-publish_world3D_rois: true 
-
-
+###########For choose on which camera to set the object names###########
+set_object_names: false
+###########For choose on which camera to set the object names###########
 
 
 ############################
@@ -60,7 +55,7 @@ d_bins: 100
 
 # Three options : H HS HSD : 
 # if the objects are in different color, choose HS which is faster, or choose HSD.
-Backprojection_Mode: HSD
+Backprojection_Mode: HS
 ###########For camshift#########
 
 
@@ -79,4 +74,8 @@ AREA_TOLERANCE: 20  ##AREA_TOLERANCE is also used to create the position_maks
 QUALITY_TOLERANCE: 20000
 DENSITY_TOLORENCE: 2.0
 ###########For camshift recover from occlusion###########
+
+
+
+
 

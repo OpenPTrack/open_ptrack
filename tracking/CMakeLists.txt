@@ -24,11 +24,16 @@ catkin_package(
    CATKIN_DEPENDS roscpp bayes opencv2 pcl_ros detection tf tf_conversions opt_msgs opt_utils
 )
 
-add_library(${PROJECT_NAME} src/munkres.cpp src/kalman_filter.cpp src/track.cpp src/tracker.cpp)
+add_library(${PROJECT_NAME} src/munkres.cpp src/kalman_filter.cpp src/track.cpp src/tracker.cpp src/track_object.cpp src/tracker_object.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
 add_executable(tracker apps/tracker_node.cpp)
 target_link_libraries(tracker ${PROJECT_NAME} ${catkin_LIBRARIES})
+
+add_executable(tracker_object apps/tracker_object_node.cpp)
+target_link_libraries(tracker_object ${PROJECT_NAME} ${catkin_LIBRARIES})
+#add_executable(tracker3d apps/tracker_node_3d.cpp)
+#target_link_libraries(tracker3d ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 #add_executable(tracker_filter apps/tracker_filter_node.cpp)
 #add_dependencies(tracker_filter ${PROJECT_NAME}_gencfg)

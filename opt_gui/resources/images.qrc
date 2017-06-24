@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/images">
         <file>openptrack-logo.png</file>
+        <file>DeleteRed.png</file>
     </qresource>
 </RCC>

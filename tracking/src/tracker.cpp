@@ -389,12 +389,17 @@ namespace open_ptrack
           // If a detection<->track association has been found:
           if(cost_matrix_(track, measure) == 0.0 && distance_matrix_(track, measure) <= gate_distance_)
           {
+
+
+
+
             open_ptrack::detection::Detection& d = detections_[measure];
 
             // If the detection has enough confidence in the current frame or in a recent past:
 //            if ((t->getLowConfidenceConsecutiveFrames() < 10) || ((d.getConfidence() - 0.5) > min_confidence_detections_))
             if ((t->getLowConfidenceConsecutiveFrames() < 10) || (d.getConfidence() > ((min_confidence_ + min_confidence_detections_)/2)))
             {
+
               // Update track with the associated detection:
               bool first_update = false;
               t->update(d.getWorldCentroid()(0), d.getWorldCentroid()(1), d.getWorldCentroid()(2),d.getHeight(),

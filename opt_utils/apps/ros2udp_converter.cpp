@@ -84,7 +84,7 @@ trackingCallback(const opt_msgs::TrackArray::ConstPtr& tracking_msg)
 
     tracks.Add(current_track);
   }
-  root.Add("tracks", tracks);
+  root.Add("people_tracks", tracks);
 
   /// Convert JSON object to string:
   Jzon::Format message_format = Jzon::StandardFormat;

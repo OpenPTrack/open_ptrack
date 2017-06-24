@@ -7,26 +7,44 @@ Component {
         id: imagewraper
         width: show_rois.width/3
         height: show_rois.width/3+20
-
-        Rectangle {
+        Rectangle {//main rect
             id: image
             color: "black"
-//            anchors.left: parent.left
             anchors.top: parent.top
             width: show_rois.width/3
             height:show_rois.width/3+20
-            Image {
+            Image {//image display
                 id:image_
                 anchors.top: parent.top
                 width: show_rois.width/3
                 height:show_rois.width/3
-                z:1
+                cache : false
                 fillMode: Image.Stretch
                 source: roiSource
+                Image {//icon for remove the current roi
+                    id: delete_red
+                    z:2
+                    visible: showConfirmbutton
+                    anchors.top:parent.top
+                    anchors.right: parent.right
+                    source: "/images/DeleteRed.png"
+                    width: 30
+                    height: 30
+                    fillMode: Image.PreserveAspectFit
+                    MouseArea{
+                        anchors.fill: parent
+                        onClicked:
+                        {
+                            var roi_no_=roi_visual_Model.get(index).roiNo
+                            roi_visual_Model.remove(index)
+                            roiModel.remove(roi_no_)
+                            main_view.no_roi--
+                        }
+                    }
+                }
             }
             TextInput {
                 id:roi_name
-//                anchors.left: parent.left
                 anchors.top: image_.bottom
                 anchors.left: image_.left
                 height: 20
@@ -34,6 +52,7 @@ Component {
                 color: "lime"
                 text:roiName
                 font.pixelSize: 16
+
             }
             Button{
                 id:confirm_button
@@ -41,45 +60,26 @@ Component {
                 anchors.right: image_.right
                 height: 20
                 width: 50
+                visible: showConfirmbutton
                 z:1
-                text: qsTr("Confirm")
-                onClicked:
+                text: "confirm"
+                property int roi_no_
+                onClicked://add the current roi to the models
                 {
                     roi_name.focus=false
                     main_view.focus=true
-                    roiblock.model.get(index).roiName=roi_name.text
-                    switch(main_view.current_camera)
-                    {
-                    case 1:
-                        videoStream1.set_roi_name(index,roi_name.text)
-                        confirm_button.visible=false
-                        break;
-                    case 2:
-                        videoStream2.set_roi_name(index,roi_name.text)
-                        confirm_button.visible=false
-                        break;
-                    case 3:
-                        videoStream3.set_roi_name(index,roi_name.text)
-                        confirm_button.visible=false
-                        break;
-                    case 4:
-                        videoStream4.set_roi_name(index,roi_name.text)
-                        confirm_button.visible=false
-                        break;
-                    case 5:
-                        videoStream5.set_roi_name(index,roi_name.text)
-                        confirm_button.visible=false
-                        break;
-                    case 6:
-                        videoStream6.set_roi_name(index,roi_name.text)
-                        confirm_button.visible=false
-                        break;
-                    }
+                    roi_visual_Model.setProperty(index, "roiName", roi_name.text)
+                    roi_visual_Model.setProperty(index, "showConfirmbutton", false)
+                    roi_no_=roi_visual_Model.get(index).roiNo
+                    roiModel.setProperty(roi_no_, "showConfirmbutton", false)
+                    roiModel.setProperty(roi_no_, "roiName", roi_name.text)
+                    confirm_button.visible=false
+                    delete_red.visible=false
                 }
             }
         }
-
-        MouseArea {
+/*
+        MouseArea {//strech the image
             id:imagearea
             z:0
             anchors.top: imagewraper.top
@@ -87,28 +87,14 @@ Component {
             anchors.bottomMargin: 20
             anchors.left: imagewraper.left
             anchors.right: imagewraper.right
-
-            //            anchors.fill: imagewraper
-            //            hoverEnabled: true
-            //            drag.target: imagewraper
             onClicked: {
                 switch(imagewraper.state)
                 {
                 case "":imagewraper.state="expanded";break;
                 case "expanded":imagewraper.state="";break;
-                    //                case "doubleexpanded":imagewraper.state="doubleexpanded";break;
                 default:imagewraper.state="";break;
                 }
             }
-            //            onDoubleClicked: {
-            //                switch(imagewraper.state)
-            //                {
-            //                case "expanded":imagewraper.state="expanded";break;
-            //                case "":imagewraper.state="doubleexpanded";break
-            //                case "doubleexpanded":imagewraper.state="expanded";break;
-            //                default:imagewraper.state="expanded";break;
-            //                }
-            //            }
         }
         states: [
             State {
@@ -117,12 +103,6 @@ Component {
                 PropertyChanges { target: image_; width: roiblock.width; height: roiblock.height/2}
                 PropertyChanges { target: imagewraper.ListView.view; contentX: imagewraper.x;contentY: imagewraper.y; interactive: true }
             }
-            //            ,State {
-            //                name: "doubleexpanded"
-            //                PropertyChanges { target: imagewraper; height: roiblock.height*2 ;width:imageblock.width*2;z:100}
-            //                PropertyChanges { target: image; width: imageblock.width*2; height: imageblock.height*2}
-            //                PropertyChanges { target: imagewraper.GridView.view; contentX: imagewraper.x;contentY: imagewraper.y.mouseY; interactive: true }
-            //            }
         ]
 
 
@@ -134,5 +114,7 @@ Component {
                 }
             }
         ]
+    */
+
     }
 }

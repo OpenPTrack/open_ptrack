@@ -15,9 +15,9 @@
     <remap from="/detector/markers_array" to="/detector/people_markers_array" />
     <remap from="/detector/history" to="/detector/people_history" />
 
-    <rosparam command="load" file="$(find tracking)/conf/tracker_multicamera.yaml" /> 
+    <rosparam command="load" file="$(find tracking)/conf/tracker.yaml" /> 
     <rosparam command="load" file="$(find detection)/conf/haar_disp_ada_detector.yaml" />
-    <rosparam command="load" file="$(find opt_calibration)/conf/camera_network.yaml" /> 
+
   </node>
   
   <!-- Re-publishing at fixed rate / smoothing node -->
@@ -44,9 +44,9 @@
     <remap from="/detector/markers_array" to="/detector/object_markers_array" />
     <remap from="/detector/history" to="/detector/object_history" />
 
-    <rosparam command="load" file="$(find tracking)/conf/object_tracker_multicamera.yaml" /> 
+    <rosparam command="load" file="$(find tracking)/conf/tracker.yaml" /> 
     <rosparam command="load" file="$(find detection)/conf/haar_disp_ada_detector.yaml" />
-    <rosparam command="load" file="$(find opt_calibration)/conf/camera_network.yaml" /> 
+
   </node>
   
   <!-- Re-publishing at fixed rate / smoothing node -->

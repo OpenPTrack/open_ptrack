@@ -3,7 +3,8 @@
 
 #include <ros/ros.h>
 #include <QQmlApplicationEngine>
-
+#include <QGuiApplication>
+#include <QQmlContext>
 class Main_Application : public QQmlApplicationEngine {
     Q_OBJECT
     public:
@@ -18,12 +19,12 @@ class Main_Application : public QQmlApplicationEngine {
 
     private:
         ros::NodeHandle nh;
-        std::string view_topic1;
-        std::string view_topic2;
-        std::string view_topic3;
-        std::string view_topic4;
-        std::string view_topic5;
-        std::string view_topic6;
+        std::string sensor_name1;
+        std::string sensor_name2;
+        std::string sensor_name3;
+        std::string sensor_name4;
+        std::string sensor_name5;
+        std::string sensor_name6;
 
 };
 

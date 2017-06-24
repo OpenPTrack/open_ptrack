@@ -1,6 +1,7 @@
 <RCC>
     <qresource prefix="/">
         <file>main_window.qml</file>
+        <file>Streaming_listview_delegate.qml</file>
         <file>Rois_listview_delegate.qml</file>
     </qresource>
 </RCC>
