@@ -40,8 +40,8 @@ void draw() {
 
  void receive( byte[] data ) { 			
   
-  // get the "real" message / forget the "\n" at the end 
-  data = subset(data, 0, data.length-2);
+  // trim the trailing char to end with the brace
+  data = subset(data, 0, data.length-1);
   String message = new String( data );
   //println(message);
   json = JSONObject.parse(message);
