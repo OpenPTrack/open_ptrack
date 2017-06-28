@@ -6,7 +6,7 @@
   <arg name="sensor_name"             default="kinect2" />
 
   <!-- Launch sensor -->
-  <include file="$(find kinect2_bridge)/launch/kinect2_bridge_ir.launch">
+  <include file="$(find kinect2_bridge)/launch/kinect2_bridge.launch">
     <arg name="sensor_id"           value="$(arg sensor_id)" />
     <arg name="sensor_name"         value="$(arg sensor_name)" />
     <arg name="publish_frame"       value="true" />
