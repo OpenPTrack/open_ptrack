@@ -3,6 +3,7 @@ udp:
   buffer_length: 2048
   hostip: "127.0.0.1"
   #change to 224.0.0.1 for LAN multicast or X.X.X.255 (or 192 / etc depending on netmask) for broadcast
+  #multicast is not recommended for troubleshooting, unless you know it is supported on your network and machine.
   heartbeat_interval: 0.25
 
 json:
