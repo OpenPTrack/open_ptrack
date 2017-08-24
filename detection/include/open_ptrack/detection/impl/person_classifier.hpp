@@ -191,7 +191,7 @@ open_ptrack::detection::PersonClassifier<PointT>::copyMakeBorder (PointCloudPtr&
   output_image->points.resize(height*width, black_point);
   output_image->width = width;
   output_image->height = height;
-  if((0 == width)||(0 == height)){
+  if((width <= 0)||(height <= 0)){
     return;
   }
 
