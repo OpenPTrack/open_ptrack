@@ -191,6 +191,9 @@ open_ptrack::detection::PersonClassifier<PointT>::copyMakeBorder (PointCloudPtr&
   output_image->points.resize(height*width, black_point);
   output_image->width = width;
   output_image->height = height;
+//  if((width <= 0)||(height <= 0)){
+//    return;
+//  }
 
   int x_start_in = std::max(0, xmin);
   int x_end_in = std::max(x_start_in, std::min(int(input_image->width-1), xmin+width-1));
@@ -233,8 +236,8 @@ open_ptrack::detection::PersonClassifier<PointT>::evaluate (float height_person,
   double confidence;
 
 //std::cout << "Before copyMakeBorder: " << xmin << " " << ymin << " " << width << " " << height << std::endl;
-
-  if ((height > 0) & ((xmin+width-1) > 0))
+/*different from pcl persion_classifier.hpp if add (xmin+width-1) > 0 must check if width >0 else if width <= 0 cause crash */
+  if ((height > 0) &&(width > 0) && ((xmin+width-1) > 0))
   {
     // If near the border, fill with black:
     PointCloudPtr box(new PointCloud);
