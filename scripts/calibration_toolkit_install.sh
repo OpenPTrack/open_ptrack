@@ -8,4 +8,4 @@ cd ~/workspace/ros/catkin/src
 git clone https://github.com/iaslab-unipd/calibration_toolkit 
 cd calibration_toolkit 
 git fetch origin --tags
-git checkout tags/v0.2
+git checkout tags/v1.0

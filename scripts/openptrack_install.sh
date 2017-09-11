@@ -2,7 +2,7 @@
 
 # Clone OpenPTrack into ROS workspace:
 cd ~/workspace/ros/catkin/src
-git clone https://github.com/OpenPTrack/open_ptrack.git
+git clone https://github.com/wangqiang1588/open_ptrack_org.git open_ptrack
 cd ~/workspace/ros/catkin/src/open_ptrack/scripts
 chmod +x *.sh
 

@@ -6,10 +6,10 @@ sudo apt-get install cmake libgoogle-glog-dev libatlas-base-dev libeigen3-dev li
 mkdir /tmp/ceres_install
 cd /tmp/ceres_install
 
-git clone https://ceres-solver.googlesource.com/ceres-solver
+git clone https://github.com/ceres-solver/ceres-solver.git
 cd ceres-solver
 git fetch --tags
-git checkout tags/1.9.0
+git checkout tags/1.13.0
 cd ..
 mkdir ceres-bin
 cd ceres-bin

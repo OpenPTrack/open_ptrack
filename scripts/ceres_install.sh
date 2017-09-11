@@ -7,6 +7,8 @@ if [ $UBUNTU_VERSION = trusty ]; then
   ./ceres_install_trusty.sh
 elif [ $UBUNTU_VERSION = raring ]; then
   ./ceres_install_raring.sh
+elif [ $UBUNTU_VERSION = xenial ]; then
+  ./ceres_install_trusty.sh
 else
 
   echo ""  1>&2
