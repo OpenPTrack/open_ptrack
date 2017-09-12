@@ -7,7 +7,7 @@ find_package(VTK REQUIRED)
 if(VTK_FOUND)
 	include_directories(${VTK_INCLUDE_DIRS})
 	link_directories(${VTK_LIBRARY_DIRS})
-	add_definitions(${VTK_DEFINITIONS})
+#	add_definitions(${VTK_DEFINITIONS})
 	include (${VTK_USE_FILE})
 endif() 
 
