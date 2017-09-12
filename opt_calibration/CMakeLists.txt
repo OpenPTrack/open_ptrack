@@ -7,7 +7,7 @@ set(CMAKE_BUILD_TYPE Release)#RelWithDebInfo)
 ## is used, also find other catkin packages
 ## kinect is deprecated ,use freenect_stack
 ## find_package(catkin REQUIRED COMPONENTS cmake_modules roscpp opt_msgs calibration_common kinect camera_info_manager
-find_package(catkin REQUIRED COMPONENTS cmake_modules roscpp opt_msgs calibration_common freenect-stack camera_info_manager
+find_package(catkin REQUIRED COMPONENTS cmake_modules roscpp opt_msgs calibration_common  camera_info_manager
                                         cv_bridge image_transport tf_conversions swissranger_camera pcl_ros detection)
 
 ## System dependencies are found with CMake's conventions
@@ -34,7 +34,7 @@ endif()
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES
-  CATKIN_DEPENDS roscpp opt_msgs calibration_common camera_info_manager cv_bridge image_transport swissranger_camera
+  CATKIN_DEPENDS roscpp opt_msgs calibration_common camera_info_manager cv_bridge image_transport swissranger_camera freenect_stack
   DEPENDS eigen pcl opencv2
 )
 
