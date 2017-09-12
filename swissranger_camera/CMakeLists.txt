@@ -7,13 +7,8 @@ ELSE()
 	set(SWISSRANGER_ENABLED 0)
 ENDIF()
 
-# there is no ros-kinetic-driver-base 
-# http://wiki.ros.org/driver_base
-#sudo apt-get install ros-jade-driver-base
-#driver-base is deprecated but swissranger camera driver need this lib
 LIST(APPEND CMAKE_CXXFLAGS "-DSWISSRANGER_ENABLED")
-#find_package(catkin REQUIRED COMPONENTS cmake_modules roscpp tf camera_info_manager image_transport dynamic_reconfigure driver_base sensor_msgs cv_bridge)
-find_package(catkin REQUIRED COMPONENTS cmake_modules roscpp tf camera_info_manager image_transport dynamic_reconfigure message_generation std_msgs sensor_msgs cv_bridge)
+find_package(catkin REQUIRED COMPONENTS cmake_modules roscpp tf camera_info_manager image_transport dynamic_reconfigure driver_base sensor_msgs cv_bridge)
 
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
@@ -42,9 +37,7 @@ include_directories(include ${catkin_INCLUDE_DIRS} cfg/cpp)
 catkin_package(
    INCLUDE_DIRS include
    LIBRARIES swissranger_utility
-#   CATKIN_DEPENDS roscpp tf camera_info_manager image_transport dynamic_reconfigure driver_base
-   CATKIN_DEPENDS roscpp tf camera_info_manager image_transport dynamic_reconfigure message_runtime std_msgs
-)
+   CATKIN_DEPENDS roscpp tf camera_info_manager image_transport dynamic_reconfigure driver_base)
 add_library(swissranger_utility src/swissranger_camera/utility.cpp
 	include/swissranger_camera/utility.h)
 target_link_libraries(swissranger_utility ${catkin_LIBRARIES})

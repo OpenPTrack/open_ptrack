@@ -15,6 +15,15 @@ chmod +x *.sh
 # Install SwissRanger driver:
 ./mesa_install.sh
 
+UBUNTU_VERSION=`lsb_release -c -s`
+
+if [ $UBUNTU_VERSION = xenial ] ; then
+  ROS_DISTRO=kinetic
+  cd ~/workspace/ros/catkin/src
+  git clone https://github.com/ros-drivers/driver_common.git
+  ln -s /opt/ros/$ROS_DISTRO/share/catkin/cmake/toplevel.cmake driver_common/CMakeLists.txt
+fi
+
 # Building everything
 cd ~/workspace/ros/catkin
 catkin_make --pkg calibration_msgs

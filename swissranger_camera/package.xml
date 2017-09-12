@@ -35,14 +35,7 @@
   <build_depend>tf</build_depend>
   <build_depend>camera_info_manager</build_depend>
   <build_depend>dynamic_reconfigure</build_depend>
-  <!-- 
-  # there is no ros-kinetic-driver-base 
-  # http://wiki.ros.org/driver_base
-  #sudo apt-get install ros-jade-driver-base
-  #driver-base is deprecated but swissranger camera driver need this lib
   <build_depend>driver_base</build_depend>
--->
-  <build_depend>std_msgs</build_depend>
   <build_depend>image_common</build_depend>
   <build_depend>libmesasr</build_depend>
   <build_depend>pcl_ros</build_depend>
@@ -66,7 +59,6 @@
   <run_depend>opencv2</run_depend>
   <run_depend>cv_bridge</run_depend>  
   <run_depend>message_runtime</run_depend>
-  <run_depend>std_msgs</run_depend> 
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
