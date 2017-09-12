@@ -17,7 +17,9 @@
   <build_depend>roscpp</build_depend>
   <build_depend>opt_msgs</build_depend>
   <build_depend>calibration_common</build_depend>
-  <build_depend>kinect</build_depend>
+<!-- kinect is deprecated ,use freenect_stack-->
+<!--  <build_depend>kinect</build_depend> -->
+  <build_depend>freenect_stack</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>eigen_conversions</build_depend>
   <build_depend>camera_info_manager</build_depend>
@@ -31,7 +33,9 @@
   <run_depend>rospy</run_depend>
   <run_depend>opt_msgs</run_depend>
   <run_depend>calibration_common</run_depend>
-  <run_depend>kinect</run_depend>
+<!-- kinect is deprecated ,use freenect_stack-->
+<!--    <run_depend>kinect</run_depend> -->
+  <run_depend>freenect_stack</run_depend>
   <run_depend>geometry_msgs</run_depend>
   <run_depend>eigen_conversions</run_depend>
   <run_depend>camera_info_manager</run_depend>

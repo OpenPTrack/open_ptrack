@@ -5,7 +5,9 @@ set(CMAKE_BUILD_TYPE Release)#RelWithDebInfo)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS cmake_modules roscpp opt_msgs calibration_common kinect camera_info_manager
+## kinect is deprecated ,use freenect_stack
+## find_package(catkin REQUIRED COMPONENTS cmake_modules roscpp opt_msgs calibration_common kinect camera_info_manager
+find_package(catkin REQUIRED COMPONENTS cmake_modules roscpp opt_msgs calibration_common freenect-stack camera_info_manager
                                         cv_bridge image_transport tf_conversions swissranger_camera pcl_ros detection)
 
 ## System dependencies are found with CMake's conventions
