@@ -40,6 +40,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include <map>
 #include <boost/filesystem.hpp>
+#include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv/cv.h>
 #include <opencv/ml.h>
