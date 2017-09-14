@@ -39,6 +39,8 @@ then
 fi
 
 cd ../examples/protonect/
+#Fix bug https://github.com/code-iai/iai_kinect2/issues/29
+sed -i s/'TARGET_LINK_LIBRARIES(freenect2 ${LIBRARIES})'/'TARGET_LINK_LIBRARIES(freenect2 ${LIBRARIES} udev)'/g CMakeLists.txt
 cmake .
 make	
 sudo make install
