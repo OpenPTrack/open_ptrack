@@ -24,7 +24,7 @@ if [ $UBUNTU_VERSION = xenial ] ; then
   ln -s /opt/ros/$ROS_DISTRO/share/catkin/cmake/toplevel.cmake driver_common/CMakeLists.txt
 fi
 
-GCC_VERSION = `gcc -dumpversion | cut -f1 -d.`
+GCC_VERSION=`gcc -dumpversion | cut -f1 -d.`
 
 # Building everything
 cd ~/workspace/ros/catkin
