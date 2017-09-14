@@ -24,9 +24,17 @@ if [ $UBUNTU_VERSION = xenial ] ; then
   ln -s /opt/ros/$ROS_DISTRO/share/catkin/cmake/toplevel.cmake driver_common/CMakeLists.txt
 fi
 
+GCC_VERSION = `gcc -dumpversion | cut -f1 -d.`
+
 # Building everything
 cd ~/workspace/ros/catkin
 catkin_make --pkg calibration_msgs
 catkin_make --pkg opt_msgs
-catkin_make --force-cmake
+
+#GCC 5 bug out of memory
+if [ $GCC_VERSION > 4 ] ; then
+  catkin_make --force-cmake -j 1
+else
+  catkin_make --force-cmake
+fi
 
