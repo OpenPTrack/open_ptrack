@@ -54,7 +54,7 @@ sudo rm -r libfreenect2
 #install iai-kinect
 cd $ROS_WORKSPACE
 cd ../catkin/src/
-git clone https://github.com/OpenPTrack/iai_kinect2.git
+git clone https://github.com/wangqiang1588/iai_kinect2.git
 
 #####################################################
 # Temporary 
