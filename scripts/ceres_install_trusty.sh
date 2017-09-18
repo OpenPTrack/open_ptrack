@@ -9,7 +9,14 @@ cd /tmp/ceres_install
 git clone https://github.com/ceres-solver/ceres-solver.git
 cd ceres-solver
 git fetch --tags
-git checkout tags/1.13.0
+
+UBUNTU_VERSION=`lsb_release -c -s`
+if [ $UBUNTU_VERSION = trusty ]; then
+	git checkout tags/1.9.0
+elif [ $UBUNTU_VERSION = xenial ]; then
+	git checkout tags/1.13.0
+fi
+
 cd ..
 mkdir ceres-bin
 cd ceres-bin
