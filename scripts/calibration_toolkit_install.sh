@@ -8,4 +8,12 @@ cd ~/workspace/ros/catkin/src
 git clone https://github.com/iaslab-unipd/calibration_toolkit 
 cd calibration_toolkit 
 git fetch origin --tags
-git checkout tags/v0.3.1
+
+UBUNTU_VERSION=`lsb_release -c -s`
+if [ $UBUNTU_VERSION = trusty ] || [ $UBUNTU_VERSION = saucy ] ; then
+	git checkout tags/v0.2
+elif [ $UBUNTU_VERSION = xenial ] ; then
+	git checkout tags/v0.3.1
+else
+	git checkout tags/v0.2
+fi
