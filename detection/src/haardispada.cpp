@@ -80,7 +80,7 @@ namespace open_ptrack
           int rtn = haar_features_fast(HF); // compute haar features
           if(rtn== 1){
             // Compute classifier score:
-#if CV_VERSION_MAJOR >= 3
+#if CV_MAJOR_VERSION >= 3
             result = HDAC_->predict(HF); 
 #else
             result = HDAC_.predict(HF);
@@ -124,7 +124,7 @@ namespace open_ptrack
           int rtn = haar_features_fast(HF); // compute haar features
           if(rtn== 1){
             // Compute classifier score:
-#if CV_VERSION_MAJOR >= 3 
+#if CV_MAJOR_VERSION >= 3 
             result = HDAC_->predict(HF, cv::Mat(),  cv::ml::StatModel::RAW_OUTPUT);
 #else
             result = HDAC_.predict(HF, cv::Mat(), cv::Range::all(), false, true);
@@ -197,7 +197,7 @@ namespace open_ptrack
     HaarDispAdaClassifier::train(string filename)
     {
       float priorFloat[] = { 1.0, HaarDispAdaPrior_ };  // preliminary priors based on ROC)
-#if CV_VERSION_MAJOR >= 3
+#if CV_MAJOR_VERSION >= 3
       cv::Mat prior(1,sizeof(priorFloat)/sizeof(priorFloat[0]),CV_32F,&priorFloat[0],sizeof(priorFloat)/sizeof(priorFloat[0]));
       HDAC_->setPriors(prior); 
       HDAC_->setUseSurrogates(false);
@@ -222,7 +222,7 @@ namespace open_ptrack
         if(trainingLabels_.at<int>(i,0) == -1) trainingLabels_.at<int>(i,0) = 0;//classes: 0,1
         Responses.at<int>(i,0) = trainingLabels_.at<int>(i,0);
       }
-#if CV_VERSION_MAJOR >= 3 
+#if CV_MAJOR_VERSION >= 3 
       HDAC_->train(Features, cv::ml::ROW_SAMPLE, Responses);
 #else
       Mat vIdx=Mat::ones(Features.cols,1,CV_8UC1); // variables of interest
@@ -233,7 +233,7 @@ namespace open_ptrack
 #endif
       ROS_ERROR("saving trained classifier to %s",filename.c_str());
       loaded = true;
-#if CV_VERSION_MAJOR >= 3 
+#if CV_MAJOR_VERSION >= 3 
       HDAC_->save(filename);
 #else
       HDAC_.save(filename.c_str());
@@ -246,7 +246,7 @@ namespace open_ptrack
       int num_TN     = 0;
       int num_FN     = 0;
       for(int i=0;i<Features.rows;i++){
-#if CV_VERSION_MAJOR >= 3
+#if CV_MAJOR_VERSION >= 3
         float result = HDAC_->predict(Features.row(i)); 
 #else
         float result = HDAC_.predict(Features.row(i));
@@ -289,7 +289,7 @@ namespace open_ptrack
     void
     HaarDispAdaClassifier::init()
     {
-#if CV_VERSION_MAJOR >= 3 
+#if CV_MAJOR_VERSION >= 3 
       HDAC_ = cv::ml::Boost::create();
 #endif
       num_filters_ = 174;
@@ -310,7 +310,7 @@ namespace open_ptrack
     void
     HaarDispAdaClassifier::load(string filename)
     {
-#if CV_VERSION_MAJOR >= 3
+#if CV_MAJOR_VERSION >= 3
       const cv::String cv_filename(filename); 
     /*bug fix */
     /*https://stackoverflow.com/questions/43532122/opencv-logistic-regression-load-failed */
