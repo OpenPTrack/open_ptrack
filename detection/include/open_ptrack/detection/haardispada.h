@@ -102,7 +102,7 @@ namespace open_ptrack
         void setMinConfidence(float );
 
       private:
-#if CV_VERSION_MAJOR >= 3 
+#if CV_MAJOR_VERSION >= 3 
         cv::Ptr<cv::ml::Boost> HDAC_;
         cv::String classifier_filename_; // for loading and saving
 #else
