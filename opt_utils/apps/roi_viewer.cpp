@@ -220,6 +220,8 @@ class roiViewerNode
 
       // Display the cv image
       cv::imshow("Detections",cv_ptr->image);
+      /*opencv 3.2-dev will not show image if do not call waitKey*/	
+      cv::waitKey(30);
     }
 
     ~roiViewerNode()
