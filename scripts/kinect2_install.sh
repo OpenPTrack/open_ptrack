@@ -5,11 +5,11 @@ cd $HOME
 if [ -d "libfreenect2" ]; then
 	read -p "The folder librefreenect2 already exist. Replace it? (y/n)" yn
 	case $yn in
-		[Yy]* ) sudo rm libfreenect2; git clone https://github.com/OpenPTrack/libfreenect2.git;;
+		[Yy]* ) sudo rm libfreenect2; git clone https://github.com/wangqiang1588/libfreenect2.git;;
 		[Nn]* ) ;;
 	esac
 else
-	git clone https://github.com/OpenPTrack/libfreenect2.git;
+	git clone https://github.com/wangqiang1588/libfreenect2.git;
 fi
 
 #####################################################
