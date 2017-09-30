@@ -56,10 +56,12 @@ add_executable(opt_calibration
 
 ## Add dependencies to the executable
 ## Specify libraries to link a library or executable target against
+#for Nvidiva TX2 must add libdrm
 target_link_libraries(opt_calibration
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
   ${OpenCV_LIBS}
+  drm
 )
 
 # Publish camera_info topic for stereo:
@@ -75,8 +77,10 @@ add_executable(opt_calibration_refinement
   apps/opt_calibration_refinement.cpp
   src/trajectory_registration.cpp
 )
+#for Nvidiva TX2 must add libdrm
 target_link_libraries(opt_calibration_refinement
   ${catkin_LIBRARIES}
+  drm
 )
 
 add_executable(opt_define_reference_frame
