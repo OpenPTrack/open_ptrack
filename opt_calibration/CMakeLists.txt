@@ -90,8 +90,10 @@ add_executable(opt_define_reference_frame
   src/opt_checkerboard_extraction.cpp  include/open_ptrack/opt_calibration/opt_checkerboard_extraction.h
 )
 
+#for Nvidiva TX2 must add libdrm
 target_link_libraries(opt_define_reference_frame
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
   ${OpenCV_LIBS}
+  drm
 )
