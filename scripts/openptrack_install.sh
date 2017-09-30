@@ -1,5 +1,8 @@
 #!/bin/bash
 
+#fix /usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/libGL.so: undefined reference to `drmCloseOnce' on TX2
+sudo apt-get install libdrm-dev
+
 # Clone OpenPTrack into ROS workspace:
 cd ~/workspace/ros/catkin/src
 git clone https://github.com/wangqiang1588/open_ptrack_org.git open_ptrack
