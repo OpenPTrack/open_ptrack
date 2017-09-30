@@ -1,4 +1,7 @@
 #!/bin/bash
+#first install libboost or else it will failed on Nvidia TX2
+sudo apt-get -y install libboost-all-dev
+
 UBUNTU_VERSION=`lsb_release -c -s`
 ROS_DISTRO=hydro
 
