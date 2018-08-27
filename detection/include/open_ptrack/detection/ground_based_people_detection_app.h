@@ -317,7 +317,7 @@ namespace open_ptrack
          * \return The cloud after pre-processing.
          */
         PointCloudPtr
-        preprocessCloud (PointCloudPtr& input_cloud);
+        preprocessCloud (PointCloudPtr& input_cloud);//, void (*publishBeforeVoxelFilterCloud)(PointCloudPtr&));
 
         /**
          * \brief Perform people detection on the input data and return people clusters information.
@@ -327,7 +327,7 @@ namespace open_ptrack
          * \return true if the compute operation is successful, false otherwise.
          */
         bool
-        compute (std::vector<pcl::people::PersonCluster<PointT> >& clusters);
+        compute (std::vector<pcl::people::PersonCluster<PointT> >& clusters);//, void (*publishExtractRGB)(PointCloudPtr&), void (*publishPreProcessed)(PointCloudPtr&), void (*publishGroundRemoval)(PointCloudPtr&), void (*publishBeforeVoxelFilterCloud)(PointCloudPtr&));
 
       protected:
         /** \brief sampling factor used to downsample the point cloud */

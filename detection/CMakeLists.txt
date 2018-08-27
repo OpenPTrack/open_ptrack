@@ -11,10 +11,11 @@ if(VTK_FOUND)
 	include (${VTK_USE_FILE})
 endif() 
 
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 2.4 REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 link_directories(${OpenCV_LIB_DIR})
 add_definitions(${OpenCV_DEFINITIONS})
+
 
 find_package(Eigen REQUIRED)
 include_directories(${Eigen_INCLUDE_DIRS} include ${catkin_INCLUDE_DIRS})

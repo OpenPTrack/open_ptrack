@@ -60,8 +60,8 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <image_transport/subscriber_filter.h>
 
 // Used to display OPENCV images
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 
 // Dynamic reconfigure:
 #include <dynamic_reconfigure/server.h>

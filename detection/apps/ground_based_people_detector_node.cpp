@@ -74,6 +74,9 @@
 #include <dynamic_reconfigure/server.h>
 #include <detection/GroundBasedPeopleDetectorConfig.h>
 
+#include <cmath>
+#include <math.h> 
+
 using namespace opt_msgs;
 using namespace sensor_msgs;
 
@@ -115,6 +118,11 @@ bool background_subtraction;
 // Threshold on the ratio of valid points needed for ground estimation
 double valid_points_threshold;
 
+//ros::Publisher extractedRGB_cloud;
+//ros::Publisher beforeVoxelFilter_cloud;
+//ros::Publisher preProcessed_cloud;
+//ros::Publisher groundRemoval_cloud;
+
 void
 cloud_cb (const PointCloudT::ConstPtr& callback_cloud)
 {
@@ -143,6 +151,51 @@ updateBackgroundCallback (const std_msgs::String::ConstPtr & msg)
   }
 }
 
+/*
+//Publish Intermediate Point Cloud Calls
+void
+publishExtractRGBCloud(PointCloudT::Ptr& cloud)
+{
+  sensor_msgs::PointCloud2 output;
+  pcl::toROSMsg(*cloud, output); // Convert the point cloud to a ROS message
+  extractedRGB_cloud.publish(output);
+}
+
+void
+publishpreProcessedCloud(PointCloudT::Ptr& cloud)
+{
+  sensor_msgs::PointCloud2 output;
+  pcl::toROSMsg(*cloud, output); // Convert the point cloud to a ROS message
+  preProcessed_cloud.publish(output);
+}
+
+
+void
+publishBeforeVoxelFilterCloud(PointCloudT::Ptr& cloud)
+{
+  sensor_msgs::PointCloud2 output;
+  pcl::toROSMsg(*cloud, output); // Convert the point cloud to a ROS message
+  beforeVoxelFilter_cloud.publish(output);
+}
+
+void
+publishBeforeVoxelFilterDummyCloud(PointCloudT::Ptr& cloud)
+{
+  //sensor_msgs::PointCloud2 output;
+  //pcl::toROSMsg(*cloud, output); // Convert the point cloud to a ROS message
+  //beforeVoxelFilter_cloud.publish(output);
+}
+
+
+void
+publishgroundRemovalCloud(PointCloudT::Ptr& cloud)
+{
+  sensor_msgs::PointCloud2 output;
+  pcl::toROSMsg(*cloud, output); // Convert the point cloud to a ROS message
+  groundRemoval_cloud.publish(output);
+}
+*/
+
 void
 computeBackgroundCloud (int frames, float voxel_size, std::string frame_id, ros::Rate rate, PointCloudT::Ptr& background_cloud)
 {
@@ -155,7 +208,7 @@ computeBackgroundCloud (int frames, float voxel_size, std::string frame_id, ros:
   {
     // Point cloud pre-processing (downsampling and filtering):
     PointCloudT::Ptr cloud_filtered(new PointCloudT);
-    cloud_filtered = people_detector.preprocessCloud (cloud);
+    cloud_filtered = people_detector.preprocessCloud (cloud);//, &publishBeforeVoxelFilterDummyCloud);
 
     *background_cloud += *cloud_filtered;
     ros::spinOnce();
@@ -316,6 +369,11 @@ main (int argc, char** argv)
   ros::Publisher detection_pub;
   detection_pub= nh.advertise<DetectionArray>(output_topic, 3);
 
+	//extractedRGB_cloud = nh.advertise<sensor_msgs::PointCloud2> (pointcloud_topic + "/extractedRGB", 3);
+	//preProcessed_cloud = nh.advertise<sensor_msgs::PointCloud2> (pointcloud_topic + "/preProcessed", 3);
+	//groundRemoval_cloud = nh.advertise<sensor_msgs::PointCloud2> (pointcloud_topic + "/groundRemoval", 3);
+	//beforeVoxelFilter_cloud = nh.advertise<sensor_msgs::PointCloud2> (pointcloud_topic + "/beforeVoxelFilter", 3);
+
   Rois output_rois_;
   open_ptrack::opt_utils::Conversions converter;
 
@@ -407,10 +465,8 @@ main (int argc, char** argv)
     if (new_cloud_available_flag)
     {
 	  new_cloud_available_flag = false;
-
       // Convert PCL cloud header to ROS header:
       std_msgs::Header cloud_header = pcl_conversions::fromPCL(cloud->header);
-
       // If requested, update background:
       if (update_background)
       {
@@ -427,9 +483,11 @@ main (int argc, char** argv)
 
       // Perform people detection on the new cloud:
       std::vector<pcl::people::PersonCluster<PointT> > clusters;   // vector containing persons clusters
+
+    
       people_detector.setInputCloud(cloud);
       people_detector.setGround(ground_coeffs);                    // set floor coefficients
-      people_detector.compute(clusters);                           // perform people detection
+      people_detector.compute(clusters);//, &publishExtractRGBCloud, &publishpreProcessedCloud , &publishgroundRemovalCloud, &publishBeforeVoxelFilterCloud);                // perform people detection
 
       // If not lock_ground, update ground coefficients:
       if (not lock_ground)

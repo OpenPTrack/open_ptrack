@@ -370,14 +370,21 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::preprocessCloud (
   PointCloudPtr cloud_filtered(new PointCloud);
   pcl::VoxelGrid<PointT> voxel_grid_filter_object;
   if (apply_denoising_)
+  {
     voxel_grid_filter_object.setInputCloud(cloud_denoised);
+  }
   else
   {
     if (sampling_factor_ != 1)
+    {
       voxel_grid_filter_object.setInputCloud(cloud_downsampled);
+    }
     else
+    {
       voxel_grid_filter_object.setInputCloud(input_cloud);
+    }
   }
+
   voxel_grid_filter_object.setLeafSize (voxel_size_, voxel_size_, voxel_size_);
   voxel_grid_filter_object.setFilterFieldName("z");
   voxel_grid_filter_object.setFilterLimits(0.0, max_distance_);
@@ -476,6 +483,7 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
       PCL_INFO ("No groundplane update!\n");
     }
   }
+  
 
   // Background Subtraction (optional):
   if (background_subtraction_)
@@ -490,12 +498,34 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
     }
     no_ground_cloud_ = foreground_cloud;
   }
+		
+		
+    std::vector<int> myvector;
+    
+    int count = 0;
+    for(pcl::PointCloud<pcl::PointXYZRGB>::iterator it = no_ground_cloud_->begin(); it != no_ground_cloud_->end(); it++)
+    {
+        if (!std::isfinite (it->x) || !std::isfinite (it->y) || !std::isfinite (it->z))
+        {
+            myvector.push_back(count);
+        }   
+        count++;
+    }
+
+    count = 0;
+    for (unsigned i=0; i<myvector.size(); ++i)
+    {   
+        no_ground_cloud_->erase(no_ground_cloud_->begin() + myvector[i] - count);
+        count++;
+    }
+	
 
   if (no_ground_cloud_->points.size() > 0)
   {
     // Euclidean Clustering:
     std::vector<pcl::PointIndices> cluster_indices;
     typename pcl::search::KdTree<PointT>::Ptr tree (new pcl::search::KdTree<PointT>);
+
     tree->setInputCloud(no_ground_cloud_);
     pcl::EuclideanClusterExtraction<PointT> ec;
     ec.setClusterTolerance(2 * 0.06);
@@ -504,7 +534,7 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
     ec.setSearchMethod(tree);
     ec.setInputCloud(no_ground_cloud_);
     ec.extract(cluster_indices);
-
+    
     // Sensor tilt compensation to improve people detection:
     PointCloudPtr no_ground_cloud_rotated(new PointCloud);
     Eigen::VectorXf ground_coeffs_new;
