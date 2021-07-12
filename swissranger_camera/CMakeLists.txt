@@ -6,6 +6,7 @@ IF(EXISTS "/usr/lib/libmesasr.so")
 ELSE()
 	set(SWISSRANGER_ENABLED 0)
 ENDIF()
+
 LIST(APPEND CMAKE_CXXFLAGS "-DSWISSRANGER_ENABLED")
 find_package(catkin REQUIRED COMPONENTS cmake_modules roscpp tf camera_info_manager image_transport dynamic_reconfigure driver_base sensor_msgs cv_bridge)
 
@@ -36,8 +37,7 @@ include_directories(include ${catkin_INCLUDE_DIRS} cfg/cpp)
 catkin_package(
    INCLUDE_DIRS include
    LIBRARIES swissranger_utility
-   CATKIN_DEPENDS roscpp tf camera_info_manager image_transport dynamic_reconfigure driver_base
-)
+   CATKIN_DEPENDS roscpp tf camera_info_manager image_transport dynamic_reconfigure driver_base)
 add_library(swissranger_utility src/swissranger_camera/utility.cpp
 	include/swissranger_camera/utility.h)
 target_link_libraries(swissranger_utility ${catkin_LIBRARIES})

@@ -1,9 +1,13 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(bayes)
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
-find_package(catkin REQUIRED COMPONENTS roscpp )
+find_package(catkin REQUIRED COMPONENTS roscpp)
 
-link_libraries(/usr/lib/liblapack.so.3gf)
+if (EXISTS "/usr/lib/liblapack.so.3gf")
+	link_libraries(/usr/lib/liblapack.so.3gf)
+elseif(EXISTS "/usr/lib/liblapack.so")
+	link_libraries(/usr/lib/liblapack.so)	
+endif()
 
 include_directories(include include/open_ptrack/bayes include/open_ptrack/bayes/filters)
 

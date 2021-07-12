@@ -32,7 +32,7 @@ endif()
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES
-  CATKIN_DEPENDS roscpp opt_msgs calibration_common camera_info_manager cv_bridge image_transport swissranger_camera
+  CATKIN_DEPENDS roscpp opt_msgs calibration_common camera_info_manager cv_bridge image_transport swissranger_camera kinect
   DEPENDS eigen pcl opencv2
 )
 
@@ -56,10 +56,12 @@ add_executable(opt_calibration
 
 ## Add dependencies to the executable
 ## Specify libraries to link a library or executable target against
+#for Nvidiva TX2 must add libdrm
 target_link_libraries(opt_calibration
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
   ${OpenCV_LIBS}
+  drm
 )
 
 # Publish camera_info topic for stereo:
@@ -75,8 +77,10 @@ add_executable(opt_calibration_refinement
   apps/opt_calibration_refinement.cpp
   src/trajectory_registration.cpp
 )
+#for Nvidiva TX2 must add libdrm
 target_link_libraries(opt_calibration_refinement
   ${catkin_LIBRARIES}
+  drm
 )
 
 add_executable(opt_define_reference_frame
@@ -86,8 +90,10 @@ add_executable(opt_define_reference_frame
   src/opt_checkerboard_extraction.cpp  include/open_ptrack/opt_calibration/opt_checkerboard_extraction.h
 )
 
+#for Nvidiva TX2 must add libdrm
 target_link_libraries(opt_define_reference_frame
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
   ${OpenCV_LIBS}
+  drm
 )

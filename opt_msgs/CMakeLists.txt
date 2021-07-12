@@ -15,7 +15,7 @@ catkin_package(
    CATKIN_DEPENDS roscpp std_msgs sensor_msgs message_runtime
 )
 
-include_directories(include include/open_ptrack/${PROJECT_NAME}/)
+include_directories(include ${catkin_INCLUDE_DIRS} include/open_ptrack/${PROJECT_NAME}/)
 
 add_library(roi_msgs src/overlap.cpp )
 

@@ -3,6 +3,8 @@ UBUNTU_VERSION=`lsb_release -c -s`
 
 if [ $UBUNTU_VERSION = trusty ] || [ $UBUNTU_VERSION = saucy ] ; then
   . /opt/ros/indigo/setup.bash
+elif  [ $UBUNTU_VERSION = xenial ] ; then
+  . /opt/ros/kinetic/setup.bash
 else
   . /opt/ros/hydro/setup.bash
 fi

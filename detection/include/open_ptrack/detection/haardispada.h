@@ -40,7 +40,9 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include <map>
 #include <boost/filesystem.hpp>
+#include <opencv2/opencv.hpp> 
 #include <opencv2/core/core.hpp>
+#include <opencv2/core/version.hpp>
 #include <opencv/cv.h>
 #include <opencv/ml.h>
 #include <opt_msgs/Rois.h>
@@ -65,7 +67,6 @@ namespace open_ptrack
     /*****************************************************************************
      ** Class
      *****************************************************************************/
-
     class HaarDispAdaClassifier{
 
       public:
@@ -101,8 +102,13 @@ namespace open_ptrack
         void setMinConfidence(float );
 
       private:
+#if CV_MAJOR_VERSION >= 3 
+        cv::Ptr<cv::ml::Boost> HDAC_;
+        cv::String classifier_filename_; // for loading and saving
+#else
         CvBoost HDAC_;
         string classifier_filename_; // for loading and saving
+#endif
         int maxSamples_;
         int num_filters_;
         Mat integralImage_;

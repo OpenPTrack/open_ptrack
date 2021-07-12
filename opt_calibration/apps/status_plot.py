@@ -101,6 +101,8 @@ class CalibrationStatusPlotter :
     self.lock.release()
     
     plot.draw()
+    #for compact after matplotlib 1.5.1 ,we must call matplotlib.pyplot.pause(interval) or else no draw  
+    plot.pause(0.00001)
   #####################
 
   def spin(self) :

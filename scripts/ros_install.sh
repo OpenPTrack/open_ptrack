@@ -1,9 +1,14 @@
 #!/bin/bash
+#first install libboost or else it will failed on Nvidia TX2
+sudo apt-get -y install libboost-all-dev
+
 UBUNTU_VERSION=`lsb_release -c -s`
 ROS_DISTRO=hydro
 
 if [ $UBUNTU_VERSION = trusty ] || [ $UBUNTU_VERSION = saucy ] ; then
   ROS_DISTRO=indigo
+elif [ $UBUNTU_VERSION = xenial ] ; then
+  ROS_DISTRO=kinetic
 fi
 
 ROS_PACKAGES="python-rosinstall ros-$ROS_DISTRO-robot-state-publisher ros-$ROS_DISTRO-cmake-modules ros-$ROS_DISTRO-freenect-stack ros-$ROS_DISTRO-openni-launch ros-$ROS_DISTRO-camera-info-manager-py"

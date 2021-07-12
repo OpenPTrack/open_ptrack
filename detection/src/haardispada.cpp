@@ -80,7 +80,11 @@ namespace open_ptrack
           int rtn = haar_features_fast(HF); // compute haar features
           if(rtn== 1){
             // Compute classifier score:
+#if CV_MAJOR_VERSION >= 3
+            result = HDAC_->predict(HF); 
+#else
             result = HDAC_.predict(HF);
+#endif
           }
           else{
             ROS_ERROR("WHY O WHY");
@@ -120,7 +124,11 @@ namespace open_ptrack
           int rtn = haar_features_fast(HF); // compute haar features
           if(rtn== 1){
             // Compute classifier score:
+#if CV_MAJOR_VERSION >= 3 
+            result = HDAC_->predict(HF, cv::Mat(),  cv::ml::StatModel::RAW_OUTPUT);
+#else
             result = HDAC_.predict(HF, cv::Mat(), cv::Range::all(), false, true);
+#endif
           }
           else{
             ROS_ERROR("WHY O WHY");
@@ -188,11 +196,18 @@ namespace open_ptrack
     void
     HaarDispAdaClassifier::train(string filename)
     {
-      CvBoostParams bparams = CvBoostParams();
       float priorFloat[] = { 1.0, HaarDispAdaPrior_ };  // preliminary priors based on ROC)
+#if CV_MAJOR_VERSION >= 3
+      cv::Mat prior(1,sizeof(priorFloat)/sizeof(priorFloat[0]),CV_32F,&priorFloat[0],sizeof(priorFloat)/sizeof(priorFloat[0]));
+      HDAC_->setPriors(prior); 
+      HDAC_->setUseSurrogates(false);
+      HDAC_->setWeakCount(100);
+#else
+      CvBoostParams bparams = CvBoostParams();
       bparams.priors = &priorFloat[0];
       bparams.use_surrogates = false;
       bparams.weak_count = 100;
+#endif
 
       // copy sub matrix for training
       Mat VarIdx;
@@ -207,14 +222,22 @@ namespace open_ptrack
         if(trainingLabels_.at<int>(i,0) == -1) trainingLabels_.at<int>(i,0) = 0;//classes: 0,1
         Responses.at<int>(i,0) = trainingLabels_.at<int>(i,0);
       }
+#if CV_MAJOR_VERSION >= 3 
+      HDAC_->train(Features, cv::ml::ROW_SAMPLE, Responses);
+#else
       Mat vIdx=Mat::ones(Features.cols,1,CV_8UC1); // variables of interest
       Mat sIdx=Mat::ones(Responses.rows,1,CV_8UC1); // samples of interest
       Mat vtyp=Mat(Features.cols,1,CV_8UC1,CV_VAR_ORDERED); // could be VAR_CATAGORICAL(discrete)
       Mat MDM; // no missing mask
       HDAC_.train(Features, CV_ROW_SAMPLE, Responses,vIdx,sIdx,vtyp,MDM,bparams,false);
+#endif
       ROS_ERROR("saving trained classifier to %s",filename.c_str());
       loaded = true;
+#if CV_MAJOR_VERSION >= 3 
+      HDAC_->save(filename);
+#else
       HDAC_.save(filename.c_str());
+#endif
       // Determine Recall Statistics
       int num_TP     = 0;
       int num_FP     = 0;
@@ -223,7 +246,11 @@ namespace open_ptrack
       int num_TN     = 0;
       int num_FN     = 0;
       for(int i=0;i<Features.rows;i++){
+#if CV_MAJOR_VERSION >= 3
+        float result = HDAC_->predict(Features.row(i)); 
+#else
         float result = HDAC_.predict(Features.row(i));
+#endif
         if(Responses.at<int>(i,0) == 1) num_people++;
         if(Responses.at<int>(i,0) != 1) num_neg++;
         if(result==1 && Responses.at<int>(i,0) == 1) num_TP++; // true pos
@@ -262,6 +289,9 @@ namespace open_ptrack
     void
     HaarDispAdaClassifier::init()
     {
+#if CV_MAJOR_VERSION >= 3 
+      HDAC_ = cv::ml::Boost::create();
+#endif
       num_filters_ = 174;
       setMaxSamples(350); //use a small number to have a small memory footprint by default
 
@@ -280,7 +310,18 @@ namespace open_ptrack
     void
     HaarDispAdaClassifier::load(string filename)
     {
+#if CV_MAJOR_VERSION >= 3
+      const cv::String cv_filename(filename); 
+    /*bug fix */
+    /*https://stackoverflow.com/questions/43532122/opencv-logistic-regression-load-failed */
+  #if CV_VERSION_MINOR > 1 
+      HDAC_->load<cv::ml::Boost>(cv_filename);
+  #else
+      HDAC_->load(cv_filename);
+  #endif
+#else
       HDAC_.load(filename.c_str());
+#endif
       loaded = true;
     }
 
